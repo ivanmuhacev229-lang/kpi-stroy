@@ -1021,42 +1021,45 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-<!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (ТОЛЬКО ДЛЯ РОЛИ ДИРЕКТОРА) -->
+<!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (СТРОГО ТОЛЬКО ДЛЯ РОЛИ ДИРЕКТОРА) -->
 <script>
 (function() {
-  function syncDirectorSettings() {
-    var headerEl = document.querySelector('header');
-    var headerText = headerEl ? headerEl.textContent : '';
-    var isDirector = headerText.indexOf('Директор') !== -1;
+  setInterval(function() {
+    var topBar = document.querySelector('header') || document.body;
+    var isDirector = false;
+    var badges = document.querySelectorAll('header span, header div, .badge-role');
+    for (var b = 0; b < badges.length; b++) {
+      if (badges[b].textContent.trim() === 'Директор' || badges[b].textContent.indexOf('Директор /') !== -1) {
+        isDirector = true;
+        break;
+      }
+    }
 
     var diagBtn = null;
-    var btns = document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.indexOf('Диагностика объекта') !== -1) {
-        diagBtn = btns[i];
+    var allBtns = document.querySelectorAll('button');
+    for (var i = 0; i < allBtns.length; i++) {
+      if (allBtns[i].textContent.indexOf('Диагностика объекта') !== -1) {
+        diagBtn = allBtns[i];
         break;
       }
     }
     if (!diagBtn || !diagBtn.parentElement) return;
 
     var nav = diagBtn.parentElement;
-    var existingBtn = document.getElementById('adm-tab-btn');
-    var existingPanel = document.getElementById('view-settings-admin');
+    var admBtn = document.getElementById('adm-tab-btn');
+    var admPanel = document.getElementById('view-settings-admin');
 
-    // Если активна любая роль, кроме Директора — полностью прячем кнопку и панель
     if (!isDirector) {
-      if (existingBtn) existingBtn.style.display = 'none';
-      if (existingPanel) existingPanel.style.display = 'none';
+      if (admBtn) admBtn.style.setProperty('display', 'none', 'important');
+      if (admPanel) admPanel.style.setProperty('display', 'none', 'important');
       return;
     }
 
-    // Если кнопка уже создана — просто показываем её для Директора
-    if (existingBtn) {
-      existingBtn.style.display = '';
+    if (admBtn) {
+      admBtn.style.removeProperty('display');
       return;
     }
 
-    // Создаем кнопку и панель настроек один раз
     var btn = document.createElement('button');
     btn.id = 'adm-tab-btn';
     btn.className = diagBtn.className.replace('active', '').trim();
@@ -1187,11 +1190,10 @@ function renderPortfolioTable() {
         });
       }
     }
-  }
-
-  setInterval(syncDirectorSettings, 400);
+  }, 300);
 })();
 </script>
+
 
 <!-- МОДУЛЬ ОБЛАЧНОЙ БАЗЫ И РЕГИСТРАЦИИ SUPABASE -->
 <script src="https://jsdelivr.net"></script>
