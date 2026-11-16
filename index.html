@@ -1021,33 +1021,34 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
- <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (ТОЛЬКО ДЛЯ КАБИНЕТА ДИРЕКТОРА) -->
+ <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (ДЛЯ КАБИНЕТА ДИРЕКТОРА) -->
 <script>
 (function() {
   function attachDirectorSettings() {
     if (document.getElementById('adm-tab-btn')) return;
 
-    // Ищем именно внутреннюю панель вкладок, где есть кнопка "1. Диагностика объекта"
-    var targetNav = null;
-    var allButtons = document.querySelectorAll('button');
-    for (var i = 0; i < allButtons.length; i++) {
-      if (allButtons[i].textContent.indexOf('Диагностика объекта') !== -1) {
-        targetNav = allButtons[i].parentElement;
+    // Ищем именно тег <button>, содержащий текст "Диагностика объекта"
+    var diagBtn = null;
+    var buttons = document.querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) {
+      if (buttons[i].textContent.indexOf('Диагностика объекта') !== -1) {
+        diagBtn = buttons[i];
         break;
       }
     }
-    if (!targetNav) return;
+    if (!diagBtn || !diagBtn.parentElement) return;
+
+    var targetNav = diagBtn.parentElement;
 
     var btn = document.createElement('button');
     btn.id = 'adm-tab-btn';
-    btn.className = targetNav.firstElementChild.className.replace('active', '').trim();
+    btn.className = diagBtn.className.replace('active', '').trim();
     btn.textContent = '⚙️ 4. Настройки методики';
     btn.style.cursor = 'pointer';
 
     var panel = document.createElement('div');
     panel.id = 'view-settings-admin';
-    panel.className = 'card hidden';
-    panel.style.cssText = 'background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
+    panel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
     panel.innerHTML =
       '<h2 style="margin-top:0;color:#1e293b;">⚙️ Настройки методики и нормативов «Светофора»</h2>' +
       '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Регулируйте граничные значения показателей для каждого профиля строительства. После сохранения весь сайт и портфель пересчитаются автоматически.</p>' +
@@ -1145,11 +1146,9 @@ function renderPortfolioTable() {
       var siblings = targetNav.parentElement.children;
       for (var j = 0; j < siblings.length; j++) {
         if (siblings[j] !== targetNav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
-          siblings[j].classList.add('hidden');
           siblings[j].style.display = 'none';
         }
       }
-      panel.classList.remove('hidden');
       panel.style.display = 'block';
       renderTable();
     });
@@ -1158,7 +1157,6 @@ function renderPortfolioTable() {
       if (otherBtn !== btn) {
         otherBtn.addEventListener('click', function() {
           btn.classList.remove('active');
-          panel.classList.add('hidden');
           panel.style.display = 'none';
           var siblings = targetNav.parentElement.children;
           for (var j = 0; j < siblings.length; j++) {
@@ -1171,11 +1169,10 @@ function renderPortfolioTable() {
     });
   }
 
-  setInterval(attachDirectorSettings, 600);
+  setInterval(attachDirectorSettings, 500);
 })();
 </script>
 
-</script>
 
 </body>
 </html>
