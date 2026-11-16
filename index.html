@@ -1021,25 +1021,23 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
- <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (ДЛЯ КАБИНЕТА ДИРЕКТОРА) -->
+ <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ -->
 <script>
 (function() {
-  function attachDirectorSettings() {
+  function initAdminSettings() {
     if (document.getElementById('adm-tab-btn')) return;
 
-    // Ищем именно тег <button>, содержащий текст "Диагностика объекта"
     var diagBtn = null;
-    var buttons = document.querySelectorAll('button');
-    for (var i = 0; i < buttons.length; i++) {
-      if (buttons[i].textContent.indexOf('Диагностика объекта') !== -1) {
-        diagBtn = buttons[i];
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent.indexOf('Диагностика объекта') !== -1) {
+        diagBtn = btns[i];
         break;
       }
     }
     if (!diagBtn || !diagBtn.parentElement) return;
 
-    var targetNav = diagBtn.parentElement;
-
+    var nav = diagBtn.parentElement;
     var btn = document.createElement('button');
     btn.id = 'adm-tab-btn';
     btn.className = diagBtn.className.replace('active', '').trim();
@@ -1051,7 +1049,7 @@ function renderPortfolioTable() {
     panel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
     panel.innerHTML =
       '<h2 style="margin-top:0;color:#1e293b;">⚙️ Настройки методики и нормативов «Светофора»</h2>' +
-      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Регулируйте граничные значения показателей для каждого профиля строительства. После сохранения весь сайт и портфель пересчитаются автоматически.</p>' +
+      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Измените граничные значения показателей для каждого профиля строительства. После сохранения весь сайт и портфель пересчитаются автоматически.</p>' +
       '<div style="margin-bottom:16px;">' +
         '<label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;color:#475569;">ПРОФИЛЬ СТРОИТЕЛЬСТВА:</label>' +
         '<select id="adm-prof" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;font-weight:600;font-size:14px;">' +
@@ -1076,8 +1074,8 @@ function renderPortfolioTable() {
         '<button id="adm-reset" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">↺ Сбросить к базовым стандартам</button>' +
       '</div>';
 
-    targetNav.parentElement.insertBefore(panel, targetNav.nextSibling);
-    targetNav.appendChild(btn);
+    nav.parentElement.insertBefore(panel, nav.nextSibling);
+    nav.appendChild(btn);
 
     var defaults = {
       residential: { mei_g: 8, mei_y: 15, dcc_g: 500, dcc_y: 1000, cod_g: 120, cod_y: 200, cle_g: 5, cle_y: 10, ftri_g: 85, ftri_y: 70 },
@@ -1088,20 +1086,21 @@ function renderPortfolioTable() {
     var saved = localStorage.getItem('kpi_custom_norms');
     var norms = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaults));
 
-    var meta = [
+    var meta = new Array(
       { k: 'mei', name: 'MEI — Коэффициент «съеденной» маржи (%) — не более' },
       { k: 'dcc', name: 'DCC — Цена заморозки капитала в КС-2 (тыс. ₽) — не более' },
       { k: 'cod', name: 'CoD — Стоимость одного дня простоя (тыс. ₽/дн) — не более' },
       { k: 'cle', name: 'CLE — Доля ФОТ на переделки и брак (%) — не более' },
       { k: 'ftri', name: 'FTRI — Приемка работ с первого раза (%) — не менее' }
-    ];
+    );
 
     function renderTable() {
       var p = document.getElementById('adm-prof').value;
       var cur = norms[p] || defaults[p];
       var tb = document.getElementById('adm-tbody');
       tb.innerHTML = '';
-      meta.forEach(function(m) {
+      for (var idx = 0; idx < meta.length; idx++) {
+        var m = meta[idx];
         var tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid #e2e8f0';
         tr.innerHTML =
@@ -1110,23 +1109,24 @@ function renderPortfolioTable() {
           '<td style="padding:12px;"><input type="number" step="0.5" data-k="' + m.k + '_g" value="' + cur[m.k + '_g'] + '" style="width:110px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;"></td>' +
           '<td style="padding:12px;"><input type="number" step="0.5" data-k="' + m.k + '_y" value="' + cur[m.k + '_y'] + '" style="width:110px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;"></td>';
         tb.appendChild(tr);
-      });
+      }
     }
 
     document.getElementById('adm-prof').addEventListener('change', renderTable);
 
     document.getElementById('adm-save').addEventListener('click', function() {
       var p = document.getElementById('adm-prof').value;
-      document.querySelectorAll('#adm-tbody input').forEach(function(inp) {
-        norms[p][inp.dataset.k] = parseFloat(inp.value) || 0;
-      });
+      var inputs = document.querySelectorAll('#adm-tbody input');
+      for (var i = 0; i < inputs.length; i++) {
+        norms[p][inputs[i].dataset.k] = parseFloat(inputs[i].value) || 0;
+      }
       localStorage.setItem('kpi_custom_norms', JSON.stringify(norms));
       if (typeof THRESHOLDS !== 'undefined' && THRESHOLDS[p]) {
-        THRESHOLDS[p].mei = [norms[p].mei_g, norms[p].mei_y];
-        THRESHOLDS[p].dcc = [norms[p].dcc_g, norms[p].dcc_y];
-        THRESHOLDS[p].cod = [norms[p].cod_g, norms[p].cod_y];
-        THRESHOLDS[p].cle = [norms[p].cle_g, norms[p].cle_y];
-        THRESHOLDS[p].ftri = [norms[p].ftri_g, norms[p].ftri_y];
+        THRESHOLDS[p].mei = new Array(norms[p].mei_g, norms[p].mei_y);
+        THRESHOLDS[p].dcc = new Array(norms[p].dcc_g, norms[p].dcc_y);
+        THRESHOLDS[p].cod = new Array(norms[p].cod_g, norms[p].cod_y);
+        THRESHOLDS[p].cle = new Array(norms[p].cle_g, norms[p].cle_y);
+        THRESHOLDS[p].ftri = new Array(norms[p].ftri_g, norms[p].ftri_y);
       }
       if (typeof recalc === 'function') recalc();
       if (typeof updateUI === 'function') updateUI();
@@ -1141,11 +1141,12 @@ function renderPortfolioTable() {
     });
 
     btn.addEventListener('click', function() {
-      Array.from(targetNav.children).forEach(function(b) { b.classList.remove('active'); });
+      var children = nav.children;
+      for (var k = 0; k < children.length; k++) children[k].classList.remove('active');
       btn.classList.add('active');
-      var siblings = targetNav.parentElement.children;
+      var siblings = nav.parentElement.children;
       for (var j = 0; j < siblings.length; j++) {
-        if (siblings[j] !== targetNav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
+        if (siblings[j] !== nav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
           siblings[j].style.display = 'none';
         }
       }
@@ -1153,26 +1154,26 @@ function renderPortfolioTable() {
       renderTable();
     });
 
-    Array.from(targetNav.children).forEach(function(otherBtn) {
-      if (otherBtn !== btn) {
-        otherBtn.addEventListener('click', function() {
+    var navBtns = nav.children;
+    for (var n = 0; n < navBtns.length; n++) {
+      if (navBtns[n] !== btn) {
+        navBtns[n].addEventListener('click', function() {
           btn.classList.remove('active');
           panel.style.display = 'none';
-          var siblings = targetNav.parentElement.children;
+          var siblings = nav.parentElement.children;
           for (var j = 0; j < siblings.length; j++) {
-            if (siblings[j] !== targetNav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
+            if (siblings[j] !== nav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
               siblings[j].style.display = '';
             }
           }
         });
       }
-    });
+    }
   }
 
-  setInterval(attachDirectorSettings, 500);
+  setInterval(initAdminSettings, 500);
 })();
 </script>
-
 
 </body>
 </html>
