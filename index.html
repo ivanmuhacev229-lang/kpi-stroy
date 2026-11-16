@@ -1021,137 +1021,134 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-    <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ И НОРМАТИВОВ -->
+  <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ И НОРМАТИВОВ -->
 <script>
 (function() {
-  window.addEventListener('load', function() {
-    const nav = document.getElementById('nav-tabs') || document.querySelector('.tabs');
-    const container = document.getElementById('app-screen') || document.querySelector('.container');
-    if (!nav || !container) return;
+  function initSettingsModule() {
+    var nav = document.getElementById('nav-tabs') || document.querySelector('.tabs') || document.querySelector('[class*="tab"]')?.parentElement;
+    var container = document.getElementById('app-screen') || document.querySelector('.container') || document.body;
+    if (!nav || document.getElementById('adm-tab-btn')) return;
 
-    const btn = document.createElement('button');
-    btn.className = 'tab';
+    var btn = document.createElement('button');
+    btn.id = 'adm-tab-btn';
+    btn.className = nav.firstElementChild ? nav.firstElementChild.className.replace('active', '').trim() : 'tab';
     btn.textContent = '⚙️ 4. Настройки методики';
-    btn.dataset.tab = 'settings-admin';
-    
-    const panel = document.createElement('div');
+    btn.style.cursor = 'pointer';
+
+    var panel = document.createElement('div');
     panel.id = 'view-settings-admin';
     panel.className = 'card hidden';
-    panel.style.marginTop = '16px';
-    panel.innerHTML = [
-      '<h2>⚙️ Настройки методики и нормативов «Светофора»</h2>',
-      '<p style="color:#64748b;font-size:13px;margin-bottom:16px;">Измените граничные значения для перехода показателей между Зеленой, Желтой и Красной зонами. После сохранения весь сайт пересчитается автоматически.</p>',
-      '<div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">',
-      '  <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Профиль строительства для настройки:</label>',
-      '  <select id="adm-prof" style="padding:8px 12px;border-radius:6px;border:1px solid #cbd5e1;font-weight:600;">',
-      '    <option value="residential">Жилое строительство</option>',
-      '    <option value="industrial">Промышленное строительство</option>',
-      '    <option value="road">Дорожное и инфраструктурное</option>',
-      '  </select></div>',
-      '</div>',
-      '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">',
-      '  <thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;text-align:left;">',
-      '    <th style="padding:10px;">Код KPI</th><th style="padding:10px;">Показатель эффективности</th>',
-      '    <th style="padding:10px;color:#166534;">Порог Зеленой зоны</th>',
-      '    <th style="padding:10px;color:#854d0e;">Порог Желтой зоны (далее Красная)</th>',
-      '  </tr></thead>',
-      '  <tbody id="adm-tbody"></tbody>',
-      '</table></div>',
-      '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">',
-      '  <button id="adm-save" class="btn btn-primary" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:6px;font-weight:600;cursor:pointer;">💾 Применить и сохранить нормативы</button>',
-      '  <button id="adm-reset" class="btn btn-light" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 18px;border-radius:6px;font-weight:600;cursor:pointer;">↺ Сбросить к базовым стандартам</button>',
-      '</div>'
-    ].join('');
+    panel.style.cssText = 'background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
+    panel.innerHTML = 
+      '<h2 style="margin-top:0;color:#1e293b;">⚙️ Настройки методики и нормативов «Светофора»</h2>' +
+      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Регулируйте граничные значения показателей для каждого профиля строительства. После сохранения весь сайт и портфель пересчитаются автоматически.</p>' +
+      '<div style="margin-bottom:16px;">' +
+        '<label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;color:#475569;">ПРОФИЛЬ СТРОИТЕЛЬСТВА:</label>' +
+        '<select id="adm-prof" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;font-weight:600;font-size:14px;">' +
+          '<option value="residential">Жилое строительство</option>' +
+          '<option value="industrial">Промышленное строительство</option>' +
+          '<option value="road">Дорожное и инфраструктурное</option>' +
+        '</select>' +
+      '</div>' +
+      '<div style="overflow-x:auto;">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+          '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;text-align:left;">' +
+            '<th style="padding:12px;">Код KPI</th>' +
+            '<th style="padding:12px;">Показатель эффективности</th>' +
+            '<th style="padding:12px;color:#166534;">Порог Зеленой зоны</th>' +
+            '<th style="padding:12px;color:#854d0e;">Порог Желтой зоны (далее Красная)</th>' +
+          '</tr></thead>' +
+          '<tbody id="adm-tbody"></tbody>' +
+        '</table>' +
+      '</div>' +
+      '<div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">' +
+        '<button id="adm-save" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">💾 Применить и сохранить нормативы</button>' +
+        '<button id="adm-reset" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">↺ Сбросить к базовым стандартам</button>' +
+      '</div>';
 
-    container.appendChild(panel);
+    nav.parentElement.insertBefore(panel, nav.nextSibling);
+    nav.appendChild(btn);
 
-    const kpiMeta = [
-      { key: 'mei', name: 'MEI — Коэффициент «съеденной» маржи (%) — не более' },
-      { key: 'dcc', name: 'DCC — Цена заморозки капитала в КС-2 (тыс. ₽) — не более' },
-      { key: 'cod', name: 'CoD — Стоимость одного дня простоя (тыс. ₽/дн) — не более' },
-      { key: 'cle', name: 'CLE — Доля ФОТ на переделки и брак (%) — не более' },
-      { key: 'ftri', name: 'FTRI — Приемка работ с первого раза (%) — не менее' }
-    ];
-
-    const defaultThresholds = {
-      residential: { mei:, dcc:, cod:, cle:, ftri: [85, 72] },
-      industrial:  { mei:, dcc:, cod:, cle:, ftri: [82, 70] },
-      road:        { mei:, dcc:, cod:, cle: [5.5, 10], ftri: [84, 72] }
+    var defaults = {
+      residential: { mei_g: 8, mei_y: 15, dcc_g: 500, dcc_y: 1000, cod_g: 120, cod_y: 200, cle_g: 5, cle_y: 10, ftri_g: 85, ftri_y: 70 },
+      industrial:  { mei_g: 10, mei_y: 18, dcc_g: 800, dcc_y: 1500, cod_g: 180, cod_y: 300, cle_g: 6, cle_y: 12, ftri_g: 82, ftri_y: 68 },
+      road:        { mei_g: 9, mei_y: 16, dcc_g: 1000, dcc_y: 2000, cod_g: 220, cod_y: 350, cle_g: 5.5, cle_y: 10, ftri_g: 85, ftri_y: 70 }
     };
 
-    function renderAdmTable() {
-      const prof = document.getElementById('adm-prof').value;
-      const src = (typeof THRESHOLDS !== 'undefined' && THRESHOLDS[prof]) ? THRESHOLDS[prof] : defaultThresholds[prof];
-      const tbody = document.getElementById('adm-tbody');
-      tbody.innerHTML = '';
-      kpiMeta.forEach(function(item) {
-        const vals = src[item.key] ||;
-        const tr = document.createElement('tr');
+    var saved = localStorage.getItem('kpi_custom_norms');
+    var norms = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaults));
+
+    var meta = [
+      { k: 'mei', name: 'MEI — Коэффициент «съеденной» маржи (%) — не более' },
+      { k: 'dcc', name: 'DCC — Цена заморозки капитала в КС-2 (тыс. ₽) — не более' },
+      { k: 'cod', name: 'CoD — Стоимость одного дня простоя (тыс. ₽/дн) — не более' },
+      { k: 'cle', name: 'CLE — Доля ФОТ на переделки и брак (%) — не более' },
+      { k: 'ftri', name: 'FTRI — Приемка работ с первого раза (%) — не менее' }
+    ];
+
+    function renderTable() {
+      var p = document.getElementById('adm-prof').value;
+      var cur = norms[p] || defaults[p];
+      var tb = document.getElementById('adm-tbody');
+      tb.innerHTML = '';
+      meta.forEach(function(m) {
+        var tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid #e2e8f0';
-        tr.innerHTML = '<td style="padding:10px;"><strong>' + item.key.toUpperCase() + '</strong></td>' +
-          '<td style="padding:10px;">' + item.name + '</td>' +
-          '<td style="padding:10px;"><input type="number" step="0.5" data-k="' + item.key + '" data-i="0" value="' + vals[0] + '" style="width:100px;padding:6px;border:1px solid #cbd5e1;border-radius:4px;"></td>' +
-          '<td style="padding:10px;"><input type="number" step="0.5" data-k="' + item.key + '" data-i="1" value="' + vals[1] + '" style="width:100px;padding:6px;border:1px solid #cbd5e1;border-radius:4px;"></td>';
-        tbody.appendChild(tr);
+        tr.innerHTML =
+          '<td style="padding:12px;"><strong>' + m.k.toUpperCase() + '</strong></td>' +
+          '<td style="padding:12px;">' + m.name + '</td>' +
+          '<td style="padding:12px;"><input type="number" step="0.5" data-k="' + m.k + '_g" value="' + cur[m.k + '_g'] + '" style="width:110px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;"></td>' +
+          '<td style="padding:12px;"><input type="number" step="0.5" data-k="' + m.k + '_y" value="' + cur[m.k + '_y'] + '" style="width:110px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;"></td>';
+        tb.appendChild(tr);
       });
     }
 
-    document.getElementById('adm-prof').addEventListener('change', renderAdmTable);
+    document.getElementById('adm-prof').addEventListener('change', renderTable);
 
     document.getElementById('adm-save').addEventListener('click', function() {
-      const prof = document.getElementById('adm-prof').value;
-      if (typeof THRESHOLDS !== 'undefined' && THRESHOLDS[prof]) {
-        document.querySelectorAll('#adm-tbody input').forEach(function(inp) {
-          THRESHOLDS[prof][inp.dataset.k][+inp.dataset.i] = parseFloat(inp.value) || 0;
-        });
-        try { localStorage.setItem('kpi_custom_thresholds', JSON.stringify(THRESHOLDS)); } catch(e) {}
-        if (typeof recalc === 'function') recalc();
-        if (typeof calculateAll === 'function') calculateAll();
+      var p = document.getElementById('adm-prof').value;
+      document.querySelectorAll('#adm-tbody input').forEach(function(inp) {
+        norms[p][inp.dataset.k] = parseFloat(inp.value) || 0;
+      });
+      localStorage.setItem('kpi_custom_norms', JSON.stringify(norms));
+      if (typeof THRESHOLDS !== 'undefined' && THRESHOLDS[p]) {
+        THRESHOLDS[p].mei = [norms[p].mei_g, norms[p].mei_y];
+        THRESHOLDS[p].dcc = [norms[p].dcc_g, norms[p].dcc_y];
+        THRESHOLDS[p].cod = [norms[p].cod_g, norms[p].cod_y];
+        THRESHOLDS[p].cle = [norms[p].cle_g, norms[p].cle_y];
+        THRESHOLDS[p].ftri = [norms[p].ftri_g, norms[p].ftri_y];
       }
-      alert('Нормативы «светофора» успешно обновлены! Все расчеты на сайте пересчитаны.');
+      if (typeof recalc === 'function') recalc();
+      if (typeof updateUI === 'function') updateUI();
+      alert('Нормативы «светофора» сохранены! Все расчеты обновлены.');
     });
 
     document.getElementById('adm-reset').addEventListener('click', function() {
-      if (typeof THRESHOLDS !== 'undefined') {
-        Object.assign(THRESHOLDS, JSON.parse(JSON.stringify(defaultThresholds)));
-        try { localStorage.removeItem('kpi_custom_thresholds'); } catch(e) {}
-        if (typeof recalc === 'function') recalc();
-      }
-      renderAdmTable();
-      alert('Базовые отраслевые нормативы восстановлены.');
+      norms = JSON.parse(JSON.stringify(defaults));
+      localStorage.removeItem('kpi_custom_norms');
+      renderTable();
+      alert('Восстановлены базовые отраслевые нормативы.');
     });
 
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      Array.from(nav.children).forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
-      container.querySelectorAll(':scope > div').forEach(function(d) {
-        if (d.id && d.id.indexOf('view-') === 0) d.classList.add('hidden');
-      });
+      document.querySelectorAll('[id^="view-"]').forEach(function(v) { v.classList.add('hidden'); });
       panel.classList.remove('hidden');
-      renderAdmTable();
+      renderTable();
     });
 
-    const observer = new MutationObserver(function() {
-      if (nav.children.length > 1 && !document.getElementById('adm-tab-btn')) {
-        btn.id = 'adm-tab-btn';
-        nav.appendChild(btn);
+    Array.from(nav.children).forEach(function(otherBtn) {
+      if (otherBtn !== btn) {
+        otherBtn.addEventListener('click', function() {
+          btn.classList.remove('active');
+          panel.classList.add('hidden');
+        });
       }
-      nav.querySelectorAll('.tab').forEach(function(t) {
-        if (t !== btn && !t.dataset.admHook) {
-          t.dataset.admHook = '1';
-          t.addEventListener('click', function() {
-            btn.classList.remove('active');
-            panel.classList.add('hidden');
-          });
-        }
-      });
     });
-    observer.observe(nav, { childList: true });
-    if (nav.children.length > 1) {
-      btn.id = 'adm-tab-btn';
-      nav.appendChild(btn);
-    }
-  });
+  }
+
+  setInterval(initSettingsModule, 800);
 })();
 </script>
 
