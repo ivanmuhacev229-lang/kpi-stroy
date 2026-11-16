@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СтройЭффект KPI — Система управления эффективностью строительства</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --primary-light: #334155;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --green-bg: #dcfce7;
+            --green-text: #166534;
+            --green-bar: #22c55e;
+            --yellow-bg: #fef9c3;
+            --yellow-text: #854d0e;
+            --yellow-bar: #eab308;
+            --red-bg: #fee2e2;
+            --red-text: #991b1b;
+            --red-bar: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); line-height: 1.5; }
+        .hidden { display: none !important; }
+        
+        /* Auth Screen */
+        .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); }
+        .auth-container { background: var(--card); border-radius: 16px; max-width: 960px; width: 100%; display: grid; grid-template-columns: 1.1fr 0.9fr; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); }
+        @media (max-width: 768px) { .auth-container { grid-template-columns: 1fr; } }
+        .auth-demo { background: #f1f5f9; padding: 36px; border-right: 1px solid var(--border); }
+        .auth-form-box { padding: 36px; }
+        .brand-badge { display: inline-block; background: #dbeafe; color: #1e40af; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 20px; margin-bottom: 12px; }
+        h1 { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+        
+        .demo-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .demo-btn { display: flex; align-items: center; justify-content: space-between; background: var(--card); border: 1px solid var(--border); padding: 14px 16px; border-radius: 10px; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .demo-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37,99,235,0.1); }
+        .demo-role-title { font-weight: 700; font-size: 15px; color: var(--primary); }
+        .demo-role-desc { font-size: 12px; color: var(--text-muted); }
+        .demo-arrow { font-weight: 700; color: var(--accent); font-size: 18px; }
+
+        .tabs-auth { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .tab-auth-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 6px 12px; border-radius: 6px; }
+        .tab-auth-btn.active { background: #eff6ff; color: var(--accent); }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--primary-light); }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+        .form-control:focus { border-color: var(--accent); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--primary); }
+        .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-success:hover { background: #15803d; }
+
+        /* Main App Layout */
+        header { background: var(--primary); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 50; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .logo-text { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+        .role-pill { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .btn-header { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .btn-header:hover { background: rgba(255,255,255,0.2); }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .nav-tab { padding: 10px 18px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--text-muted); }
+        .nav-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+        .card-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+
+        /* Stat Cards */
+        .stat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+        .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .stat-val { font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px; }
+        .stat-sub { font-size: 12px; margin-top: 4px; }
+
+        /* Inputs Grid */
+        .inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) { .inputs-grid { grid-template-columns: 1fr; } }
+        .input-item { background: #fefce8; border: 1px solid #fef08a; padding: 10px; border-radius: 8px; }
+        .input-item.locked { background: #f1f5f9; border-color: var(--border); opacity: 0.75; }
+        .input-item label { display: block; font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+        .input-item input { width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; font-weight: 600; background: #fff; }
+        .input-item input:disabled { background: #e2e8f0; cursor: not-allowed; color: #64748b; }
+
+        /* Tables */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f1f5f9; color: var(--primary); font-weight: 700; text-align: left; padding: 12px; border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+        .badge-green { background: var(--green-bg); color: var(--green-text); }
+        .badge-yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+        .badge-red { background: var(--red-bg); color: var(--red-text); }
+
+        /* Progress Bars */
+        .bar-bg { width: 100%; height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin-top: 6px; }
+        .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+
+        /* Recommendations */
+        .rec-item { padding: 12px 14px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid; font-size: 13px; }
+        .rec-red { background: #fef2f2; border-color: #ef4444; }
+        .rec-yellow { background: #fefce8; border-color: #eab308; }
+        .rec-green { background: #f0fdf4; border-color: #22c55e; }
+
+        /* Print Styles */
+        .print-only { display: none; }
+        @media print {
+            body { background: #fff; }
+            header, .nav-tabs, .no-print { display: none !important; }
+            .container { padding: 0; max-width: 100%; }
+            .card { border: 1px solid #cbd5e1; box-shadow: none; break-inside: avoid; }
+            .print-only { display: block !important; margin-top: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ЭКРАН ВХОДА И РЕГИСТРАЦИИ -->
+<div id="authScreen" class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-demo">
+            <span class="brand-badge">КОНФЕРЕНЦИЯ • ДЕМО-СТЕНД</span>
+            <h1>СтройЭффект KPI</h1>
+            <p class="subtitle">Интерактивная платформа оценки организационно-экономической эффективности строительного производства и контроля подрядчиков.</p>
+            
+            <p style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 10px; text-transform: uppercase;">Быстрый вход в Демо-режим (1 клик):</p>
+            <div class="demo-grid">
+                <button class="demo-btn" onclick="loginDemo('director')">
+                    <div>
+                        <div class="demo-role-title">Директор / Генподрядчик</div>
+                        <div class="demo-role-desc">Полный доступ: портфель объектов, рейтинг подрядчиков, экономика, PDF-отчет</div>
+                    </div>
+                    <span class="demo-arrow">→</span>
+                </button>
+                <button class="demo-btn" onclick="loginDemo('pto')">
+                    <div>
+                        <div class="demo-role-title">Инженер ПТО</div>
+                        <div class="demo-role-desc">Управление сметами, сроками закрытия актов КС-2/КС-3 и незавершенкой</div>
+                    </div>
+                    <span class="demo-arrow">→</span>
+                </button>
+                <button class="demo-btn" onclick="loginDemo('prorab')">
+                    <div>
+                        <div class="demo-role-title">Прораб / Начальник участка</div>
+                        <div class="demo-role-desc">Оперативный учет: простои, переделки, приемка технадзором (без доступа к марже)</div>
+                    </div>
+                    <span class="demo-arrow">→</span>
+                </button>
+                <button class="demo-btn" onclick="loginDemo('contractor')">
+                    <div>
+                        <div class="demo-role-title">Подрядная организация</div>
+                        <div class="demo-role-desc">Кабинет субподрядчика: подача отчета по своему фронту работ в систему заказчика</div>
+                    </div>
+                    <span class="demo-arrow">→</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="auth-form-box">
+            <div class="tabs-auth">
+                <button class="tab-auth-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">Вход в кабинет</button>
+                <button class="tab-auth-btn" id="tabRegBtn" onclick="switchAuthTab('register')">Регистрация</button>
+            </div>
+
+            <!-- Форма входа -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email или Логин</label>
+                    <input type="text" id="loginEmail" class="form-control" placeholder="director@stroy.ru" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPass" class="form-control" placeholder="••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Войти в систему</button>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 14px;">Совет: для быстрого просмотра на конференции используйте кнопки выбора роли слева.</p>
+            </form>
+
+            <!-- Форма регистрации -->
+            <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>ФИО / Название подрядной организации</label>
+                    <input type="text" id="regName" class="form-control" placeholder="ООО «МонолитСтрой» или Иванов И.И." required>
+                </div>
+                <div class="form-group">
+                    <label>Роль в системе</label>
+                    <select id="regRole" class="form-control">
+                        <option value="contractor">Подрядная организация (Субподрядчик)</option>
+                        <option value="director">Директор / Руководитель проекта</option>
+                        <option value="pto">Инженер ПТО</option>
+                        <option value="prorab">Прораб / Начальник участка</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Email (логин)</label>
+                    <input type="email" id="regEmail" class="form-control" placeholder="company@mail.ru" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="regPass" class="form-control" placeholder="Придумайте пароль" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Зарегистрироваться и войти</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+<div id="appScreen" class="hidden">
+    <header>
+        <div class="header-left">
+            <span class="logo-text">СтройЭффект KPI</span>
+            <span class="role-pill" id="headerRoleBadge">Директор</span>
+            <span style="font-size: 13px; color: #cbd5e1;" id="headerUserName">Пользователь</span>
+        </div>
+        <div class="header-right">
+            <button class="btn-header" onclick="resetDemoData()" title="Вернуть исходные демо-данные">Сбросить демо-базу</button>
+            <button class="btn-header" onclick="logout()">Сменить роль / Выйти</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Навигация по вкладкам -->
+        <div class="nav-tabs no-print" id="navTabs">
+            <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">1. Диагностика объекта (KPI)</button>
+            <button class="nav-tab" data-tab="contractors" id="tabBtnContractors" onclick="switchTab('contractors')">2. Рейтинг подрядных организаций</button>
+            <button class="nav-tab" data-tab="portfolio" id="tabBtnPortfolio" onclick="switchTab('portfolio')">3. Портфель объектов компании</button>
+            <button class="nav-tab" data-tab="contractorPortal" id="tabBtnContractorPortal" onclick="switchTab('contractorPortal')">Кабинет подрядчика (Подача отчета)</button>
+        </div>
+
+        <!-- ВКЛАДКА 1: ДАШБОРД ОБЪЕКТА -->
+        <div id="tab-dashboard" class="tab-content">
+            <div class="card no-print" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block;">ВЫБЕРИТЕ ОБЪЕКТ:</label>
+                        <select id="objectSelect" class="form-control" style="min-width: 220px; font-weight: 700;" onchange="loadSelectedObject()"></select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block;">ПРОФИЛЬ СТРОИТЕЛЬСТВА:</label>
+                        <select id="profileSelect" class="form-control" style="min-width: 210px;" onchange="recalculateCurrent()">
+                            <option value="residential">Жилое строительство</option>
+                            <option value="industrial">Промышленное строительство</option>
+                            <option value="road">Дорожное и инфраструктурное</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" id="btnAddNewObj" onclick="createNewObjectPrompt()">+ Новый объект</button>
+                    <button class="btn btn-success" onclick="saveCurrentObjectChanges()">Сохранить изменения</button>
+                    <button class="btn btn-primary" style="width: auto;" onclick="window.print()">Печать / PDF-отчет</button>
+                </div>
+            </div>
+
+            <!-- Шапка для PDF печати -->
+            <div class="print-only" style="margin-bottom: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 10px;">
+                <h2 style="font-size: 20px;">ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ СТРОИТЕЛЬНОГО ПРОИЗВОДСТВА</h2>
+                <p id="printMeta" style="font-size: 13px; color: #475569; margin-top: 4px;"></p>
+            </div>
+
+            <!-- Сводные карточки экономики (скрываются от прораба) -->
+            <div class="grid-3" id="economySummaryCards" style="margin-bottom: 20px;">
+                <div class="stat-box">
+                    <div class="stat-label">Сметная стоимость объекта</div>
+                    <div class="stat-val" id="statBudget">0 тыс. ₽</div>
+                    <div class="stat-sub" style="color: var(--text-muted);">Плановая рентабельность: <b id="statPlanMargin">0%</b></div>
+                </div>
+                <div class="stat-box" style="background: #fef2f2; border-color: #fecaca;">
+                    <div class="stat-label" style="color: #991b1b;">Выявленные скрытые потери</div>
+                    <div class="stat-val" style="color: #b91c1c;" id="statLosses">0 тыс. ₽</div>
+                    <div class="stat-sub" style="color: #991b1b;">Доля от бюджета: <b id="statLossesPct">0%</b></div>
+                </div>
+                <div class="stat-box" style="background: #f0fdf4; border-color: #bbf7d0;">
+                    <div class="stat-label" style="color: #166534;">Потенциал возврата прибыли</div>
+                    <div class="stat-val" style="color: #15803d;" id="statReturn">0 тыс. ₽</div>
+                    <div class="stat-sub" style="color: #166534;">При выводе KPI в зеленую зону</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <!-- Левая колонка: Исходные данные с ролевым доступом -->
+                <div class="card no-print">
+                    <div class="card-header">
+                        <span class="card-title">Исходные данные объекта</span>
+                        <span id="roleAccessNote" class="badge badge-yellow">Полный доступ</span>
+                    </div>
+                    <div class="inputs-grid" id="inputsContainer"></div>
+                </div>
+
+                <!-- Правая колонка: 5 Авторских KPI и Светофор -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">5 авторских показателей эффективности (KPI)</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Код</th>
+                                        <th>Показатель</th>
+                                        <th>Факт</th>
+                                        <th>Норма</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kpiTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Графики визуализации -->
+                    <div class="card" id="chartsCard">
+                        <div class="card-header">
+                            <span class="card-title">Структура скрытых потерь и отклонений</span>
+                        </div>
+                        <div id="visualBarsContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок управленческих рекомендаций -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Управленческие рекомендации и план действий</span>
+                </div>
+                <div id="recommendationsContainer"></div>
+            </div>
+
+            <!-- Блок подписи для PDF -->
+            <div class="print-only">
+                <table style="width: 100%; border: none; margin-top: 30px;">
+                    <tr>
+                        <td style="border: none; font-weight: 700; width: 45%;">Руководитель проекта / Директор по строительству:</td>
+                        <td style="border-bottom: 1px solid #000; width: 25%;"></td>
+                        <td style="border: none; width: 5%;"></td>
+                        <td style="border-bottom: 1px solid #000; width: 25%;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: none;"></td>
+                        <td style="border: none; font-size: 11px; text-align: center; color: #64748b;">(подпись)</td>
+                        <td style="border: none;"></td>
+                        <td style="border: none; font-size: 11px; text-align: center; color: #64748b;">(расшифровка подписи)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 2: РЕЙТИНГ ПОДРЯДНЫХ ОРГАНИЗАЦИЙ (ДЛЯ ДИРЕКТОРА) -->
+        <div id="tab-contractors" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <span class="card-title">Мониторинг и оценка эффективности подрядных организаций</span>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Автоматический рейтинг надежности субподрядчиков на основе авторских KPI качества, сроков и потерь</p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Подрядная организация</th>
+                                <th>Объект / Вид работ</th>
+                                <th>Сдано с 1-го раза (FTRI)</th>
+                                <th>Доля брака в ФОТ (CLE)</th>
+                                <th>Простои по вине подрядчика</th>
+                                <th>Ущерб от простоев, тыс. ₽</th>
+                                <th>Итоговый рейтинг</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contractorsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 3: ПОРТФЕЛЬ ОБЪЕКТОВ КОМПАНИИ -->
+        <div id="tab-portfolio" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Сводный портфель строительных объектов компании</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Объект</th>
+                                <th>Профиль</th>
+                                <th>Бюджет, тыс. ₽</th>
+                                <th>MEI</th>
+                                <th>DCC, тыс. ₽</th>
+                                <th>CoD, тыс. ₽/дн</th>
+                                <th>CLE</th>
+                                <th>FTRI</th>
+                                <th>Скрытые потери</th>
+                                <th>Потенциал возврата</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolioTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 4: КАБИНЕТ ПОДРЯДНОЙ ОРГАНИЗАЦИИ -->
+        <div id="tab-contractorPortal" class="tab-content hidden">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Подача оперативного отчета подрядчика</span>
+                    </div>
+                    <form onsubmit="submitContractorReport(event)">
+                        <div class="form-group">
+                            <label>Наименование вашей организации</label>
+                            <input type="text" id="cpName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Объект строительства</label>
+                            <select id="cpObject" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Комплекс выполняемых работ</label>
+                            <input type="text" id="cpWorkType" class="form-control" placeholder="Например: Монолитные работы, Фасад, Электрика" required>
+                        </div>
+                        <div class="inputs-grid">
+                            <div class="form-group">
+                                <label>Предъявлено работ технадзору (тыс. ₽)</label>
+                                <input type="number" id="cpTotalWork" class="form-control" value="25000" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Принято с 1-го раза без замечаний (тыс. ₽)</label>
+                                <input type="number" id="cpFirstTimeWork" class="form-control" value="22500" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Общий ФОТ бригад подрядчика (тыс. ₽)</label>
+                                <input type="number" id="cpTotalFot" class="form-control" value="6000" required>
+                            </div>
+                            <div class="form-group">
+                                <label>ФОТ на исправление замечаний/брака (тыс. ₽)</label>
+                                <input type="number" id="cpDefectFot" class="form-control" value="350" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Дней простоя / срыва графика по вине подрядчика</label>
+                                <input type="number" id="cpDelayDays" class="form-control" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Стоимость дня простоя смежников (тыс. ₽/дн)</label>
+                                <input type="number" id="cpDelayCost" class="form-control" value="85" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Отправить отчет Генподрядчику</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Как Генподрядчик оценивает вашу работу</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">После отправки отчета данные автоматически попадают в сводный рейтинг Директора. Система оценивает подрядчика по 3 ключевым критериям:</p>
+                    <div class="rec-item rec-green">
+                        <b>Зеленая зона (Надежный партнер):</b> Сдача с 1-го раза (FTRI) ≥ 85%, доля переделок (CLE) ≤ 5%, срывы сроков не более 1 дня. Приоритет при распределении новых объемов.
+                    </div>
+                    <div class="rec-item rec-yellow">
+                        <b>Желтая зона (Требуется усиление контроля):</b> FTRI от 70% до 85% или CLE до 10%. Назначается дополнительный операционный контроль прораба.
+                    </div>
+                    <div class="rec-item rec-red">
+                        <b>Красная зона (Критическая неэффективность):</b> FTRI ниже 70% или доля переделок выше 10%. Применение штрафных санкций и пересмотр договора.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// =========================================================================
+// ОПЦИОНАЛЬНОЕ ПОДКЛЮЧЕНИЕ ОБЛАЧНОЙ БАЗЫ SUPABASE
+// Если оставить пустыми, сайт работает полностью автономно в браузере
+// =========================================================================
+const SUPABASE_URL = ""; 
+const SUPABASE_ANON_KEY = "";
+
+// Справочник нормативов по профилям
+const NORMS = {
+    residential: { name: "Жилое строительство", mei: 5.0, dcc: 500, cod: 100, cle: 5.0, ftri: 85.0 },
+    industrial:  { name: "Промышленное строительство", mei: 7.0, dcc: 800, cod: 150, cle: 6.0, ftri: 82.0 },
+    road:        { name: "Дорожное и инфраструктурное", mei: 6.0, dcc: 1000, cod: 180, cle: 4.5, ftri: 88.0 }
+};
+
+// Описание 16 полей ввода и ролей доступа к ним
+const INPUT_FIELDS = [
+    { key: "budget", label: "1. Сметная стоимость объекта (тыс. ₽)", group: "pto" },
+    { key: "planProfit", label: "2. Плановая валовая прибыль (тыс. ₽)", group: "director" },
+    { key: "factProfit", label: "3. Фактическая валовая прибыль (тыс. ₽)", group: "director" },
+    { key: "inflation", label: "4. Удорожание из-за рыночных цен (тыс. ₽)", group: "pto" },
+    { key: "overhead", label: "5. Постоянные накладные в месяц (тыс. ₽)", group: "pto" },
+    { key: "workDays", label: "6. Рабочих дней в месяце (дн.)", group: "pto" },
+    { key: "machineryRent", label: "7. Аренда простаивающих механизмов (тыс. ₽/дн)", group: "prorab" },
+    { key: "penaltyDay", label: "8. Штрафные санкции за день срыва (тыс. ₽/дн)", group: "pto" },
+    { key: "idleDays", label: "9. Дней организационного простоя (дн.)", group: "prorab" },
+    { key: "ksDays", label: "10. Средний срок закрытия актов КС-2 (дн.)", group: "pto" },
+    { key: "wipAmount", label: "11. Незакрытый объем НЗП без КС-2 (тыс. ₽)", group: "pto" },
+    { key: "capitalRate", label: "12. Ставка привлечения капитала (% годовых)", group: "director" },
+    { key: "totalFot", label: "13. Общий ФОТ основных рабочих (тыс. ₽)", group: "pto" },
+    { key: "defectFot", label: "14. ФОТ, ушедший на переделки и брак (тыс. ₽)", group: "prorab" },
+    { key: "presentedWork", label: "15. Предъявлено работ технадзору (тыс. ₽)", group: "prorab" },
+    { key: "firstTimeWork", label: "16. Принято с 1-го раза без замечаний (тыс. ₽)", group: "prorab" }
+];
+
+// Начальные демо-данные (включая кейс ЖК Онега)
+const INITIAL_OBJECTS = [
+    {
+        id: "onega",
+        name: "ЖК Онега (Комфорт-класс)",
+        profile: "residential",
+        data: {
+            budget: 680000, planProfit: 102000, factProfit: 81000, inflation: 8500,
+            overhead: 2600, workDays: 22, machineryRent: 42, penaltyDay: 15,
+            idleDays: 5, ksDays: 38, wipAmount: 54000, capitalRate: 21,
+            totalFot: 34000, defectFot: 3900, presentedWork: 165000, firstTimeWork: 128000
+        }
+    },
+    {
+        id: "prom1",
+        name: "Логистический хаб «Север»",
+        profile: "industrial",
+        data: {
+            budget: 950000, planProfit: 142500, factProfit: 136000, inflation: 4000,
+            overhead: 3200, workDays: 22, machineryRent: 55, penaltyDay: 20,
+            idleDays: 2, ksDays: 24, wipAmount: 30000, capitalRate: 20,
+            totalFot: 45000, defectFot: 1600, presentedWork: 240000, firstTimeWork: 216000
+        }
+    },
+    {
+        id: "road1",
+        name: "Развязка Южный обход",
+        profile: "road",
+        data: {
+            budget: 1200000, planProfit: 180000, factProfit: 148000, inflation: 12000,
+            overhead: 4100, workDays: 22, machineryRent: 95, penaltyDay: 35,
+            idleDays: 7, ksDays: 45, wipAmount: 85000, capitalRate: 21,
+            totalFot: 52000, defectFot: 4800, presentedWork: 310000, firstTimeWork: 242000
+        }
+    }
+];
+
+const INITIAL_CONTRACTORS = [
+    { id: "c1", name: "ООО «МонолитГрупп»", object: "ЖК Онега (Комфорт-класс)", workType: "Монолитный каркас", totalWork: 85000, firstTimeWork: 61000, totalFot: 18000, defectFot: 2300, delayDays: 4, delayCost: 110 },
+    { id: "c2", name: "СК «ТехноФасад»", object: "ЖК Онега (Комфорт-класс)", workType: "Вентилируемые фасады", totalWork: 42000, firstTimeWork: 38500, totalFot: 9000, defectFot: 320, delayDays: 0, delayCost: 90 },
+    { id: "c3", name: "ООО «ДорСпецСтрой»", object: "Развязка Южный обход", workType: "Земляные и дорожные работы", totalWork: 140000, firstTimeWork: 109000, totalFot: 24000, defectFot: 2600, delayDays: 5, delayCost: 150 }
+];
+
+let state = {
+    currentUser: null,
+    objects: [],
+    contractors: [],
+    currentObjId: "onega"
+};
+
+function initStorage() {
+    const savedObjs = localStorage.getItem("stroy_kpi_objects");
+    const savedConts = localStorage.getItem("stroy_kpi_contractors");
+    state.objects = savedObjs ? JSON.parse(savedObjs) : JSON.parse(JSON.stringify(INITIAL_OBJECTS));
+    state.contractors = savedConts ? JSON.parse(savedConts) : JSON.parse(JSON.stringify(INITIAL_CONTRACTORS));
+}
+
+function saveStorage() {
+    localStorage.setItem("stroy_kpi_objects", JSON.stringify(state.objects));
+    localStorage.setItem("stroy_kpi_contractors", JSON.stringify(state.contractors));
+}
+
+function resetDemoData() {
+    if (!confirm("Сбросить все изменения и вернуть исходные демонстрационные объекты и подрядчиков?")) return;
+    localStorage.removeItem("stroy_kpi_objects");
+    localStorage.removeItem("stroy_kpi_contractors");
+    initStorage();
+    state.currentObjId = state.objects[0].id;
+    renderApp();
+}
+
+// Авторизация
+function switchAuthTab(tab) {
+    document.getElementById("tabLoginBtn").classList.toggle("active", tab === "login");
+    document.getElementById("tabRegBtn").classList.toggle("active", tab === "register");
+    document.getElementById("loginForm").classList.toggle("hidden", tab !== "login");
+    document.getElementById("registerForm").classList.toggle("hidden", tab !== "register");
+}
+
+function loginDemo(role) {
+    const names = {
+        director: "Алексей Смирнов (Директор по строительству)",
+        pto: "Елена Волкова (Ведущий инженер ПТО)",
+        prorab: "Дмитрий Соколов (Начальник участка)",
+        contractor: "ООО «МонолитГрупп» (Подрядчик)"
+    };
+    state.currentUser = { name: names[role], role: role };
+    enterApp();
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const users = JSON.parse(localStorage.getItem("stroy_kpi_users") || "[]");
+    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (found) {
+        state.currentUser = found;
+    } else {
+        state.currentUser = { name: email, role: "director" };
+    }
+    enterApp();
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById("regName").value.trim();
+    const role = document.getElementById("regRole").value;
+    const email = document.getElementById("regEmail").value.trim();
+    const pass = document.getElementById("regPass").value;
+    
+    const users = JSON.parse(localStorage.getItem("stroy_kpi_users") || "[]");
+    const newUser = { name, role, email, pass };
+    users.push(newUser);
+    localStorage.setItem("stroy_kpi_users", JSON.stringify(users));
+    
+    state.currentUser = newUser;
+    enterApp();
+}
+
+function logout() {
+    state.currentUser = null;
+    document.getElementById("appScreen").classList.add("hidden");
+    document.getElementById("authScreen").classList.remove("hidden");
+}
+
+function enterApp() {
+    initStorage();
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("appScreen").classList.remove("hidden");
+    
+    const roleLabels = {
+        director: "Директор / Генподрядчик",
+        pto: "Инженер ПТО",
+        prorab: "Прораб / Участок",
+        contractor: "Подрядная организация"
+    };
+    
+    document.getElementById("headerRoleBadge").textContent = roleLabels[state.currentUser.role];
+    document.getElementById("headerUserName").textContent = state.currentUser.name;
+    
+    // Настройка видимости вкладок под роль
+    const isContractor = state.currentUser.role === "contractor";
+    const isProrab = state.currentUser.role === "prorab";
+    
+    document.getElementById("tabBtnContractors").classList.toggle("hidden", isProrab);
+    document.getElementById("tabBtnPortfolio").classList.toggle("hidden", isProrab || isContractor);
+    document.getElementById("economySummaryCards").classList.toggle("hidden", isProrab);
+    document.getElementById("btnAddNewObj").classList.toggle("hidden", isProrab || isContractor);
+    
+    if (isContractor) {
+        document.getElementById("cpName").value = state.currentUser.name;
+        switchTab("contractorPortal");
+    } else {
+        switchTab("dashboard");
+    }
+    
+    renderApp();
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll(".nav-tab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+    });
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+    document.getElementById("tab-" + tabId).classList.remove("hidden");
+}
+
+function renderApp() {
+    // Заполняем селекты объектов
+    const objSelect = document.getElementById("objectSelect");
+    const cpObjSelect = document.getElementById("cpObject");
+    objSelect.innerHTML = "";
+    cpObjSelect.innerHTML = "";
+    
+    state.objects.forEach(obj => {
+        const opt1 = new Option(obj.name, obj.id);
+        const opt2 = new Option(obj.name, obj.name);
+        objSelect.add(opt1);
+        cpObjSelect.add(opt2);
+    });
+    
+    objSelect.value = state.currentObjId;
+    loadSelectedObject();
+    renderContractorsTable();
+    renderPortfolioTable();
+}
+
+function loadSelectedObject() {
+    state.currentObjId = document.getElementById("objectSelect").value;
+    const obj = state.objects.find(o => o.id === state.currentObjId) || state.objects[0];
+    document.getElementById("profileSelect").value = obj.profile;
+    
+    const container = document.getElementById("inputsContainer");
+    container.innerHTML = "";
+    
+    const role = state.currentUser.role;
+    const accessNotes = {
+        director: "Полный доступ (Все параметры)",
+        pto: "Доступ ПТО (Сметы, КС-2, Накладные)",
+        prorab: "Доступ Прораба (Только площадка, маржа скрыта)",
+        contractor: "Режим просмотра объекта"
+    };
+    document.getElementById("roleAccessNote").textContent = accessNotes[role];
+    
+    INPUT_FIELDS.forEach(field => {
+        // Скрываем коммерческую тайну (прибыль и ставку капитала) от прораба и подрядчика
+        if ((role === "prorab" || role === "contractor") && field.group === "director") {
+            return;
+        }
+        
+        let isEditable = false;
+        if (role === "director") isEditable = true;
+        if (role === "pto" && (field.group === "pto" || field.group === "director")) isEditable = true;
+        if (role === "prorab" && field.group === "prorab") isEditable = true;
+        
+        const div = document.createElement("div");
+        div.className = "input-item" + (isEditable ? "" : " locked");
+        div.innerHTML = `
+            <label>${field.label}</label>
+            <input type="number" step="any" id="inp_${field.key}" value="${obj.data[field.key]}" ${isEditable ? "" : "disabled"} oninput="recalculateCurrent()">
+        `;
+        container.appendChild(div);
+    });
+    
+    recalculateCurrent();
+}
+
+function calculateKPIs(data, profileKey) {
+    const norm = NORMS[profileKey];
+    
+    // 1. MEI: Коэффициент съеденной маржи (%)
+    const internalProfitLoss = Math.max(0, (data.planProfit - data.factProfit) - data.inflation);
+    const mei = data.planProfit > 0 ? (internalProfitLoss / data.planProfit) * 100 : 0;
+    
+    // 2. DCC: Стоимость бумажного цикла (тыс. руб.)
+    const dcc = data.wipAmount * (data.capitalRate / 100) * (data.ksDays / 365);
+    
+    // 3. CoD: Цена дня организационного простоя (тыс. руб./день)
+    const cod = (data.overhead / (data.workDays || 22)) + data.machineryRent + data.penaltyDay;
+    const totalIdleLoss = cod * data.idleDays;
+    
+    // 4. CLE: Доля мусорного ФОТ на переделки (%)
+    const cle = data.totalFot > 0 ? (data.defectFot / data.totalFot) * 100 : 0;
+    
+    // 5. FTRI: Индекс первого предъявления (%)
+    const ftri = data.presentedWork > 0 ? (data.firstTimeWork / data.presentedWork) * 100 : 100;
+    
+    // Суммарные скрытые потери
+    const totalHiddenLosses = internalProfitLoss + dcc + totalIdleLoss + data.defectFot;
+    const returnPotential = totalHiddenLosses * 0.65;
+    
+    // Статусы светофора
+    const getStatusLowerBetter = (val, n) => val <= n ? "green" : (val <= n * 1.35 ? "yellow" : "red");
+    const getStatusHigherBetter = (val, n) => val >= n ? "green" : (val >= n * 0.85 ? "yellow" : "red");
+    
+    return {
+        mei, dcc, cod, cle, ftri,
+        internalProfitLoss, totalIdleLoss, totalHiddenLosses, returnPotential,
+        norm,
+        status: {
+            mei: getStatusLowerBetter(mei, norm.mei),
+            dcc: getStatusLowerBetter(dcc, norm.dcc),
+            cod: getStatusLowerBetter(cod, norm.cod),
+            cle: getStatusLowerBetter(cle, norm.cle),
+            ftri: getStatusHigherBetter(ftri, norm.ftri)
+        }
+    };
+}
+
+function recalculateCurrent() {
+    const obj = state.objects.find(o => o.id === state.currentObjId);
+    const profileKey = document.getElementById("profileSelect").value;
+    
+    // Собираем текущие значения из доступных инпутов
+    const currentData = { ...obj.data };
+    INPUT_FIELDS.forEach(f => {
+        const el = document.getElementById("inp_" + f.key);
+        if (el) currentData[f.key] = parseFloat(el.value) || 0;
+    });
+    
+    const res = calculateKPIs(currentData, profileKey);
+    
+    // Обновляем сводные карточки
+    const fmt = (n) => Math.round(n).toLocaleString("ru-RU");
+    document.getElementById("statBudget").textContent = fmt(currentData.budget) + " тыс. ₽";
+    const marginPct = currentData.budget > 0 ? ((currentData.planProfit / currentData.budget) * 100).toFixed(1) : 0;
+    document.getElementById("statPlanMargin").textContent = marginPct + "%";
+    document.getElementById("statLosses").textContent = fmt(res.totalHiddenLosses) + " тыс. ₽";
+    const lossesPct = currentData.budget > 0 ? ((res.totalHiddenLosses / currentData.budget) * 100).toFixed(2) : 0;
+    document.getElementById("statLossesPct").textContent = lossesPct + "%";
+    document.getElementById("statReturn").textContent = "+" + fmt(res.returnPotential) + " тыс. ₽";
+    
+    // Метаданные для печати
+    document.getElementById("printMeta").textContent = `Объект: ${obj.name} | Профиль: ${res.norm.name} | Дата формирования: ${new Date().toLocaleDateString("ru-RU")}`;
+    
+    // Таблица 5 KPI
+    const badgeHtml = (st) => {
+        if (st === "green") return '<span class="badge badge-green">ЗЕЛЕНАЯ ЗОНА</span>';
+        if (st === "yellow") return '<span class="badge badge-yellow">ЖЕЛТАЯ ЗОНА</span>';
+        return '<span class="badge badge-red">КРАСНАЯ ЗОНА</span>';
+    };
+    
+    const rows = [
+        { code: "MEI", name: "Коэффициент «съеденной» маржи", val: res.mei.toFixed(1) + "%", norm: "≤ " + res.norm.mei + "%", st: res.status.mei },
+        { code: "DCC", name: "Стоимость «бумажного» цикла (КС-2)", val: fmt(res.dcc) + " тыс. ₽", norm: "≤ " + fmt(res.norm.dcc) + " тыс. ₽", st: res.status.dcc },
+        { code: "CoD", name: "Цена дня организационного простоя", val: res.cod.toFixed(1) + " тыс. ₽/дн", norm: "≤ " + res.norm.cod + " тыс. ₽/дн", st: res.status.cod },
+        { code: "CLE", name: "Доля «мусорного» ФОТ на переделки", val: res.cle.toFixed(1) + "%", norm: "≤ " + res.norm.cle + "%", st: res.status.cle },
+        { code: "FTRI", name: "Индекс первого предъявления работ", val: res.ftri.toFixed(1) + "%", norm: "≥ " + res.norm.ftri + "%", st: res.status.ftri }
+    ];
+    
+    document.getElementById("kpiTableBody").innerHTML = rows.map(r => `
+        <tr>
+            <td><b>${r.code}</b></td>
+            <td>${r.name}</td>
+            <td><b>${r.val}</b></td>
+            <td style="color: var(--text-muted); font-size: 12px;">${r.norm}</td>
+            <td>${badgeHtml(r.st)}</td>
+        </tr>
+    `).join("");
+    
+    // Визуальные графики структуры потерь
+    const total = res.totalHiddenLosses || 1;
+    const bars = [
+        { label: "Внутреннее снижение маржи (MEI)", val: res.internalProfitLoss, color: "#3b82f6" },
+        { label: "Переделки и исправление брака (CLE)", val: currentData.defectFot, color: "#ef4444" },
+        { label: "Заморозка капитала в актах КС-2 (DCC)", val: res.dcc, color: "#f59e0b" },
+        { label: "Организационные простои площадки (CoD)", val: res.totalIdleLoss, color: "#8b5cf6" }
+    ];
+    
+    document.getElementById("visualBarsContainer").innerHTML = bars.map(b => {
+        const pct = Math.min(100, Math.round((b.val / total) * 100));
+        return `
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;">
+                    <span>${b.label}</span>
+                    <span>${fmt(b.val)} тыс. ₽ (${pct}%)</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width: ${pct}%; background: ${b.color};"></div>
+                </div>
+            </div>
+        `;
+    }).join("");
+    
+    // Умные рекомендации
+    const recs = [];
+    if (res.status.mei !== "green") {
+        recs.push({ st: res.status.mei, title: "MEI (Снижение маржинальности)", text: `Внутренняя утечка прибыли составила ${fmt(res.internalProfitLoss)} тыс. ₽. Внедрить еженедельный план-фактный контроль себестоимости по видам работ и зафиксировать расценки субподрядчиков.` });
+    }
+    if (res.status.dcc !== "green") {
+        recs.push({ st: res.status.dcc, title: "DCC (Заморозка денег в КС-2)", text: `Средний срок закрытия актов составляет ${currentData.ksDays} дн. (потери ${fmt(res.dcc)} тыс. ₽). Перевести сдачу исполнительной документации в ЭДО и дробить крупные акты на этапы по 15 дней.` });
+    }
+    if (res.status.cod !== "green") {
+        recs.push({ st: res.status.cod, title: "CoD (Высокая цена простоя)", text: `Один день простоя обходится в ${res.cod.toFixed(1)} тыс. ₽ (потеряно ${currentData.idleDays} дн. = ${fmt(res.totalIdleLoss)} тыс. ₽). Внедрить недельно-суточное планирование (Last Planner System) и почасовую заявку спецтехники.` });
+    }
+    if (res.status.cle !== "green") {
+        recs.push({ st: res.status.cle, title: "CLE (Потери ФОТ на переделки)", text: `На переделки ушло ${fmt(currentData.defectFot)} тыс. ₽ (${res.cle.toFixed(1)}% ФОТ). Привязать премиальную часть ИТР и бригад к сдаче работ без предписаний стройконтроля.` });
+    }
+    if (res.status.ftri !== "green") {
+        recs.push({ st: res.status.ftri, title: "FTRI (Низкий индекс приемки с 1-го раза)", text: `С первого раза сдается ${res.ftri.toFixed(1)}% работ. Ввести обязательные чек-листы самоконтроля мастеров перед вызовом технадзора.` });
+    }
+    
+    if (recs.length === 0) {
+        document.getElementById("recommendationsContainer").innerHTML = `<div class="rec-item rec-green"><b>Отличный результат!</b> Все 5 показателей объекта находятся в зеленой зоне. Рекомендуется тиражировать стандарты управления на другие стройки компании.</div>`;
+    } else {
+        document.getElementById("recommendationsContainer").innerHTML = recs.map(r => `
+            <div class="rec-item rec-${r.st}">
+                <b>${r.title}:</b> ${r.text}
+            </div>
+        `).join("");
+    }
+}
+
+function saveCurrentObjectChanges() {
+    const obj = state.objects.find(o => o.id === state.currentObjId);
+    obj.profile = document.getElementById("profileSelect").value;
+    INPUT_FIELDS.forEach(f => {
+        const el = document.getElementById("inp_" + f.key);
+        if (el) obj.data[f.key] = parseFloat(el.value) || 0;
+    });
+    saveStorage();
+    renderPortfolioTable();
+    alert("Данные по объекту «" + obj.name + "» успешно сохранены!");
+}
+
+function createNewObjectPrompt() {
+    const name = prompt("Введите название нового строительного объекта (например, ЖК Северный):");
+    if (!name || !name.trim()) return;
+    const baseObj = state.objects[0];
+    const newObj = {
+        id: "obj_" + Date.now(),
+        name: name.trim(),
+        profile: "residential",
+        data: { ...baseObj.data }
+    };
+    state.objects.push(newObj);
+    state.currentObjId = newObj.id;
+    saveStorage();
+    renderApp();
+}
+
+// Таблица подрядчиков (для Директора)
+function renderContractorsTable() {
+    const tbody = document.getElementById("contractorsTableBody");
+    tbody.innerHTML = state.contractors.map(c => {
+        const ftri = c.totalWork > 0 ? (c.firstTimeWork / c.totalWork) * 100 : 100;
+        const cle = c.totalFot > 0 ? (c.defectFot / c.totalFot) * 100 : 0;
+        const damage = c.delayDays * c.delayCost;
+        
+        let statusBadge = '<span class="badge badge-green">НАДЕЖНЫЙ (Зеленая)</span>';
+        if (ftri < 70 || cle > 10 || c.delayDays >= 4) {
+            statusBadge = '<span class="badge badge-red">РИСК / ШТРАФЫ (Красная)</span>';
+        } else if (ftri < 85 || cle > 5 || c.delayDays >= 2) {
+            statusBadge = '<span class="badge badge-yellow">УСИЛИТЬ КОНТРОЛЬ (Желтая)</span>';
+        }
+        
+        return `
+            <tr>
+                <td><b>${c.name}</b></td>
+                <td>${c.object}<br><span style="font-size: 12px; color: var(--text-muted);">${c.workType}</span></td>
+                <td><b>${ftri.toFixed(1)}%</b></td>
+                <td><b>${cle.toFixed(1)}%</b></td>
+                <td>${c.delayDays} дн.</td>
+                <td>${damage.toLocaleString("ru-RU")} тыс. ₽</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// Отправка отчета подрядчиком
+function submitContractorReport(e) {
+    e.preventDefault();
+    const newReport = {
+        id: "c_" + Date.now(),
+        name: document.getElementById("cpName").value.trim(),
+        object: document.getElementById("cpObject").value,
+        workType: document.getElementById("cpWorkType").value.trim(),
+        totalWork: parseFloat(document.getElementById("cpTotalWork").value) || 0,
+        firstTimeWork: parseFloat(document.getElementById("cpFirstTimeWork").value) || 0,
+        totalFot: parseFloat(document.getElementById("cpTotalFot").value) || 0,
+        defectFot: parseFloat(document.getElementById("cpDefectFot").value) || 0,
+        delayDays: parseFloat(document.getElementById("cpDelayDays").value) || 0,
+        delayCost: parseFloat(document.getElementById("cpDelayCost").value) || 0
+    };
+    
+    state.contractors.unshift(newReport);
+    saveStorage();
+    renderContractorsTable();
+    alert("Отчет подрядчика отправлен! Показатели обновлены в сводном рейтинге Директора.");
+    switchTab("contractors");
+}
+
+// Сводный портфель объектов
+function renderPortfolioTable() {
+    const tbody = document.getElementById("portfolioTableBody");
+    const fmt = (n) => Math.round(n).toLocaleString("ru-RU");
+    
+    let sumBudget = 0, sumLosses = 0, sumReturn = 0;
+    
+    const rowsHtml = state.objects.map(obj => {
+        const res = calculateKPIs(obj.data, obj.profile);
+        sumBudget += obj.data.budget;
+        sumLosses += res.totalHiddenLosses;
+        sumReturn += res.returnPotential;
+        
+        return `
+            <tr>
+                <td><b>${obj.name}</b></td>
+                <td>${res.norm.name}</td>
+                <td>${fmt(obj.data.budget)}</td>
+                <td><span class="badge badge-${res.status.mei}">${res.mei.toFixed(1)}%</span></td>
+                <td><span class="badge badge-${res.status.dcc}">${fmt(res.dcc)}</span></td>
+                <td><span class="badge badge-${res.status.cod}">${res.cod.toFixed(1)}</span></td>
+                <td><span class="badge badge-${res.status.cle}">${res.cle.toFixed(1)}%</span></td>
+                <td><span class="badge badge-${res.status.ftri}">${res.ftri.toFixed(1)}%</span></td>
+                <td style="color: #b91c1c; font-weight: 700;">${fmt(res.totalHiddenLosses)} тыс. ₽</td>
+                <td style="color: #15803d; font-weight: 700;">+${fmt(res.returnPotential)} тыс. ₽</td>
+            </tr>
+        `;
+    }).join("");
+    
+    const totalRow = `
+        <tr style="background: #f1f5f9; font-weight: 800;">
+            <td colspan="2">ИТОГО ПО ПОРТФЕЛЮ КОМПАНИИ</td>
+            <td>${fmt(sumBudget)} тыс. ₽</td>
+            <td colspan="5"></td>
+            <td style="color: #b91c1c;">${fmt(sumLosses)} тыс. ₽</td>
+            <td style="color: #15803d;">+${fmt(sumReturn)} тыс. ₽</td>
+        </tr>
+    `;
+    
+    tbody.innerHTML = rowsHtml + totalRow;
+}
+</script>
+</body>
+</html>
