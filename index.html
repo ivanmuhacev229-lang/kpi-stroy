@@ -1174,6 +1174,163 @@ function renderPortfolioTable() {
   setInterval(initAdminSettings, 500);
 })();
 </script>
+<!-- МОДУЛЬ ОБЛАЧНОЙ БАЗЫ И РЕГИСТРАЦИИ SUPABASE -->
+<script src="https://jsdelivr.net"></script>
+<script>
+(function() {
+  var SUPA_URL = 'https://supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4eXVtcnd4aXJ4dXprd2V2YXp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MjYyNjMsImV4cCI6MjExMDQwMjI2M30.xq5_sMkGCHqMjDzKS-_DvuCfVcfuo2dye-gN5BMUpFQ';
+  
+  if (!window.supabase) return;
+  var sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+  // Перехват регистрации и входа через облако Supabase
+  window.addEventListener('load', function() {
+    var regBtn = document.querySelector('button[onclick*="register"]');
+    if (regBtn) {
+      regBtn.removeAttribute('onclick');
+      regBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        var nameInp = document.getElementById('reg-name') || document.querySelector('#auth-screen input[type="text"]');
+        var roleSel = document.getElementById('reg-role') || document.querySelector('#auth-screen select');
+        var emailInp = document.getElementById('reg-email') || document.querySelector('#auth-screen input[type="email"]');
+        var passInps = document.querySelectorAll('#auth-screen input[type="password"]');
+        var passInp = passInps.length > 0 ? passInps[passInps.length - 1] : null;
+
+        var fullName = nameInp ? nameInp.value.trim() : 'Пользователь';
+        var role = roleSel ? roleSel.value : 'director';
+        var email = emailInp ? emailInp.value.trim() : '';
+        var password = passInp && passInp.value ? passInp.value : 'StroyKPI2026!';
+
+        if (!email) {
+          alert('Введите Email для регистрации в облачной базе.');
+          return;
+        }
+        if (password.length < 6) {
+          alert('Пароль должен содержать минимум 6 символов.');
+          return;
+        }
+
+        regBtn.textContent = '⏳ Регистрация в облаке...';
+        var res = await sb.auth.signUp({
+          email: email,
+          password: password,
+          options: { data: { full_name: fullName, role: role } }
+        });
+
+        if (res.error) {
+          // Если пользователь уже есть — пробуем войти
+          var loginRes = await sb.auth.signInWithPassword({ email: email, password: password });
+          if (loginRes.error) {
+            alert('Ошибка авторизации: ' + loginRes.error.message);
+            regBtn.textContent = 'Зарегистрироваться и войти';
+            return;
+          }
+          var meta = loginRes.data.user.user_metadata || {};
+          enterCloudRole(meta.full_name || email, meta.role || role);
+        } else if (res.data && res.data.user) {
+          await sb.from('profiles').insert({
+            id: res.data.user.id,
+            full_name: fullName,
+            role: role,
+            email: email
+          });
+          enterCloudRole(fullName, role);
+        }
+        regBtn.textContent = 'Зарегистрироваться и войти';
+      });
+    }
+
+    // Перехват кнопки обычного входа по Email и паролю
+    var loginBtns = document.querySelectorAll('#auth-screen button');
+    loginBtns.forEach(function(b) {
+      if (b.textContent.indexOf('Войти в систему') !== -1) {
+        b.removeAttribute('onclick');
+        b.addEventListener('click', async function(e) {
+          e.preventDefault();
+          var em = document.querySelector('#auth-screen input[type="email"], #auth-screen input[placeholder*="Email"]');
+          var pw = document.querySelector('#auth-screen input[type="password"]');
+          if (!em || !em.value || !pw || !pw.value) {
+            alert('Введите Email и пароль.');
+            return;
+          }
+          var lRes = await sb.auth.signInWithPassword({ email: em.value.trim(), password: pw.value });
+          if (lRes.error) {
+            alert('Неверный логин или пароль: ' + lRes.error.message);
+            return;
+          }
+          var meta = lRes.data.user.user_metadata || {};
+          enterCloudRole(meta.full_name || em.value, meta.role || 'director');
+        });
+      }
+    });
+
+    // Перехват отправки отчета подрядчика для сохранения в облако
+    var subContractorBtn = document.querySelector('button[onclick*="submitContractor"]');
+    if (subContractorBtn) {
+      subContractorBtn.addEventListener('click', async function() {
+        var cName = (document.getElementById('c-name') || {}).value || 'Подрядчик';
+        var cWork = (document.getElementById('c-worktype') || {}).value || 'СМР';
+        var cObj = (document.getElementById('c-obj') || {}).value || 'ЖК Онега';
+        var delay = +(document.getElementById('c-delay') || {}).value || 0;
+        var fot = +(document.getElementById('c-fot') || {}).value || 1;
+        var rework = +(document.getElementById('c-rework') || {}).value || 0;
+        var total = +(document.getElementById('c-total') || {}).value || 1;
+        var first = +(document.getElementById('c-first') || {}).value || 0;
+
+        var cle = +((rework / fot) * 100).toFixed(1);
+        var ftri = +((first / total) * 100).toFixed(1);
+        var damage = Math.round(delay * 145 + rework);
+
+        await sb.from('contractor_reports').insert({
+          contractor_name: cName,
+          work_type: cWork,
+          object_name: cObj,
+          delay_days: delay,
+          cle: cle,
+          ftri: ftri,
+          damage: damage
+        });
+      });
+    }
+
+    // Загрузка облачных отчетов подрядчиков в таблицу Директора
+    loadCloudContractors();
+  });
+
+  function enterCloudRole(name, role) {
+    if (typeof state !== 'undefined') {
+      state.user = { name: name + ' (Облако)', role: role };
+      if (typeof initApp === 'function') initApp();
+    } else if (typeof loginDemo === 'function') {
+      loginDemo(role);
+      var lbl = document.getElementById('current-user-label');
+      if (lbl) lbl.textContent = name + ' (Облако)';
+    }
+  }
+
+  async function loadCloudContractors() {
+    var res = await sb.from('contractor_reports').select('*').order('created_at', { ascending: false });
+    if (res.data && res.data.length > 0 && typeof state !== 'undefined' && state.contractors) {
+      res.data.forEach(function(r) {
+        var exists = state.contractors.some(function(x) { return x.name === r.contractor_name && x.obj === r.object_name; });
+        if (!exists) {
+          state.contractors.unshift({
+            name: r.contractor_name,
+            work: r.work_type,
+            obj: r.object_name,
+            delay: +r.delay_days || 0,
+            cle: +r.cle || 0,
+            ftri: +r.ftri || 100,
+            damage: +r.damage || 0
+          });
+        }
+      });
+      if (typeof renderContractorsDir === 'function') renderContractorsDir();
+    }
+  }
+})();
+</script>
 
 </body>
 </html>
