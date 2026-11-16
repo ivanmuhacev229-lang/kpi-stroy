@@ -1021,11 +1021,13 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
- <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ -->
+<!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (ТОЛЬКО ДЛЯ РОЛИ ДИРЕКТОРА) -->
 <script>
 (function() {
-  function initAdminSettings() {
-    if (document.getElementById('adm-tab-btn')) return;
+  function syncDirectorSettings() {
+    var headerEl = document.querySelector('header');
+    var headerText = headerEl ? headerEl.textContent : '';
+    var isDirector = headerText.indexOf('Директор') !== -1;
 
     var diagBtn = null;
     var btns = document.querySelectorAll('button');
@@ -1038,6 +1040,23 @@ function renderPortfolioTable() {
     if (!diagBtn || !diagBtn.parentElement) return;
 
     var nav = diagBtn.parentElement;
+    var existingBtn = document.getElementById('adm-tab-btn');
+    var existingPanel = document.getElementById('view-settings-admin');
+
+    // Если активна любая роль, кроме Директора — полностью прячем кнопку и панель
+    if (!isDirector) {
+      if (existingBtn) existingBtn.style.display = 'none';
+      if (existingPanel) existingPanel.style.display = 'none';
+      return;
+    }
+
+    // Если кнопка уже создана — просто показываем её для Директора
+    if (existingBtn) {
+      existingBtn.style.display = '';
+      return;
+    }
+
+    // Создаем кнопку и панель настроек один раз
     var btn = document.createElement('button');
     btn.id = 'adm-tab-btn';
     btn.className = diagBtn.className.replace('active', '').trim();
@@ -1049,7 +1068,7 @@ function renderPortfolioTable() {
     panel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
     panel.innerHTML =
       '<h2 style="margin-top:0;color:#1e293b;">⚙️ Настройки методики и нормативов «Светофора»</h2>' +
-      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Измените граничные значения показателей для каждого профиля строительства. После сохранения весь сайт и портфель пересчитаются автоматически.</p>' +
+      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Раздел доступен только Директору. Измените граничные значения для перехода показателей между зонами.</p>' +
       '<div style="margin-bottom:16px;">' +
         '<label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;color:#475569;">ПРОФИЛЬ СТРОИТЕЛЬСТВА:</label>' +
         '<select id="adm-prof" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;font-weight:600;font-size:14px;">' +
@@ -1129,8 +1148,7 @@ function renderPortfolioTable() {
         THRESHOLDS[p].ftri = new Array(norms[p].ftri_g, norms[p].ftri_y);
       }
       if (typeof recalc === 'function') recalc();
-      if (typeof updateUI === 'function') updateUI();
-      alert('Нормативы «светофора» сохранены! Все расчеты обновлены.');
+      alert('Нормативы «светофора» сохранены и применены!');
     });
 
     document.getElementById('adm-reset').addEventListener('click', function() {
@@ -1171,9 +1189,10 @@ function renderPortfolioTable() {
     }
   }
 
-  setInterval(initAdminSettings, 500);
+  setInterval(syncDirectorSettings, 400);
 })();
 </script>
+
 <!-- МОДУЛЬ ОБЛАЧНОЙ БАЗЫ И РЕГИСТРАЦИИ SUPABASE -->
 <script src="https://jsdelivr.net"></script>
 <script>
