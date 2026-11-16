@@ -1021,17 +1021,26 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-  <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ И НОРМАТИВОВ -->
+ <!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (ТОЛЬКО ДЛЯ КАБИНЕТА ДИРЕКТОРА) -->
 <script>
 (function() {
-  function initSettingsModule() {
-    var nav = document.getElementById('nav-tabs') || document.querySelector('.tabs') || document.querySelector('[class*="tab"]')?.parentElement;
-    var container = document.getElementById('app-screen') || document.querySelector('.container') || document.body;
-    if (!nav || document.getElementById('adm-tab-btn')) return;
+  function attachDirectorSettings() {
+    if (document.getElementById('adm-tab-btn')) return;
+
+    // Ищем именно внутреннюю панель вкладок, где есть кнопка "1. Диагностика объекта"
+    var targetNav = null;
+    var allButtons = document.querySelectorAll('button');
+    for (var i = 0; i < allButtons.length; i++) {
+      if (allButtons[i].textContent.indexOf('Диагностика объекта') !== -1) {
+        targetNav = allButtons[i].parentElement;
+        break;
+      }
+    }
+    if (!targetNav) return;
 
     var btn = document.createElement('button');
     btn.id = 'adm-tab-btn';
-    btn.className = nav.firstElementChild ? nav.firstElementChild.className.replace('active', '').trim() : 'tab';
+    btn.className = targetNav.firstElementChild.className.replace('active', '').trim();
     btn.textContent = '⚙️ 4. Настройки методики';
     btn.style.cursor = 'pointer';
 
@@ -1039,7 +1048,7 @@ function renderPortfolioTable() {
     panel.id = 'view-settings-admin';
     panel.className = 'card hidden';
     panel.style.cssText = 'background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
-    panel.innerHTML = 
+    panel.innerHTML =
       '<h2 style="margin-top:0;color:#1e293b;">⚙️ Настройки методики и нормативов «Светофора»</h2>' +
       '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Регулируйте граничные значения показателей для каждого профиля строительства. После сохранения весь сайт и портфель пересчитаются автоматически.</p>' +
       '<div style="margin-bottom:16px;">' +
@@ -1066,8 +1075,8 @@ function renderPortfolioTable() {
         '<button id="adm-reset" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">↺ Сбросить к базовым стандартам</button>' +
       '</div>';
 
-    nav.parentElement.insertBefore(panel, nav.nextSibling);
-    nav.appendChild(btn);
+    targetNav.parentElement.insertBefore(panel, targetNav.nextSibling);
+    targetNav.appendChild(btn);
 
     var defaults = {
       residential: { mei_g: 8, mei_y: 15, dcc_g: 500, dcc_y: 1000, cod_g: 120, cod_y: 200, cle_g: 5, cle_y: 10, ftri_g: 85, ftri_y: 70 },
@@ -1131,25 +1140,41 @@ function renderPortfolioTable() {
     });
 
     btn.addEventListener('click', function() {
-      Array.from(nav.children).forEach(function(b) { b.classList.remove('active'); });
+      Array.from(targetNav.children).forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
-      document.querySelectorAll('[id^="view-"]').forEach(function(v) { v.classList.add('hidden'); });
+      var siblings = targetNav.parentElement.children;
+      for (var j = 0; j < siblings.length; j++) {
+        if (siblings[j] !== targetNav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
+          siblings[j].classList.add('hidden');
+          siblings[j].style.display = 'none';
+        }
+      }
       panel.classList.remove('hidden');
+      panel.style.display = 'block';
       renderTable();
     });
 
-    Array.from(nav.children).forEach(function(otherBtn) {
+    Array.from(targetNav.children).forEach(function(otherBtn) {
       if (otherBtn !== btn) {
         otherBtn.addEventListener('click', function() {
           btn.classList.remove('active');
           panel.classList.add('hidden');
+          panel.style.display = 'none';
+          var siblings = targetNav.parentElement.children;
+          for (var j = 0; j < siblings.length; j++) {
+            if (siblings[j] !== targetNav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
+              siblings[j].style.display = '';
+            }
+          }
         });
       }
     });
   }
 
-  setInterval(initSettingsModule, 800);
+  setInterval(attachDirectorSettings, 600);
 })();
+</script>
+
 </script>
 
 </body>
