@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СтройЭффект KPI — Система управления эффективностью строительства</title>
+<style>
+  :root {
+    --primary: #1e293b;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --green-bg: #dcfce7;
+    --green-txt: #166534;
+    --yellow-bg: #fef9c3;
+    --yellow-txt: #854d0e;
+    --red-bg: #fee2e2;
+    --red-txt: #991b1b;
+  }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+  header { background: var(--primary); color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  header h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .badge-role { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; font-size: 13px; }
+  .btn { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: #fff; }
+  .btn-outline:hover { background: rgba(255,255,255,0.1); }
+  .btn-light { background: #e2e8f0; color: var(--text); }
+  .btn-light:hover { background: #cbd5e1; }
+  .container { max-width: 1240px; margin: 24px auto; padding: 0 16px; }
+  .card { background: var(--card); border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid var(--border); margin-bottom: 20px; }
+  .card h2, .card h3 { margin-top: 0; color: var(--primary); }
+  
+  .auth-wrapper { max-width: 960px; margin: 40px auto; padding: 0 16px; }
+  .auth-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+  @media (max-width: 768px) { .auth-grid { grid-template-columns: 1fr; } }
+  .demo-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .demo-btn { text-align: left; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: 0.2s; }
+  .demo-btn:hover { border-color: var(--accent); background: #eff6ff; transform: translateY(-2px); }
+  .demo-btn strong { display: block; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
+  .demo-btn span { font-size: 12px; color: var(--muted); display: block; }
+  
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { background: #e2e8f0; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--text); }
+  .tab.active { background: var(--primary); color: #fff; }
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 600px) { .input-grid { grid-template-columns: 1fr; } }
+  
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f8fafc; text-align: left; padding: 10px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
+  td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .status-pill { padding: 4px 8px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block; white-space: nowrap; }
+  .st-green { background: var(--green-bg); color: var(--green-txt); }
+  .st-yellow { background: var(--yellow-bg); color: var(--yellow-txt); }
+  .st-red { background: var(--red-bg); color: var(--red-txt); }
+  
+  .metric-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .metric-box .val { font-size: 22px; font-weight: 800; color: var(--primary); margin: 4px 0; }
+  .metric-box .lbl { font-size: 12px; color: var(--muted); }
+  
+  .bar-wrap { background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; transition: width 0.3s; }
+  .rec-item { padding: 10px 12px; border-left: 4px solid var(--accent); background: #f8fafc; margin-bottom: 8px; border-radius: 0 6px 6px 0; font-size: 13px; }
+  .rec-item.red { border-left-color: #dc2626; background: #fef2f2; }
+  .rec-item.yellow { border-left-color: #d97706; background: #fffbeb; }
+  .hidden { display: none !important; }
+  .sign-block { margin-top: 30px; padding-top: 16px; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+
+  @media print {
+    header, .no-print, .tabs { display: none !important; }
+    body { background: #fff; }
+    .container { margin: 0; max-width: 100%; }
+    .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏗️ СтройЭффект KPI <span style="font-weight:400; font-size:13px; opacity:0.8;">| Платформа диагностики строительного производства</span></h1>
+  <div id="user-panel" class="hidden" style="display:flex; align-items:center; gap:10px;">
+    <span class="badge-role" id="current-user-label"></span>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ PDF-отчет</button>
+    <button class="btn btn-outline" onclick="logout()">Выйти</button>
+  </div>
+</header>
+
+<div id="auth-screen" class="auth-wrapper">
+  <div class="auth-grid">
+    <div class="card">
+      <h2>🎯 Демо-стенд для комиссии конференции</h2>
+      <p style="color:var(--muted); font-size:14px;">Выберите роль для мгновенного входа в систему без регистрации. В базу уже загружены реальные кейсы (включая «ЖК Онега») и отчеты подрядчиков.</p>
+      <div class="demo-cards">
+        <div class="demo-btn" onclick="loginDemo('director')">
+          <strong>👔 Директор / Генподрядчик</strong>
+          <span>Полный доступ: портфель ЖК, рейтинг подрядчиков, экономика, PDF-отчет.</span>
+        </div>
+        <div class="demo-btn" onclick="loginDemo('pto')">
+          <strong>📐 Инженер ПТО</strong>
+          <span>Управление сметами, сроками закрытия КС-2/КС-3 и незавершенным производством.</span>
+        </div>
+        <div class="demo-btn" onclick="loginDemo('prorab')">
+          <strong>👷 Прораб / Нач. участка</strong>
+          <span>Оперативный учет простоев, переделок и сдачи технадзору (маржа скрыта).</span>
+        </div>
+        <div class="demo-btn" onclick="loginDemo('contractor')">
+          <strong>🚜 Подрядная организация</strong>
+          <span>Кабинет субподрядчика: подача отчета по своему фронту работ в рейтинг директора.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Регистрация / Вход</h3>
+      <div class="form-group">
+        <label>ФИО или Название компании</label>
+        <input type="text" id="reg-name" placeholder="Например: ООО МонолитСтрой">
+      </div>
+      <div class="form-group">
+        <label>Роль в системе</label>
+        <select id="reg-role">
+          <option value="director">Директор / Руководитель проекта</option>
+          <option value="pto">Инженер ПТО</option>
+          <option value="prorab">Прораб / Стройконтроль</option>
+          <option value="contractor">Подрядная организация (Субподрядчик)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Email (логин)</label>
+        <input type="email" id="reg-email" placeholder="user@stroy.ru">
+      </div>
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="registerUser()">Войти / Зарегистрироваться</button>
+      <p style="font-size:11px; color:var(--muted); margin-top:10px;">Данные сохраняются в сессии браузера. Новые подрядчики и объекты сразу отображаются в панели Директора.</p>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" class="container hidden">
+  <div class="tabs no-print" id="nav-tabs"></div>
+
+  <div id="view-object" class="hidden">
+    <div class="card no-print" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block;">Текущий объект</label>
+          <select id="obj-selector" onchange="loadSelectedObject()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border); font-weight:600;"></select>
+        </div>
+        <div>
+          <label style="font-size:11px; color:var(--muted); display:block;">Профиль стройки</label>
+          <select id="obj-profile" onchange="recalc()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
+            <option value="residential">Жилое строительство</option>
+            <option value="industrial">Промышленное строительство</option>
+            <option value="road">Дорожное строительство</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-light" onclick="createNewObjectPrompt()">+ Новый объект</button>
+        <button class="btn btn-primary" onclick="saveCurrentObject()">💾 Сохранить изменения</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card no-print">
+```html
+  <div id="view-portfolio" class="card hidden">
+    <h2>🏢 Сводный портфель объектов компании</h2>
+    <p style="color:var(--muted); font-size:13px;">Сравнительная эффективность всех строек компании на одном экране.</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Объект</th><th>Профиль</th><th>Бюджет</th><th>MEI</th><th>DCC</th><th>CoD</th><th>CLE</th><th>FTRI</th><th>Скрытые потери</th><th>Потенциал возврата</th>
+          </tr>
+        </thead>
+        <tbody id="portfolio-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-contractors-dir" class="card hidden">
+    <h2>🤝 Рейтинг эффективности подрядных организаций</h2>
+    <p style="color:var(--muted); font-size:13px;">Автоматическая оценка субподрядчиков на основе их оперативных отчетов и проверок стройконтроля.</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Подрядчик</th><th>Вид работ</th><th>Объект</th><th>Простои (дн.)</th><th>Доля брака (CLE)</th><th>Сдача с 1-го раза (FTRI)</th><th>Ущерб генподрядчику</th><th>Статус допуска</th>
+          </tr>
+        </thead>
+        <tbody id="contractors-dir-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-contractor-cabinet" class="hidden">
+    <div class="grid-2">
+      <div class="card">
+        <h3>🚜 Подача отчета подрядной организации</h3>
+        <p style="font-size:13px; color:var(--muted);">Внесите показатели по вашему фронту работ. Данные автоматически попадут в рейтинг к Директору генподрядчика.</p>
+        <div class="form-group"><label>Название вашей организации</label><input type="text" id="c-name" value="ООО МонолитСтрой"></div>
+        <div class="form-group"><label>Вид выполняемых работ</label><input type="text" id="c-worktype" value="Монолитные работы"></div>
+        <div class="form-group"><label>Объект строительства</label><select id="c-obj"></select></div>
+        <div class="input-grid">
+          <div class="form-group"><label>Дней задержки по вине подрядчика</label><input type="number" id="c-delay" value="2"></div>
+          <div class="form-group"><label>Ваш ФОТ на участке (тыс. р.)</label><input type="number" id="c-fot" value="8500"></div>
+          <div class="form-group"><label>ФОТ на переделки замечаний (тыс. р.)</label><input type="number" id="c-rework" value="450"></div>
+          <div class="form-group"><label>Сдано объемов всего (тыс. р.)</label><input type="number" id="c-total" value="42000"></div>
+          <div class="form-group"><label>Принято с 1-го раза (тыс. р.)</label><input type="number" id="c-first" value="37500"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="submitContractorReport()">📤 Отправить отчет Генподрядчику</button>
+      </div>
+      <div class="card">
+        <h3>📈 Ваша текущая оценка в системе</h3>
+        <div id="contractor-self-eval">
+          <p style="color:var(--muted); font-size:14px;">Заполните форму слева и нажмите «Отправить отчет», чтобы увидеть ваш рейтинг надежности.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const THRESHOLDS = {
+  residential: { mei:, dcc:, cod:, cle:, ftri: [85, 75] },
+  industrial:  { mei:, dcc:, cod:, cle:, ftri: [82, 72] },
+  road:        { mei:, dcc:, cod:, cle:, ftri: [80, 70] }
+};
+
+let state = {
+  user: null,
+  currentObjId: 'onega',
+  objects: [
+    {
+      id: 'onega', name: 'ЖК Онега', profile: 'residential',
+      budget: 680000, planProfit: 102000, factProfit: 81000, inflation: 8500,
+      overhead: 2600, workdays: 22, equip: 42, fine: 15, idleDays: 5,
+      ksDays: 38, wip: 54000, rate: 21, fotTotal: 34000, fotRework: 3900,
+      workTotal: 165000, workFirst: 128000
+    },
+    {
+      id: 'ceh2', name: 'Цех Сборка-2', profile: 'industrial',
+      budget: 850000, planProfit: 136000, factProfit: 125000, inflation: 5000,
+      overhead: 3200, workdays: 22, equip: 65, fine: 20, idleDays: 2,
+      ksDays: 26, wip: 40000, rate: 21, fotTotal: 48000, fotRework: 2100,
+      workTotal: 240000, workFirst: 218000
+    },
+    {
+      id: 'm12', name: 'Трасса М-12 Участок', profile: 'road',
+      budget: 1200000, planProfit: 180000, factProfit: 142000, inflation: 14000,
+      overhead: 4100, workdays: 24, equip: 95, fine: 35, idleDays: 8,
+      ksDays: 44, wip: 95000, rate: 21, fotTotal: 52000, fotRework: 4900,
+      workTotal: 310000, workFirst: 245000
+    }
+  ],
+  contractors: [
+    { name: 'ООО МонолитСтрой', work: 'Монолитный каркас', obj: 'ЖК Онега', delay: 4, cle: 11.8, ftri: 74.2, damage: 980 },
+    { name: 'СК ФасадПром', work: 'Вентилируемый фасад', obj: 'ЖК Онега', delay: 1, cle: 4.5, ftri: 91.0, damage: 175 },
+    { name: 'АО ЭлектроМонтаж', work: 'Внутренние сети', obj: 'Цех Сборка-2', delay: 0, cle: 3.1, ftri: 94.5, damage: 0 }
+  ]
+};
+
+document.getElementById('report-date').textContent = new Date().toLocaleDateString('ru-RU');
+
+function loginDemo(role) {
+  const names = {
+    director: 'Иванов А.С. (Директор по строительству)',
+    pto: 'Смирнова Е.В. (Ведущий инженер ПТО)',
+    prorab: 'Петров Д.Н. (Начальник участка)',
+    contractor: 'ООО МонолитСтрой (Подрядчик)'
+  };
+  state.user = { name: names[role], role: role };
+  initApp();
+}
+
+function registerUser() {
+  const name = document.getElementById('reg-name').value.trim() || 'Новый пользователь';
+  const role = document.getElementById('reg-role').value;
+  state.user = { name: name, role: role };
+  if (role === 'contractor') document.getElementById('c-name').value = name;
+  initApp();
+}
+
+function logout() {
+  state.user = null;
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('user-panel').classList.add('hidden');
+}
+
+function initApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('user-panel').classList.remove('hidden');
+  document.getElementById('current-user-label').textContent = state.user.name;
+
+  const tabsEl = document.getElementById('nav-tabs');
+  tabsEl.innerHTML = '';
+
+  if (state.user.role === 'contractor') {
+    addTab('cabinet', '🚜 Кабинет подрядчика', true);
+    populateContractorObjs();
+    switchTab('cabinet');
+  } else {
+    addTab('object', '📊 Диагностика объекта', true);
+    if (state.user.role === 'director') {
+      addTab('portfolio', '🏢 Портфель объектов', false);
+      addTab('contractors', '🤝 Рейтинг подрядчиков', false);
+    }
+    const isProrab = state.user.role === 'prorab';
+    document.getElementById('finance-inputs').classList.toggle('hidden', isProrab);
+    document.getElementById('summary-money-card').classList.toggle('hidden', isProrab);
+
+    populateObjSelector();
+    loadSelectedObject();
+    switchTab('object');
+  }
+}
+
+function addTab(id, label, active) {
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (active ? ' active' : '');
+  btn.textContent = label;
+  btn.dataset.tab = id;
+  btn.onclick = () => switchTab(id);
+  document.getElementById('nav-tabs').appendChild(btn);
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  ['view-object', 'view-portfolio', 'view-contractors-dir', 'view-contractor-cabinet'].forEach(v => document.getElementById(v).classList.add('hidden'));
+  if (id === 'object') document.getElementById('view-object').classList.remove('hidden');
+  if (id === 'portfolio') { renderPortfolio(); document.getElementById('view-portfolio').classList.remove('hidden'); }
+  if (id === 'contractors') { renderContractorsDir(); document.getElementById('view-contractors-dir').classList.remove('hidden'); }
+  if (id === 'cabinet') document.getElementById('view-contractor-cabinet').classList.remove('hidden');
+}
+
+function populateObjSelector() {
+  const sel = document.getElementById('obj-selector');
+  sel.innerHTML = state.objects.map(o => '<option value="' + o.id + '"' + (o.id === state.currentObjId ? ' selected' : '') + '>' + o.name + '</option>').join('');
+}
+
+function loadSelectedObject() {
+  state.currentObjId = document.getElementById('obj-selector').value;
+  const o = state.objects.find(x => x.id === state.currentObjId);
+  if (!o) return;
+  document.getElementById('obj-profile').value = o.profile;
+  document.getElementById('in-budget').value = o.budget;
+  document.getElementById('in-plan-profit').value = o.planProfit;
+  document.getElementById('in-fact-profit').value = o.factProfit;
+  document.getElementById('in-inflation').value = o.inflation;
+  document.getElementById('in-overhead').value = o.overhead;
+  document.getElementById('in-workdays').value = o.workdays;
+  document.getElementById('in-equip').value = o.equip;
+  document.getElementById('in-fine').value = o.fine;
+  document.getElementById('in-idle-days').value = o.idleDays;
+  document.getElementById('in-ks-days').value = o.ksDays;
+  document.getElementById('in-wip').value = o.wip;
+  document.getElementById('in-rate').value = o.rate;
+  document.getElementById('in-fot-total').value = o.fotTotal;
+  document.getElementById('in-fot-rework').value = o.fotRework;
+  document.getElementById('in-work-total').value = o.workTotal;
+  document.getElementById('in-work-first').value = o.workFirst;
+  recalc();
+}
+
+function calculateMetrics(o) {
+  const internalMarginLoss = Math.max(0, (o.planProfit - o.factProfit) - o.inflation);
+  const mei = o.planProfit > 0 ? (internalMarginLoss / o.planProfit) * 100 : 0;
+  const dcc = o.wip * (o.rate / 100) * (o.ksDays / 365);
+  const cod = (o.workdays > 0 ? o.overhead / o.workdays : 0) + o.equip + o.fine;
+const idleLoss = cod * o.idleDays;
+const cle = o.fotTotal > 0 ? (o.fotRework / o.fotTotal) * 100 : 0;
+const ftri = o.workTotal > 0 ? (o.workFirst / o.workTotal) * 100 : 100;
+const totalLosses = internalMarginLoss + dcc + idleLoss + o.fotRework;
+const returnPotential = totalLosses * 0.65;
+return { mei, dcc, cod, cle, ftri, internalMarginLoss, idleLoss, totalLosses, returnPotential };
+}
+function getStatus(code, val, profile) {
+const t = THRESHOLDS[profile][code];
+if (code === 'ftri') {
+if (val >= t[0]) return { cls: 'st-green', txt: 'ЗЕЛЕНАЯ ЗОНА' };
+if (val >= t[1]) return { cls: 'st-yellow', txt: 'ЖЕЛТАЯ ЗОНА' };
+return { cls: 'st-red', txt: 'КРАСНАЯ ЗОНА' };
+} else {
+if (val <= t[0]) return { cls: 'st-green', txt: 'ЗЕЛЕНАЯ ЗОНА' };
+if (val <= t[1]) return { cls: 'st-yellow', txt: 'ЖЕЛТАЯ ЗОНА' };
+return { cls: 'st-red', txt: 'КРАСНАЯ ЗОНА' };
+}
+}
+function recalc() {
+const o = {
+profile: document.getElementById('obj-profile').value,
+budget: +document.getElementById('in-budget').value || 0,
+planProfit: +document.getElementById('in-plan-profit').value || 0,
+factProfit: +document.getElementById('in-fact-profit').value || 0,
+inflation: +document.getElementById('in-inflation').value || 0,
+overhead: +document.getElementById('in-overhead').value || 0,
+workdays: +document.getElementById('in-workdays').value || 22,
+equip: +document.getElementById('in-equip').value || 0,
+fine: +document.getElementById('in-fine').value || 0,
+idleDays: +document.getElementById('in-idle-days').value || 0,
+ksDays: +document.getElementById('in-ks-days').value || 0,
+wip: +document.getElementById('in-wip').value || 0,
+rate: +document.getElementById('in-rate').value || 0,
+fotTotal: +document.getElementById('in-fot-total').value || 0,
+fotRework: +document.getElementById('in-fot-rework').value || 0,
+workTotal: +document.getElementById('in-work-total').value || 0,
+workFirst: +document.getElementById('in-work-first').value || 0
+};
+const m = calculateMetrics(o);
+document.getElementById('res-losses').textContent = Math.round(m.totalLosses).toLocaleString('ru-RU') + ' тыс. р.';
+document.getElementById('res-losses-pct').textContent = (o.budget > 0 ? (m.totalLosses / o.budget * 100).toFixed(1) : 0) + '% от сметного бюджета';
+document.getElementById('res-return').textContent = '+' + Math.round(m.returnPotential).toLocaleString('ru-RU') + ' тыс. р.';
+const isProrab = state.user && state.user.role === 'prorab';
+const rows = [
+{ code: 'mei', lbl: 'MEI', name: 'Коэф. «съеденной» маржи', val: m.mei.toFixed(1) + '%', raw: m.mei, hide: isProrab },
+{ code: 'dcc', lbl: 'DCC', name: 'Цена заморозки в КС-2', val: Math.round(m.dcc).toLocaleString('ru-RU') + ' тыс. р.', raw: m.dcc, hide: isProrab },
+{ code: 'cod', lbl: 'CoD', name: 'Цена 1 дня простоя', val: m.cod.toFixed(1) + ' тыс. р./дн', raw: m.cod, hide: false },
+{ code: 'cle', lbl: 'CLE', name: 'Доля ФОТ на переделки', val: m.cle.toFixed(1) + '%', raw: m.cle, hide: false },
+{ code: 'ftri', lbl: 'FTRI', name: 'Приемка с 1-го раза', val: m.ftri.toFixed(1) + '%', raw: m.ftri, hide: false }
+];
+const tbody = document.getElementById('kpi-table-body');
+const recs = document.getElementById('recommendations-list');
+tbody.innerHTML = '';
+recs.innerHTML = '';
+const adviceMap = {
+mei: 'Ввести еженедельный план-фактный контроль маржинальности по видам работ и зафиксировать цены с ключевыми поставщиками.',
+dcc: 'Перевести закрытие актов КС-2/КС-3 в ЭДО и дробить крупные этапы на промежуточные акты каждые 15 дней.',
+cod: 'Внедрить недельно-суточное планирование (Last Planner System) и перевести аренду спецтехники на почасовую заявку.',
+cle: 'Привязать премиальную часть ФОТ прорабов и бригад к сдаче конструкций без предписаний и переделок.',
+ftri: 'Ввести обязательные чек-листы самоконтроля мастеров перед вызовом инженера строительного контроля.'
+};
+rows.forEach(r => {
+if (r.hide) return;
+const st = getStatus(r.code, r.raw, o.profile);
+tbody.innerHTML += '' + r.lbl + '' + r.name + '' + r.val + '' + st.txt + '';
+if (st.cls !== 'st-green') {
+const cls = st.cls === 'st-red' ? 'red' : 'yellow';
+recs.innerHTML += '[' + r.lbl + ' — ' + st.txt + '] ' + adviceMap[r.code] + '';
+}
+});
+if (!recs.innerHTML) {
+recs.innerHTML = 'Все доступные показатели в зеленой зоне. Организация работает эффективно.';
+}
+const parts = [
+{ name: 'Внутреннее снижение маржи', val: m.internalMarginLoss, color: '#2563eb' },
+{ name: 'Оплата переделок и брака (ФОТ)', val: o.fotRework, color: '#dc2626' },
+{ name: 'Заморозка капитала в КС-2', val: m.dcc, color: '#d97706' },
+{ name: 'Организационные простои', val: m.idleLoss, color: '#7c3aed' }
+];
+const barsEl = document.getElementById('loss-bars');
+barsEl.innerHTML = parts.map(p => {
+const pct = m.totalLosses > 0 ? Math.round(p.val / m.totalLosses * 100) : 0;
+return '' + p.name + '' + Math.round(p.val).toLocaleString('ru-RU') + ' тыс. р. (' + pct + '%)';
+}).join('');
+}
+function saveCurrentObject() {
+const idx = state.objects.findIndex(x => x.id === state.currentObjId);
+if (idx === -1) return;
+state.objects[idx] = {
+...state.objects[idx],
+profile: document.getElementById('obj-profile').value,
+budget: +document.getElementById('in-budget').value || 0,
+planProfit: +document.getElementById('in-plan-profit').value || 0,
+factProfit: +document.getElementById('in-fact-profit').value || 0,
+inflation: +document.getElementById('in-inflation').value || 0,
+overhead: +document.getElementById('in-overhead').value || 0,
+workdays: +document.getElementById('in-workdays').value || 22,
+equip: +document.getElementById('in-equip').value || 0,
+fine: +document.getElementById('in-fine').value || 0,
+idleDays: +document.getElementById('in-idle-days').value || 0,
+ksDays: +document.getElementById('in-ks-days').value || 0,
+wip: +document.getElementById('in-wip').value || 0,
+rate: +document.getElementById('in-rate').value || 0,
+fotTotal: +document.getElementById('in-fot-total').value || 0,
+fotRework: +document.getElementById('in-fot-rework').value || 0,
+workTotal: +document.getElementById('in-work-total').value || 0,
+workFirst: +document.getElementById('in-work-first').value || 0
+};
+alert('Данные объекта сохранены и обновлены в портфеле!');
+}
+function createNewObjectPrompt() {
+const name = prompt('Введите название нового объекта (например, ЖК Северный):');
+if (!name) return;
+const id = 'obj_' + Date.now();
+state.objects.push({
+id, name, profile: 'residential',
+budget: 500000, planProfit: 75000, factProfit: 68000, inflation: 4000,
+overhead: 2000, workdays: 22, equip: 30, fine: 10, idleDays: 2,
+ksDays: 25, wip: 30000, rate: 21, fotTotal: 25000, fotRework: 1200,
+workTotal: 120000, workFirst: 106000
+});
+state.currentObjId = id;
+populateObjSelector();
+loadSelectedObject();
+}
+function renderPortfolio() {
+const profNames = { residential: 'Жилое', industrial: 'Промышленное', road: 'Дорожное' };
+const body = document.getElementById('portfolio-body');
+body.innerHTML = state.objects.map(o => {
+const m = calculateMetrics(o);
+return '' + o.name + '' + profNames[o.profile] + '' + o.budget.toLocaleString('ru-RU') + '' + m.mei.toFixed(1) + '%' + Math.round(m.dcc).toLocaleString('ru-RU') + '' + m.cod.toFixed(1) + '' + m.cle.toFixed(1) + '%' + m.ftri.toFixed(1) + '%' + Math.round(m.totalLosses).toLocaleString('ru-RU') + '+' + Math.round(m.returnPotential).toLocaleString('ru-RU') + '';
+}).join('');
+}
+function renderContractorsDir() {
+const body = document.getElementById('contractors-dir-body');
+body.innerHTML = state.contractors.map(c => {
+let st = { cls: 'st-green', txt: 'НАДЕЖНЫЙ ПОДРЯДЧИК' };
+if (c.ftri < 75 || c.cle > 10 || c.delay >= 4) st = { cls: 'st-red', txt: 'КРИТИЧЕСКИЙ РИСК' };
+else if (c.ftri < 85 || c.cle > 6 || c.delay >= 2) st = { cls: 'st-yellow', txt: 'ТРЕБУЕТ КОНТРОЛЯ' };
+return '' + c.name + '' + c.work + '' + c.obj + '' + c.delay + ' дн.' + c.cle.toFixed(1) + '%' + c.ftri.toFixed(1) + '%' + c.damage.toLocaleString('ru-RU') + ' тыс. р.' + st.txt + '';
+}).join('');
+}
+function populateContractorObjs() {
+document.getElementById('c-obj').innerHTML = state.objects.map(o => '' + o.name + '').join('');
+}
+function submitContractorReport() {
+const name = document.getElementById('c-name').value.trim() || 'Подрядчик';
+const work = document.getElementById('c-worktype').value.trim() || 'СМР';
+const objName = document.getElementById('c-obj').value;
+const delay = +document.getElementById('c-delay').value || 0;
+const fot = +document.getElementById('c-fot').value || 1;
+const rework = +document.getElementById('c-rework').value || 0;
+const total = +document.getElementById('c-total').value || 1;
+const first = +document.getElementById('c-first').value || 0;
+const cle = (rework / fot) * 100;
+const ftri = (first / total) * 100;
+const objData = state.objects.find(o => o.name === objName) || state.objects[0];
+const m = calculateMetrics(objData);
+const damage = Math.round(delay * m.cod + rework);
+const idx = state.contractors.findIndex(x => x.name === name && x.obj === objName);
+const rec = { name, work, obj: objName, delay, cle, ftri, damage };
+if (idx >= 0) state.contractors[idx] = rec; else state.contractors.unshift(rec);
+let badge = 'ЗЕЛЕНАЯ ЗОНА — ОТЛИЧНО';
+if (ftri < 75 || cle > 10 || delay >= 4) badge = 'КРАСНАЯ ЗОНА — РИСК ШТРАФОВ';
+else if (ftri < 85 || cle > 6 || delay >= 2) badge = 'ЖЕЛТАЯ ЗОНА — ЕСТЬ ЗАМЕЧАНИЯ';
+document.getElementById('contractor-self-eval').innerHTML = '✅ Отчет отправлен в панель Директора генподрядчика!Ваш интегральный статус' + badge + 'FTRI (сдача с 1-го раза): ' + ftri.toFixed(1) + '% | CLE (брак): ' + cle.toFixed(1) + '%Перейдите в Демо-режим «Директор», чтобы увидеть вашу компанию в общем рейтинге подрядчиков.';
+}
