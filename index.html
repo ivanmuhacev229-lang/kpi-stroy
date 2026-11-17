@@ -1826,6 +1826,153 @@ function renderPortfolioTable() {
   }, 500);
 })();
 </script>
+<!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 5: ГРАФИК ДИНАМИКИ ПО КАЖДОМУ ПОДРЯДЧИКУ И ОТЧЕТУ -->
+<script>
+(function() {
+  var subHistory = {
+    'ООО «МонолитГрупп»': new Array(
+      { date: 'Отчет №1', ftri: 72.0, cle: 11.5 },
+      { date: 'Отчет №2', ftri: 78.5, cle: 8.2 },
+      { date: 'Отчет №3', ftri: 84.0, cle: 5.8 },
+      { date: 'Отчет №4', ftri: 90.0, cle: 3.1 }
+    ),
+    'СК «СибФасад»': new Array(
+      { date: 'Отчет №1', ftri: 81.0, cle: 6.0 },
+      { date: 'Отчет №2', ftri: 76.5, cle: 8.9 },
+      { date: 'Отчет №3', ftri: 74.0, cle: 10.4 }
+    ),
+    'ООО «ТехМонтаж»': new Array(
+      { date: 'Отчет №1', ftri: 88.0, cle: 2.5 },
+      { date: 'Отчет №2', ftri: 92.5, cle: 1.8 }
+    )
+  };
+
+  try {
+    var savedSub = localStorage.getItem('kpi_sub_dynamics_v1');
+    if (savedSub) subHistory = JSON.parse(savedSub);
+  } catch (e) {}
+
+  function saveSubHist() {
+    try { localStorage.setItem('kpi_sub_dynamics_v1', JSON.stringify(subHistory)); } catch (e) {}
+  }
+
+  // Перехватываем отправку отчета подрядчика, чтобы добавлять новую точку в его личный график
+  document.addEventListener('click', function(e) {
+    if (e.target && (e.target.id === 'contractor-chat-box-send' || e.target.textContent.indexOf('Отправить отчет Генподрядчику') !== -1)) {
+      var visTxts = new Array();
+      var allT = document.querySelectorAll('input[type="text"]');
+      for (var j = 0; j < allT.length; j++) { if (allT[j].offsetParent !== null && allT[j].value.trim()) visTxts.push(allT[j].value.trim()); }
+      var org = visTxts.length > 0 ? visTxts.at(0) : 'ООО «МонолитГрупп»';
+
+      var visNums = new Array();
+      var allN = document.querySelectorAll('input[type="number"]');
+      for (var n = 0; n < allN.length; n++) { if (allN[n].offsetParent !== null) visNums.push(allN[n]); }
+
+      if (visNums.length >= 4) {
+        var tot = +visNums.at(0).value || 1;
+        var fst = +visNums.at(1).value || 0;
+        var fot = +visNums.at(2).value || 1;
+        var rew = +visNums.at(3).value || 0;
+        var ftriVal = +((fst / tot) * 100).toFixed(1);
+        var cleVal = +((rew / fot) * 100).toFixed(1);
+
+        if (!subHistory[org]) subHistory[org] = new Array();
+        var numIdx = subHistory[org].length + 1;
+        subHistory[org].push({ date: 'Отчет №' + numIdx, ftri: ftriVal, cle: cleVal });
+        if (subHistory[org].length > 8) subHistory[org].shift();
+        saveSubHist();
+      }
+    }
+  });
+
+  setInterval(function() {
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    if (role !== 'director' && role !== 'pto') return;
+
+    // Ищем таблицу рейтинга подрядных организаций
+    var ratingTitle = null;
+    var els = document.querySelectorAll('h2, h3, div');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].children.length === 0 && els[i].textContent.indexOf('Рейтинг подрядных организаций') !== -1) {
+        ratingTitle = els[i];
+        break;
+      }
+    }
+    if (!ratingTitle || ratingTitle.offsetParent === null) return;
+
+    var container = ratingTitle.parentElement;
+    if (!container || document.getElementById('sub-dynamics-card')) return;
+
+    var card = document.createElement('div');
+    card.id = 'sub-dynamics-card';
+    card.style.cssText = 'background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:20px;margin-top:20px;';
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">' +
+        '<div>' +
+          '<h3 style="margin:0;color:#1e293b;font-size:16px;">📈 Динамика показателей подрядчика по каждому отчету</h3>' +
+          '<p style="margin:4px 0 0;color:#64748b;font-size:12.5px;">Зеленая линия — сдача с 1-го раза (FTRI, % ↑), Красная — доля переделок в ФОТ (CLE, % ↓)</p>' +
+        '</div>' +
+        '<select id="sub-dyn-select" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-weight:600;background:#fff;"></select>' +
+      '</div>' +
+      '<div id="sub-dyn-svg"></div>';
+
+    container.appendChild(card);
+
+    var sel = document.getElementById('sub-dyn-select');
+    function fillSelect() {
+      var cur = sel.value;
+      sel.innerHTML = '';
+      var keys = Object.keys(subHistory);
+      for (var k = 0; k < keys.length; k++) {
+        var opt = document.createElement('option');
+        opt.value = keys.at(k);
+        opt.textContent = keys.at(k);
+        sel.appendChild(opt);
+      }
+      if (cur && subHistory[cur]) sel.value = cur;
+    }
+
+    function drawSubChart() {
+      var svgBox = document.getElementById('sub-dyn-svg');
+      if (!svgBox) return;
+      var orgName = sel.value;
+      var pts = subHistory[orgName] || new Array();
+      if (pts.length === 0) { svgBox.innerHTML = '<div style="color:#64748b;font-size:13px;">Нет данных по отчетам.</div>'; return; }
+
+      var w = 680, h = 190, pL = 45, pR = 35, pT = 25, pB = 30;
+      var cW = w - pL - pR, cH = h - pT - pB;
+      var polyFtri = '', polyCle = '', markers = '';
+
+      for (var i = 0; i < pts.length; i++) {
+        var x = Math.round(pL + (i * (cW / Math.max(pts.length - 1, 1))));
+        var yF = Math.round(pT + cH - ((Math.min(pts.at(i).ftri, 100) / 100) * cH));
+        var yC = Math.round(pT + cH - ((Math.min(pts.at(i).cle, 30) / 30) * cH));
+
+        polyFtri += x + ',' + yF + ' ';
+        polyCle += x + ',' + yC + ' ';
+
+        markers += '<circle cx="' + x + '" cy="' + yF + '" r="4.5" fill="#16a34a"/>' +
+          '<text x="' + x + '" y="' + (yF - 8) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="#15803d">' + pts.at(i).ftri + '%</text>' +
+          '<circle cx="' + x + '" cy="' + yC + '" r="4.5" fill="#ef4444"/>' +
+          '<text x="' + x + '" y="' + (yC + 15) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="#b91c1c">' + pts.at(i).cle + '%</text>' +
+          '<text x="' + x + '" y="' + (h - 6) + '" text-anchor="middle" font-size="11" fill="#475569">' + pts.at(i).date + '</text>';
+      }
+
+      svgBox.innerHTML = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;max-width:760px;height:auto;font-family:sans-serif;background:#fff;border-radius:8px;border:1px solid #e2e8f0;">' +
+        '<line x1="' + pL + '" y1="' + (pT + cH / 2) + '" x2="' + (w - pR) + '" y2="' + (pT + cH / 2) + '" stroke="#f1f5f9"/>' +
+        '<polyline fill="none" stroke="#16a34a" stroke-width="2.5" points="' + polyFtri.trim() + '"/>' +
+        '<polyline fill="none" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="5,3" points="' + polyCle.trim() + '"/>' +
+        markers + '</svg>';
+    }
+
+    fillSelect();
+    drawSubChart();
+    sel.addEventListener('change', drawSubChart);
+  }, 600);
+})();
+</script>
 
 </body>
 </html>
