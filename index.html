@@ -1021,70 +1021,78 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-<!-- ЕДИНЫЙ МОДУЛЬ: РОЛЕВАЯ ИЗОЛЯЦИЯ И СОГЛАСОВАНИЕ (ЧАСТЬ 1 - ФИНАЛ) -->
+<!-- МОДУЛЬ СОГЛАСОВАНИЯ С ФОТО, ЧАТОМ И РОЛЕВОЙ ИЗОЛЯЦИЕЙ (ЧАСТЬ 1) -->
 <script>
 (function() {
-  var auditLog = new Array(
-    { id: 1, date: 'Сегодня, 10:15', author: 'Прораб (Участок №2)', obj: 'ЖК Онега', desc: 'Простои: 5 дн., Брак ФОТ: 3 900 тыс. ₽, Сдано с 1-го раза: 128 000 тыс. ₽', status: 'approved', data: { idle: 5, rework: 3900, total: 165000, first: 128000 } }
+  var workflowStore = new Array(
+    {
+      id: 1,
+      date: 'Сегодня, 10:15',
+      author: 'Прораб (Дмитрий Соколов)',
+      roleType: 'foreman',
+      obj: 'ЖК Онега',
+      metrics: 'Простои: 5 дн., Брак ФОТ: 3 900 тыс. ₽, Принято с 1-го раза: 128 000 тыс. ₽',
+      comment: 'Задержка бетонирования плиты перекрытия 4-го этажа из-за поломки башенного крана. Переделка арматурного каркаса выполнена.',
+      photo: '',
+      status: 'approved',
+      reply: 'Инженер ПТО: Данные проверены по ОЖР, приняты в расчет.',
+      data: { idle: 5, rework: 3900, total: 165000, first: 128000 }
+    }
   );
 
   try {
-    var savedLog = localStorage.getItem('kpi_audit_workflow');
-    if (savedLog) auditLog = JSON.parse(savedLog);
+    var saved = localStorage.getItem('kpi_chat_workflow_v1');
+    if (saved) workflowStore = JSON.parse(saved);
   } catch (e) {}
 
-  function saveLog() {
-    try { localStorage.setItem('kpi_audit_workflow', JSON.stringify(auditLog)); } catch (e) {}
+  function saveStore() {
+    try { localStorage.setItem('kpi_chat_workflow_v1', JSON.stringify(workflowStore)); } catch (e) {
+      alert('Фото слишком большое для памяти браузера, выберите файл меньшего размера.');
+    }
   }
 
-  function getCurrentRole() {
-    var topHeader = document.querySelector('header');
-    if (!topHeader || topHeader.offsetParent === null) return 'guest';
-    var txt = topHeader.innerText || '';
-    if (txt.indexOf('Подрядчик') !== -1 || txt.indexOf('Подрядная организация') !== -1) return 'contractor';
-    if (txt.indexOf('Прораб') !== -1) return 'foreman';
-    if (txt.indexOf('ПТО') !== -1) return 'pto';
-    if (txt.indexOf('Директор') !== -1) return 'director';
+  function getRole() {
+    var h = document.querySelector('header');
+    if (!h || h.offsetParent === null) return 'guest';
+    var t = h.innerText || '';
+    if (t.indexOf('Подрядчик') !== -1 || t.indexOf('Подрядная организация') !== -1) return 'contractor';
+    if (t.indexOf('Прораб') !== -1) return 'foreman';
+    if (t.indexOf('ПТО') !== -1) return 'pto';
+    if (t.indexOf('Директор') !== -1) return 'director';
     return 'guest';
   }
 
-        function hideSectionByTitle(titleSubstr, shouldHide) {
-    // 1. Прячем правую колонку с таблицей KPI и шкалами потерь у Прораба
+  function toggleForemanIsolation(isForeman) {
     var tds = document.querySelectorAll('td, div');
     for (var i = 0; i < tds.length; i++) {
       var txt = tds[i].textContent;
       if (txt.indexOf('Коэффициент «съеденной» маржи') !== -1 || txt.indexOf('Внутреннее снижение маржи (MEI)') !== -1) {
-        // Ищем белую карточку правой колонки (в ней нет текста "Исходные данные объекта")
-        var card = tds[i].closest('div[style*="background"], div[class*="card"], div[class*="box"]') || tds[i].parentElement;
+        var card = tds[i].parentElement;
         while (card && card.parentElement && card.parentElement.innerText.indexOf('Исходные данные объекта') === -1) {
           card = card.parentElement;
         }
         if (card && card.innerText.indexOf('Исходные данные объекта') === -1) {
-          if (shouldHide) card.style.setProperty('display', 'none', 'important');
+          if (isForeman) card.style.setProperty('display', 'none', 'important');
           else card.style.removeProperty('display');
         }
       }
-
-      // 2. Прячем нижний блок с рекомендациями (где есть текст "MEI (Снижение маржинальности)")
       if (txt.indexOf('MEI (Снижение маржинальности)') !== -1) {
         var recCard = tds[i].parentElement;
         while (recCard && recCard.parentElement && recCard.parentElement.innerText.indexOf('Исходные данные объекта') === -1) {
           recCard = recCard.parentElement;
         }
         if (recCard && recCard.innerText.indexOf('Исходные данные объекта') === -1) {
-          if (shouldHide) recCard.style.setProperty('display', 'none', 'important');
+          if (isForeman) recCard.style.setProperty('display', 'none', 'important');
           else recCard.style.removeProperty('display');
         }
       }
     }
-
-    // 3. Растягиваем левую карточку Прораба на всю ширину, когда правая скрыта
     var leftHeaders = document.querySelectorAll('h2, h3, div');
     for (var k = 0; k < leftHeaders.length; k++) {
       if (leftHeaders[k].children.length === 0 && leftHeaders[k].textContent.trim() === 'Исходные данные объекта') {
         var leftCol = leftHeaders[k].parentElement;
         if (leftCol && leftCol.parentElement) {
-          if (shouldHide) leftCol.parentElement.style.setProperty('grid-template-columns', '1fr', 'important');
+          if (isForeman) leftCol.parentElement.style.setProperty('grid-template-columns', '1fr', 'important');
           else leftCol.parentElement.style.removeProperty('grid-template-columns');
         }
         break;
@@ -1092,21 +1100,457 @@ function renderPortfolioTable() {
     }
   }
 
+  function renderSenderChatBox(containerId, targetAnchor, roleType) {
+    var box = document.getElementById(containerId);
+    if (!box && targetAnchor && targetAnchor.parentElement) {
+      box = document.createElement('div');
+      box.id = containerId;
+      box.style.cssText = 'background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:18px;margin-top:16px;';
+      box.innerHTML =
+        '<div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:8px;">💬 Сопроводительный комментарий, фотофиксация и чат согласования</div>' +
+        '<textarea id="' + containerId + '-txt" rows="2" placeholder="Опишите причину простоя, переделок или приложите пояснение к актам..." style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px;"></textarea>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<label style="background:#e2e8f0;color:#0f172a;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📷 Прикрепить фото<input type="file" id="' + containerId + '-file" accept="image/*" style="display:none;"></label>' +
+            '<span id="' + containerId + '-fname" style="font-size:12px;color:#64748b;">Файл не выбран</span>' +
+          '</div>' +
+          '<button id="' + containerId + '-send" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">📤 Отправить на согласование</button>' +
+        '</div>' +
+        '<div id="' + containerId + '-history" style="border-top:1px solid #e2e8f0;padding-top:12px;"></div>';
 
+      targetAnchor.parentElement.insertAdjacentElement('afterend', box);
 
+      var currentPhotoBase64 = '';
+      document.getElementById(containerId + '-file').addEventListener('change', function(e) {
+        var f = e.target.files.item(0);
+        if (!f) return;
+        document.getElementById(containerId + '-fname').textContent = '📎 ' + f.name;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          // Сжимаем изображение через canvas, чтобы не переполнить память браузера
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxW = 600;
+            var scale = Math.min(1, maxW / img.width);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(f);
+      });
 
-  function applyRoleArchitecture() {
-    var role = getCurrentRole();
+      document.getElementById(containerId + '-send').addEventListener('click', function(e) {
+        e.preventDefault();
+        var commentVal = document.getElementById(containerId + '-txt').value.trim();
+        var now = new Date();
+        var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+        if (roleType === 'foreman') {
+          var inps = document.querySelectorAll('input[type="number"]');
+          var objSel = document.querySelector('select');
+          var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
+          var idle = inps.length > 8 ? (+inps.item(8).value || 0) : 0;
+          var rework = inps.length > 13 ? (+inps.item(13).value || 0) : 0;
+          var total = inps.length > 14 ? (+inps.item(14).value || 0) : 0;
+          var first = inps.length > 15 ? (+inps.item(15).value || 0) : 0;
+
+          workflowStore.unshift({
+            id: Date.now(),
+            date: 'Сегодня, ' + timeStr,
+            author: 'Прораб (Участок)',
+            roleType: 'foreman',
+            obj: objName,
+            metrics: 'Простои: ' + idle + ' дн., Брак ФОТ: ' + rework + ' тыс. ₽, Сдано с 1-го раза: ' + first + ' из ' + total + ' тыс. ₽',
+            comment: commentVal || 'Оперативные данные с площадки за смену.',
+            photo: currentPhotoBase64,
+            status: 'pending',
+            reply: '',
+            data: { idle: idle, rework: rework, total: total, first: first }
+          });
+        } else {
+          var cInputs = document.querySelectorAll('input');
+          var orgName = 'Подрядная организация';
+          for (var j = 0; j < cInputs.length; j++) {
+            if (cInputs[j].offsetParent !== null && cInputs[j].type === 'text' && cInputs[j].value.trim()) {
+              orgName = cInputs[j].value.trim();
+              break;
+            }
+          }
+          workflowStore.unshift({
+            id: Date.now(),
+            date: 'Сегодня, ' + timeStr,
+            author: 'Подрядчик: ' + orgName,
+            roleType: 'contractor',
+            obj: 'ЖК Онега (Субподряд)',
+            metrics: 'Оперативный отчет подрядчика по выполненным объемам и приемке',
+            comment: commentVal || 'Отчет по закрытию этапа работ направлен генподрядчику.',
+            photo: currentPhotoBase64,
+            status: 'pending',
+            reply: '',
+            data: null
+          });
+        }
+
+        saveStore();
+        document.getElementById(containerId + '-txt').value = '';
+        document.getElementById(containerId + '-fname').textContent = 'Файл не выбран';
+        currentPhotoBase64 = '';
+        if (window._refreshSenderHistory) window._refreshSenderHistory(containerId, roleType);
+        alert('✅ Отчет с комментарием и фото отправлен! Инженер ПТО и Директор увидят его во вкладке согласования.');
+      });
+    }
+
+    if (box) {
+      box.style.removeProperty('display');
+      if (window._refreshSenderHistory) window._refreshSenderHistory(containerId, roleType);
+    }
+  }
+
+  window._kpiChatCore = {
+    store: workflowStore,
+    save: saveStore,
+    getRole: getRole,
+    toggleForeman: toggleForemanIsolation,
+    renderChatBox: renderSenderChatBox
+  };
+})();
+</script>
+<!-- МОДУЛЬ СОГЛАСОВАНИЯ С ФОТО, ЧАТОМ И РОЛЕВОЙ ИЗОЛЯЦИЕЙ (ЧАСТЬ 1) -->
+<script>
+(function() {
+  var workflowStore = new Array(
+    {
+      id: 1,
+      date: 'Сегодня, 10:15',
+      author: 'Прораб (Дмитрий Соколов)',
+      roleType: 'foreman',
+      obj: 'ЖК Онега',
+      metrics: 'Простои: 5 дн., Брак ФОТ: 3 900 тыс. ₽, Принято с 1-го раза: 128 000 тыс. ₽',
+      comment: 'Задержка бетонирования плиты перекрытия 4-го этажа из-за поломки башенного крана. Переделка арматурного каркаса выполнена.',
+      photo: '',
+      status: 'approved',
+      reply: 'Инженер ПТО: Данные проверены по ОЖР, приняты в расчет.',
+      data: { idle: 5, rework: 3900, total: 165000, first: 128000 }
+    }
+  );
+
+  try {
+    var saved = localStorage.getItem('kpi_chat_workflow_v1');
+    if (saved) workflowStore = JSON.parse(saved);
+  } catch (e) {}
+
+  function saveStore() {
+    try { localStorage.setItem('kpi_chat_workflow_v1', JSON.stringify(workflowStore)); } catch (e) {
+      alert('Фото слишком большое для памяти браузера, выберите файл меньшего размера.');
+    }
+  }
+
+  function getRole() {
+    var h = document.querySelector('header');
+    if (!h || h.offsetParent === null) return 'guest';
+    var t = h.innerText || '';
+    if (t.indexOf('Подрядчик') !== -1 || t.indexOf('Подрядная организация') !== -1) return 'contractor';
+    if (t.indexOf('Прораб') !== -1) return 'foreman';
+    if (t.indexOf('ПТО') !== -1) return 'pto';
+    if (t.indexOf('Директор') !== -1) return 'director';
+    return 'guest';
+  }
+
+  function toggleForemanIsolation(isForeman) {
+    var tds = document.querySelectorAll('td, div');
+    for (var i = 0; i < tds.length; i++) {
+      var txt = tds[i].textContent;
+      if (txt.indexOf('Коэффициент «съеденной» маржи') !== -1 || txt.indexOf('Внутреннее снижение маржи (MEI)') !== -1) {
+        var card = tds[i].parentElement;
+        while (card && card.parentElement && card.parentElement.innerText.indexOf('Исходные данные объекта') === -1) {
+          card = card.parentElement;
+        }
+        if (card && card.innerText.indexOf('Исходные данные объекта') === -1) {
+          if (isForeman) card.style.setProperty('display', 'none', 'important');
+          else card.style.removeProperty('display');
+        }
+      }
+      if (txt.indexOf('MEI (Снижение маржинальности)') !== -1) {
+        var recCard = tds[i].parentElement;
+        while (recCard && recCard.parentElement && recCard.parentElement.innerText.indexOf('Исходные данные объекта') === -1) {
+          recCard = recCard.parentElement;
+        }
+        if (recCard && recCard.innerText.indexOf('Исходные данные объекта') === -1) {
+          if (isForeman) recCard.style.setProperty('display', 'none', 'important');
+          else recCard.style.removeProperty('display');
+        }
+      }
+    }
+    var leftHeaders = document.querySelectorAll('h2, h3, div');
+    for (var k = 0; k < leftHeaders.length; k++) {
+      if (leftHeaders[k].children.length === 0 && leftHeaders[k].textContent.trim() === 'Исходные данные объекта') {
+        var leftCol = leftHeaders[k].parentElement;
+        if (leftCol && leftCol.parentElement) {
+          if (isForeman) leftCol.parentElement.style.setProperty('grid-template-columns', '1fr', 'important');
+          else leftCol.parentElement.style.removeProperty('grid-template-columns');
+        }
+        break;
+      }
+    }
+  }
+
+  function renderSenderChatBox(containerId, targetAnchor, roleType) {
+    var box = document.getElementById(containerId);
+    if (!box && targetAnchor && targetAnchor.parentElement) {
+      box = document.createElement('div');
+      box.id = containerId;
+      box.style.cssText = 'background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:18px;margin-top:16px;';
+      box.innerHTML =
+        '<div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:8px;">💬 Сопроводительный комментарий, фотофиксация и чат согласования</div>' +
+        '<textarea id="' + containerId + '-txt" rows="2" placeholder="Опишите причину простоя, переделок или приложите пояснение к актам..." style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px;"></textarea>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<label style="background:#e2e8f0;color:#0f172a;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📷 Прикрепить фото<input type="file" id="' + containerId + '-file" accept="image/*" style="display:none;"></label>' +
+            '<span id="' + containerId + '-fname" style="font-size:12px;color:#64748b;">Файл не выбран</span>' +
+          '</div>' +
+          '<button id="' + containerId + '-send" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">📤 Отправить на согласование</button>' +
+        '</div>' +
+        '<div id="' + containerId + '-history" style="border-top:1px solid #e2e8f0;padding-top:12px;"></div>';
+
+      targetAnchor.parentElement.insertAdjacentElement('afterend', box);
+
+      var currentPhotoBase64 = '';
+      document.getElementById(containerId + '-file').addEventListener('change', function(e) {
+        var f = e.target.files.item(0);
+        if (!f) return;
+        document.getElementById(containerId + '-fname').textContent = '📎 ' + f.name;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          // Сжимаем изображение через canvas, чтобы не переполнить память браузера
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxW = 600;
+            var scale = Math.min(1, maxW / img.width);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(f);
+      });
+
+      document.getElementById(containerId + '-send').addEventListener('click', function(e) {
+        e.preventDefault();
+        var commentVal = document.getElementById(containerId + '-txt').value.trim();
+        var now = new Date();
+        var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+        if (roleType === 'foreman') {
+          var inps = document.querySelectorAll('input[type="number"]');
+          var objSel = document.querySelector('select');
+          var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
+          var idle = inps.length > 8 ? (+inps.item(8).value || 0) : 0;
+          var rework = inps.length > 13 ? (+inps.item(13).value || 0) : 0;
+          var total = inps.length > 14 ? (+inps.item(14).value || 0) : 0;
+          var first = inps.length > 15 ? (+inps.item(15).value || 0) : 0;
+
+          workflowStore.unshift({
+            id: Date.now(),
+            date: 'Сегодня, ' + timeStr,
+            author: 'Прораб (Участок)',
+            roleType: 'foreman',
+            obj: objName,
+            metrics: 'Простои: ' + idle + ' дн., Брак ФОТ: ' + rework + ' тыс. ₽, Сдано с 1-го раза: ' + first + ' из ' + total + ' тыс. ₽',
+            comment: commentVal || 'Оперативные данные с площадки за смену.',
+            photo: currentPhotoBase64,
+            status: 'pending',
+            reply: '',
+            data: { idle: idle, rework: rework, total: total, first: first }
+          });
+        } else {
+          var cInputs = document.querySelectorAll('input');
+          var orgName = 'Подрядная организация';
+          for (var j = 0; j < cInputs.length; j++) {
+            if (cInputs[j].offsetParent !== null && cInputs[j].type === 'text' && cInputs[j].value.trim()) {
+              orgName = cInputs[j].value.trim();
+              break;
+            }
+          }
+          workflowStore.unshift({
+            id: Date.now(),
+            date: 'Сегодня, ' + timeStr,
+            author: 'Подрядчик: ' + orgName,
+            roleType: 'contractor',
+            obj: 'ЖК Онега (Субподряд)',
+            metrics: 'Оперативный отчет подрядчика по выполненным объемам и приемке',
+            comment: commentVal || 'Отчет по закрытию этапа работ направлен генподрядчику.',
+            photo: currentPhotoBase64,
+            status: 'pending',
+            reply: '',
+            data: null
+          });
+        }
+
+        saveStore();
+        document.getElementById(containerId + '-txt').value = '';
+        document.getElementById(containerId + '-fname').textContent = 'Файл не выбран';
+        currentPhotoBase64 = '';
+        if (window._refreshSenderHistory) window._refreshSenderHistory(containerId, roleType);
+        alert('✅ Отчет с комментарием и фото отправлен! Инженер ПТО и Директор увидят его во вкладке согласования.');
+      });
+    }
+
+    if (box) {
+      box.style.removeProperty('display');
+      if (window._refreshSenderHistory) window._refreshSenderHistory(containerId, roleType);
+    }
+  }
+
+  window._kpiChatCore = {
+    store: workflowStore,
+    save: saveStore,
+    getRole: getRole,
+    toggleForeman: toggleForemanIsolation,
+    renderChatBox: renderSenderChatBox
+  };
+})();
+</script>
+<!-- МОДУЛЬ СОГЛАСОВАНИЯ С ФОТО И ЧАТОМ (БЛОК 2А) -->
+<script>
+(function() {
+  window._refreshSenderHistory = function(containerId, roleType) {
+    var histEl = document.getElementById(containerId + '-history');
+    var core = window._kpiChatCore;
+    if (!histEl || !core) return;
+
+    var items = new Array();
+    for (var i = 0; i < core.store.length; i++) {
+      if (core.store.at(i).roleType === roleType) items.push(core.store.at(i));
+    }
+
+    if (items.length === 0) {
+      histEl.innerHTML = '<div style="font-size:12px;color:#94a3b8;">История отправленных отчетов пока пуста.</div>';
+      return;
+    }
+
+    var html = '<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">История ваших отправок и ответы ПТО / Директора:</div>';
+    for (var j = 0; j < Math.min(items.length, 5); j++) {
+      var it = items.at(j);
+      var badge = it.status === 'pending'
+        ? '<span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:10px;font-weight:600;">⏳ На проверке</span>'
+        : (it.status === 'approved'
+          ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-weight:600;">✅ Утверждено</span>'
+          : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600;">❌ Возвращено на доработку</span>');
+
+      html += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12.5px;">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#64748b;">' + it.date + ' • ' + it.obj + '</span>' + badge + '</div>' +
+        '<div style="color:#1e293b;margin-bottom:4px;">' + it.comment + '</div>' +
+        (it.photo ? '<img src="' + it.photo + '" style="max-height:70px;border-radius:6px;border:1px solid #cbd5e1;margin-top:4px;cursor:pointer;" onclick="window.open(this.src)">' : '') +
+        (it.reply ? '<div style="margin-top:6px;padding:6px 10px;background:#f1f5f9;border-left:3px solid #2563eb;border-radius:4px;color:#0f172a;"><strong>Ответ проверяющего:</strong> ' + it.reply + '</div>' : '') +
+      '</div>';
+    }
+    histEl.innerHTML = html;
+  };
+
+  window._renderAdminApprovalPanel = function() {
+    var panel = document.getElementById('view-audit-panel');
+    var core = window._kpiChatCore;
+    if (!panel || !core) return;
+
+    var html = '<h2 style="margin-top:0;color:#1e293b;">🔔 Согласование отчетов с площадки и журнал аудита</h2>' +
+      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Проверьте показатели, комментарии и фотофиксацию от прорабов и подрядчиков. При отклонении укажите причину — исполнитель сразу увидит её в своем кабинете.</p>';
+
+    for (var i = 0; i < core.store.length; i++) {
+      var item = core.store.at(i);
+      var statusBadge = item.status === 'pending'
+        ? '<span style="background:#fef9c3;color:#854d0e;padding:4px 10px;border-radius:12px;font-weight:700;font-size:12px;">⏳ Ожидает решения</span>'
+        : (item.status === 'approved'
+          ? '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-weight:700;font-size:12px;">✅ Утверждено и применено</span>'
+          : '<span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:12px;font-weight:700;font-size:12px;">❌ Отклонено</span>');
+
+      html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:14px;background:#f8fafc;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">' +
+          '<div><strong style="color:#0f172a;font-size:14px;">' + item.author + '</strong> <span style="color:#64748b;font-size:12px;">• ' + item.date + ' • Объект: <strong>' + item.obj + '</strong></span></div>' +
+          statusBadge +
+        '</div>' +
+        '<div style="font-size:13px;color:#334155;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:8px;"><strong>Показатели:</strong> ' + item.metrics + '</div>' +
+        '<div style="font-size:13.5px;color:#1e293b;margin-bottom:8px;"><strong>💬 Комментарий:</strong> ' + item.comment + '</div>' +
+        (item.photo ? '<div style="margin-bottom:10px;"><img src="' + item.photo + '" style="max-height:140px;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer;" title="Нажмите, чтобы открыть крупно" onclick="var w=window.open();w.document.write(\'<img src=\\\'\'+this.src+\'\\\' style=\\\'max-width:100%\\\'>\')"></div>' : '') +
+        (item.reply ? '<div style="background:#eff6ff;border-left:3px solid #2563eb;padding:8px 12px;border-radius:6px;font-size:13px;color:#1e3a8a;margin-bottom:10px;"><strong>Ваш ответ / причина:</strong> ' + item.reply + '</div>' : '');
+
+      if (item.status === 'pending') {
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">' +
+          '<input type="text" id="reply-inp-' + item.id + '" placeholder="Комментарий к решению или причина отказа..." style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">' +
+          '<button onclick="window._decideAudit(' + item.id + ', \'approved\')" style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer;">✅ Утвердить</button>' +
+          '<button onclick="window._decideAudit(' + item.id + ', \'rejected\')" style="background:#ef4444;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer;">❌ Отклонить</button>' +
+        '</div>';
+      }
+      html += '</div>';
+    }
+
+    panel.innerHTML = html;
+  };
+})();
+</script>
+
+<!-- МОДУЛЬ СОГЛАСОВАНИЯ С ФОТО И ЧАТОМ (БЛОК 2Б) -->
+<script>
+(function() {
+  window._decideAudit = function(id, decision) {
+    var core = window._kpiChatCore;
+    if (!core) return;
+    var inp = document.getElementById('reply-inp-' + id);
+    var replyText = inp ? inp.value.trim() : '';
+
+    if (decision === 'rejected' && !replyText) {
+      alert('Пожалуйста, напишите причину отклонения в поле слева от кнопки, чтобы исполнитель знал, что исправить.');
+      return;
+    }
+
+    var roleLabel = core.getRole() === 'director' ? 'Директор' : 'Инженер ПТО';
+    for (var i = 0; i < core.store.length; i++) {
+      if (core.store.at(i).id === id) {
+        core.store.at(i).status = decision;
+        core.store.at(i).reply = roleLabel + ': ' + (replyText || (decision === 'approved' ? 'Принято и учтено в расчете.' : 'Отклонено.'));
+        if (decision === 'approved' && core.store.at(i).data) {
+          var d = core.store.at(i).data;
+          var inps = document.querySelectorAll('input[type="number"]');
+          if (inps.length > 15) {
+            inps.item(8).value = d.idle;
+            inps.item(13).value = d.rework;
+            inps.item(14).value = d.total;
+            inps.item(15).value = d.first;
+            inps.item(8).dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (typeof recalc === 'function') recalc();
+        }
+        break;
+      }
+    }
+    core.save();
+    if (window._renderAdminApprovalPanel) window._renderAdminApprovalPanel();
+  };
+
+  setInterval(function() {
+    var core = window._kpiChatCore;
+    if (!core) return;
+    var role = core.getRole();
     if (role === 'guest') return;
 
     var diagBtn = null;
     var contractorTabBtn = null;
+    var saveBtn = null;
+    var sendSubBtn = null;
     var allBtns = document.querySelectorAll('button');
 
     for (var i = 0; i < allBtns.length; i++) {
       var t = allBtns[i].textContent;
       if (t.indexOf('Диагностика объекта') !== -1) diagBtn = allBtns[i];
       if (t.indexOf('Кабинет подрядчика') !== -1) contractorTabBtn = allBtns[i];
+      if (t.indexOf('Сохранить изменения') !== -1) saveBtn = allBtns[i];
+      if (t.indexOf('Отправить отчет Генподрядчику') !== -1) sendSubBtn = allBtns[i];
     }
     if (!diagBtn || !diagBtn.parentElement) return;
     var nav = diagBtn.parentElement;
@@ -1138,7 +1582,7 @@ function renderPortfolioTable() {
           }
         }
         auditPanel.style.display = 'block';
-        if (window._renderAuditPanel) window._renderAuditPanel();
+        if (window._renderAdminApprovalPanel) window._renderAdminApprovalPanel();
       });
 
       var navBtns = nav.children;
@@ -1158,195 +1602,44 @@ function renderPortfolioTable() {
       }
     }
 
-    var pendingCount = 0;
-    for (var p = 0; p < auditLog.length; p++) {
-      if (auditLog.at(p).status === 'pending') pendingCount++;
+    var pending = 0;
+    for (var p = 0; p < core.store.length; p++) {
+      if (core.store.at(p).status === 'pending') pending++;
     }
-    auditBtn.textContent = pendingCount > 0 ? ('🔔 Согласование (' + pendingCount + ')') : '📋 Журнал изменений';
+    auditBtn.textContent = pending > 0 ? ('🔔 Согласование (' + pending + ')') : '📋 Журнал и Чат';
 
-    var foremanBanner = document.getElementById('foreman-workflow-bar');
+    var foremanBox = document.getElementById('foreman-chat-box');
+    var subBox = document.getElementById('contractor-chat-box');
 
-    // 1. РОЛЬ: ПОДРЯДНАЯ ОРГАНИЗАЦИЯ
     if (role === 'contractor') {
       nav.style.removeProperty('display');
-      if (contractorTabBtn && !contractorTabBtn.classList.contains('active')) {
-        contractorTabBtn.click();
-      }
+      if (contractorTabBtn && !contractorTabBtn.classList.contains('active')) contractorTabBtn.click();
       nav.style.setProperty('display', 'none', 'important');
       if (auditPanel) auditPanel.style.display = 'none';
-      if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
+      if (foremanBox) foremanBox.style.setProperty('display', 'none', 'important');
+      core.renderChatBox('contractor-chat-box', sendSubBtn, 'contractor');
       return;
     }
 
-    // 2. РОЛЬ: ПРОРАБ
     if (role === 'foreman') {
       nav.style.removeProperty('display');
-      if (!diagBtn.classList.contains('active')) {
-        diagBtn.click();
-      }
+      if (!diagBtn.classList.contains('active')) diagBtn.click();
       nav.style.setProperty('display', 'none', 'important');
       if (auditPanel) auditPanel.style.display = 'none';
-
-      // Прячем блоки с отчетом KPI, таблицей 5 показателей и рекомендациями
-      hideSectionByTitle('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ', true);
-      hideSectionByTitle('5 авторских показателей', true);
-      hideSectionByTitle('Управленческие рекомендации', true);
-      hideSectionByTitle('Структура скрытых потерь', true);
-      hideSectionByTitle('Руководитель проекта', true);
-
-
-      if (!foremanBanner) {
-        var saveBtn = null;
-        for (var s = 0; s < allBtns.length; s++) {
-          if (allBtns[s].textContent.indexOf('Сохранить изменения') !== -1) { saveBtn = allBtns[s]; break; }
-        }
-        if (saveBtn && saveBtn.parentElement) {
-          foremanBanner = document.createElement('div');
-          foremanBanner.id = 'foreman-workflow-bar';
-          foremanBanner.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;';
-          foremanBanner.innerHTML =
-            '<div><strong style="color:#1e3a8a;">👷 Режим оперативного ввода прораба</strong><br><span style="font-size:13px;color:#475569;">Заполните данные по простоям, браку и приемке технадзора. После отправки цифры поступят на проверку ПТО и Директору.</span></div>' +
-            '<button id="btn-foreman-send" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">📤 Отправить на согласование</button>';
-          saveBtn.parentElement.insertAdjacentElement('afterend', foremanBanner);
-
-          document.getElementById('btn-foreman-send').addEventListener('click', function() {
-            var inps = document.querySelectorAll('input[type="number"]');
-            var objSel = document.querySelector('select');
-            var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
-            var idle = inps.length > 8 ? (+inps.item(8).value || 0) : 0;
-            var rework = inps.length > 13 ? (+inps.item(13).value || 0) : 0;
-            var total = inps.length > 14 ? (+inps.item(14).value || 0) : 0;
-            var first = inps.length > 15 ? (+inps.item(15).value || 0) : 0;
-
-            var now = new Date();
-            var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-
-            auditLog.unshift({
-              id: Date.now(),
-              date: 'Сегодня, ' + timeStr,
-              author: 'Прораб (Участок)',
-              obj: objName,
-              desc: 'Простои: ' + idle + ' дн., Брак ФОТ: ' + rework + ' тыс. ₽, Сдано с 1-го раза: ' + first + ' из ' + total + ' тыс. ₽',
-              status: 'pending',
-              data: { idle: idle, rework: rework, total: total, first: first }
-            });
-            saveLog();
-            alert('✅ Данные отправлены! Они появятся в журнале согласования у Инженера ПТО и Директора.');
-          });
-        }
-      } else {
-        foremanBanner.style.removeProperty('display');
-      }
+      if (subBox) subBox.style.setProperty('display', 'none', 'important');
+      core.toggleForeman(true);
+      core.renderChatBox('foreman-chat-box', saveBtn, 'foreman');
       return;
     }
 
-    // 3. РОЛИ: ДИРЕКТОР И ИНЖЕНЕР ПТО
     nav.style.removeProperty('display');
-    if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
-    hideSectionByTitle('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ', false);
-    hideSectionByTitle('5 авторских показателей', false);
-    hideSectionByTitle('Управленческие рекомендации', false);
-          hideSectionByTitle('Структура скрытых потерь', false);
-    hideSectionByTitle('Руководитель проекта', false);
-
-  }
-
-  window._kpiAuditData = { log: auditLog, save: saveLog, apply: applyRoleArchitecture };
-})();
-</script>
-<!-- ЕДИНЫЙ МОДУЛЬ: ОТРИСОВКА ЖУРНАЛА И КНОПКИ СОГЛАСОВАНИЯ (ЧАСТЬ 2) -->
-<script>
-(function() {
-  window._renderAuditPanel = function() {
-    var panel = document.getElementById('view-audit-panel');
-    var store = window._kpiAuditData;
-    if (!panel || !store) return;
-
-    var auditLog = store.log;
-    var html = '<h2 style="margin-top:0;color:#1e293b;">🔔 Согласование данных с площадки и журнал изменений</h2>' +
-      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Все корректировки от прорабов и отчеты подрядчиков проходят проверку ПТО или Директора перед включением в финансовый расчет.</p>' +
-      '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-      '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;text-align:left;">' +
-        '<th style="padding:12px;">Дата / Время</th>' +
-        '<th style="padding:12px;">Автор изменения</th>' +
-        '<th style="padding:12px;">Объект</th>' +
-        '<th style="padding:12px;">Внесенные показатели</th>' +
-        '<th style="padding:12px;">Статус / Действие</th>' +
-      '</tr></thead><tbody>';
-
-    for (var i = 0; i < auditLog.length; i++) {
-      var item = auditLog.at(i);
-      var actionHtml = '';
-      if (item.status === 'pending') {
-        actionHtml =
-          '<button onclick="window._approveAudit(' + item.id + ')" style="background:#16a34a;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer;margin-right:6px;">✅ Утвердить</button>' +
-          '<button onclick="window._rejectAudit(' + item.id + ')" style="background:#ef4444;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer;">❌ Отклонить</button>';
-      } else if (item.status === 'approved') {
-        actionHtml = '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-weight:600;">Утверждено и применено</span>';
-      } else {
-        actionHtml = '<span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:12px;font-weight:600;">Отклонено</span>';
-      }
-
-      html += '<tr style="border-bottom:1px solid #e2e8f0;">' +
-        '<td style="padding:12px;color:#64748b;">' + item.date + '</td>' +
-        '<td style="padding:12px;"><strong>' + item.author + '</strong></td>' +
-        '<td style="padding:12px;">' + item.obj + '</td>' +
-        '<td style="padding:12px;">' + item.desc + '</td>' +
-        '<td style="padding:12px;">' + actionHtml + '</td>' +
-      '</tr>';
-    }
-
-    html += '</tbody></table></div>';
-    panel.innerHTML = html;
-  };
-
-  window._approveAudit = function(id) {
-    var store = window._kpiAuditData;
-    if (!store) return;
-    for (var i = 0; i < store.log.length; i++) {
-      if (store.log.at(i).id === id) {
-        store.log.at(i).status = 'approved';
-        var d = store.log.at(i).data;
-        if (d) {
-          var inps = document.querySelectorAll('input[type="number"]');
-          if (inps.length > 15) {
-            inps.item(8).value = d.idle;
-            inps.item(13).value = d.rework;
-            inps.item(14).value = d.total;
-            inps.item(15).value = d.first;
-            inps.item(8).dispatchEvent(new Event('input', { bubbles: true }));
-          }
-          if (typeof recalc === 'function') recalc();
-        }
-        break;
-      }
-    }
-    store.save();
-    window._renderAuditPanel();
-    alert('✅ Данные утверждены! Показатели объекта и расчет KPI обновлены.');
-  };
-
-  window._rejectAudit = function(id) {
-    var store = window._kpiAuditData;
-    if (!store) return;
-    for (var i = 0; i < store.log.length; i++) {
-      if (store.log.at(i).id === id) {
-        store.log.at(i).status = 'rejected';
-        break;
-      }
-    }
-    store.save();
-    window._renderAuditPanel();
-  };
-
-  setInterval(function() {
-    if (window._kpiAuditData) window._kpiAuditData.apply();
+    if (foremanBox) foremanBox.style.setProperty('display', 'none', 'important');
+    if (subBox) subBox.style.setProperty('display', 'none', 'important');
+    core.toggleForeman(false);
   }, 400);
 })();
 </script>
 
-
-</script>
 
     
 </body>
