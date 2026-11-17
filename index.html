@@ -1190,21 +1190,22 @@ function renderPortfolioTable() {
   <!-- ШАГ 1: ИМПОРТ ИЗ EXCEL (CSV) — ТОЛЬКО ДЛЯ ДИРЕКТОРА И ПТО -->
 <script>
 (function() {
-    setInterval(function() {
-    // Проверяем по тексту: у Прораба и Подрядчика нет видимого поля "Сметная стоимость"
-    var canImport = false;
-    var allLabels = document.querySelectorAll('label, td, div, span');
-    for (var L = 0; L < allLabels.length; L++) {
-      if (allLabels[L].textContent.indexOf('Сметная стоимость') !== -1 && allLabels[L].offsetParent !== null) {
-        canImport = true;
+     setInterval(function() {
+    var anchorBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent.indexOf('Новый объект') !== -1) {
+        anchorBtn = btns[i];
         break;
       }
     }
+    if (!anchorBtn || !anchorBtn.parentElement) return;
 
+    var isVisible = anchorBtn.offsetParent !== null;
     var impBtn = document.getElementById('btn-import-xlsx');
     var tplBtn = document.getElementById('btn-tpl-xlsx');
 
-    if (!canImport) {
+    if (!isVisible) {
       if (impBtn) impBtn.style.setProperty('display', 'none', 'important');
       if (tplBtn) tplBtn.style.setProperty('display', 'none', 'important');
       return;
@@ -1215,16 +1216,6 @@ function renderPortfolioTable() {
       tplBtn.style.removeProperty('display');
       return;
     }
-
-    var anchorBtn = null;
-    var btns = document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.indexOf('Сохранить изменения') !== -1 || btns[i].textContent.indexOf('Новый объект') !== -1) {
-        anchorBtn = btns[i];
-        break;
-      }
-    }
-    if (!anchorBtn || !anchorBtn.parentElement) return;
 
     var bar = anchorBtn.parentElement;
 
