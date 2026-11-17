@@ -1155,16 +1155,17 @@ function renderPortfolioTable() {
         var allN = document.querySelectorAll('input[type="number"]');
         for (var n = 0; n < allN.length; n++) { if (allN[n].offsetParent !== null) visNums.push(allN[n]); }
 
-                if (roleType === 'foreman') {
+         if (roleType === 'foreman') {
           var objName = visSels.length > 0 ? visSels.at(0).options[visSels.at(0).selectedIndex].text : 'ЖК Онега';
-          // Берем точные индексы полей из формы объекта (6: аренда, 7: штраф, 8: дни простоя, 13: брак ФОТ, 14: предъявлено, 15: принято с 1-го раза)
-          var rent = visNums.length > 6 ? (+visNums.at(6).value || 0) : 42;
-          var pen = visNums.length > 7 ? (+visNums.at(7).value || 0) : 15;
-          var idle = visNums.length > 8 ? (+visNums.at(8).value || 0) : 0;
-          var rework = visNums.length > 13 ? (+visNums.at(13).value || 0) : 0;
-          var total = visNums.length > 14 ? (+visNums.at(14).value || 0) : 0;
-          var first = visNums.length > 15 ? (+visNums.at(15).value || 0) : 0;
+          // У Прораба скрытые поля имеют type="text", поэтому среди visNums ровно 6 открытых полей (индексы 0..5)
+          var rent = visNums.length > 0 ? (+visNums.at(0).value || 0) : 42;
+          var pen = visNums.length > 1 ? (+visNums.at(1).value || 0) : 15;
+          var idle = visNums.length > 2 ? (+visNums.at(2).value || 0) : 0;
+          var rework = visNums.length > 3 ? (+visNums.at(3).value || 0) : 0;
+          var total = visNums.length > 4 ? (+visNums.at(4).value || 0) : 0;
+          var first = visNums.length > 5 ? (+visNums.at(5).value || 0) : 0;
           var ftriPct = total > 0 ? ((first / total) * 100).toFixed(1) : '0.0';
+
 
           var tbl = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;">' +
             '<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:4px 0;color:#64748b;">Дней простоя / Аренда / Штраф:</td><td style="padding:4px 0;font-weight:600;">' + idle + ' дн. (' + rent + ' / ' + pen + ' тыс. ₽/дн)</td></tr>' +
