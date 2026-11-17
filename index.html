@@ -1735,12 +1735,12 @@ function renderPortfolioTable() {
               }
             }
           }
-        });
+        }, 500);
       }
     }
 
 </script>
-<!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 4.3: ГРАФИК ДИНАМИКИ (ТОЛЬКО ДИРЕКТОР) -->
+<!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 4.3: ГРАФИК ДИНАМИКИ (ТОЛЬКО В ДИАГНОСТИКЕ ДИРЕКТОРА) -->
 <script>
 (function() {
   var histData = {
@@ -1758,10 +1758,19 @@ function renderPortfolioTable() {
     var c = window._kpiCore;
     if (!c) return;
     var role = c.getRole();
-    if (role === 'guest') return;
-
     var chartCard = document.getElementById('kpi-dynamics-card');
-    if (role !== 'director') {
+
+    // Проверяем, что активна именно 1-я вкладка "Диагностика объекта"
+    var diagActive = false;
+    var allB = document.querySelectorAll('button');
+    for (var b = 0; b < allB.length; b++) {
+      if (allB[b].textContent.indexOf('Диагностика объекта') !== -1 && allB[b].classList.contains('active')) {
+        diagActive = true;
+        break;
+      }
+    }
+
+    if (role !== 'director' || !diagActive) {
       if (chartCard) chartCard.style.setProperty('display', 'none', 'important');
       return;
     }
@@ -1829,6 +1838,7 @@ function renderPortfolioTable() {
   }, 500);
 })();
 </script>
+
 <!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 5: ГРАФИК ДИНАМИКИ ПО КАЖДОМУ ПОДРЯДЧИКУ И ОТЧЕТУ -->
 <script>
 (function() {
