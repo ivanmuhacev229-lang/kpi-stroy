@@ -1187,5 +1187,143 @@ function renderPortfolioTable() {
   }, 300);
 })();
 </script>
+    <!-- ШАГ 1: МОДУЛЬ ИМПОРТА ДАННЫХ ИЗ EXCEL / CSV -->
+<script src="https://jsdelivr.net"></script>
+<script>
+(function() {
+  function initExcelImport() {
+    if (document.getElementById('btn-import-xlsx')) return;
+
+    // Ищем кнопку "+ Новый объект" или "Сохранить изменения", чтобы встать рядом
+    var anchorBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent.indexOf('Сохранить изменения') !== -1 || btns[i].textContent.indexOf('Новый объект') !== -1) {
+        anchorBtn = btns[i];
+        break;
+      }
+    }
+    if (!anchorBtn || !anchorBtn.parentElement) return;
+
+    var bar = anchorBtn.parentElement;
+
+    // Скрытый input для выбора файла
+    var fileInp = document.createElement('input');
+    fileInp.type = 'file';
+    fileInp.id = 'xlsx-file-input';
+    fileInp.accept = '.xlsx, .xls, .csv';
+    fileInp.style.display = 'none';
+
+    // Кнопка загрузки Excel
+    var impBtn = document.createElement('button');
+    impBtn.id = 'btn-import-xlsx';
+    impBtn.className = anchorBtn.className;
+    impBtn.style.cssText = 'background:#16a34a;color:#fff;border:none;cursor:pointer;';
+    impBtn.textContent = '📥 Загрузить из Excel';
+
+    // Кнопка скачивания примера шаблона
+    var tplBtn = document.createElement('button');
+    tplBtn.id = 'btn-tpl-xlsx';
+    tplBtn.className = anchorBtn.className;
+    tplBtn.style.cssText = 'background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;cursor:pointer;';
+    tplBtn.textContent = '📄 Шаблон Excel';
+
+    bar.appendChild(fileInp);
+    bar.appendChild(impBtn);
+    bar.appendChild(tplBtn);
+
+    // Генерация и скачивание эталонного шаблона Excel для клиента
+    tplBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!window.XLSX) { alert('Библиотека Excel еще загружается, попробуйте через 2 секунды.'); return; }
+      var rows = [
+        ['Показатель', 'Значение', 'Ед. изм.'],
+        ['Сметная стоимость проекта (бюджет)', 750000, 'тыс. руб.'],
+        ['Плановая валовая прибыль', 115000, 'тыс. руб.'],
+        ['Фактическая валовая прибыль', 94000, 'тыс. руб.'],
+        ['Удорожание из-за рыночных цен (инфляция)', 7000, 'тыс. руб.'],
+        ['Постоянные накладные расходы в месяц', 2800, 'тыс. руб.'],
+        ['Рабочих дней в месяце', 22, 'дн.'],
+        ['Аренда простаивающих механизмов в день', 45, 'тыс. руб./дн'],
+        ['Штрафные санкции за день срыва срока', 20, 'тыс. руб./дн'],
+        ['Количество дней организационного простоя', 4, 'дн.'],
+        ['Средний срок закрытия актов КС-2 / КС-3', 32, 'дн.'],
+        ['Незакрытый объем НЗП (выполнено без КС-2)', 60000, 'тыс. руб.'],
+        ['Ставка привлечения оборотного капитала', 21, '% год.'],
+        ['Общий ФОТ основных рабочих за период', 38000, 'тыс. руб.'],
+        ['ФОТ, ушедший на переделки и брак', 2900, 'тыс. руб.'],
+        ['Общий объем предъявленных технадзору работ', 180000, 'тыс. руб.'],
+        ['Объем работ, принятых с 1-го раза', 152000, 'тыс. руб.']
+      ];
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }];
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Данные_Объекта');
+      XLSX.writeFile(wb, 'Shablon_Obyekta_KPI.xlsx');
+    });
+
+    impBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      fileInp.click();
+    });
+
+    // Чтение загруженного файла и подстановка значений
+    fileInp.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file || !window.XLSX) return;
+
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          var data = new Uint8Array(evt.target.result);
+          var workbook = XLSX.read(data, { type: 'array' });
+          var sheet = workbook.Sheets[workbook.SheetNames[0]];
+          var json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          // Собираем все числовые значения по строкам (ищем в 2-м или 3-м столбце)
+          var extractedNums = [];
+          for (var r = 1; r < json.length; r++) {
+            var row = json[r];
+            if (!row || row.length === 0) continue;
+            for (var c = 1; c < row.length; c++) {
+              var val = parseFloat(String(row[c]).replace(/\s+/g, '').replace(',', '.'));
+              if (!isNaN(val)) {
+                extractedNums.push(val);
+                break;
+              }
+            }
+          }
+
+          if (extractedNums.length < 10) {
+            alert('Не удалось распознать таблицу. Скачайте «Шаблон Excel» рядом, заполните второй столбец и загрузите файл снова.');
+            fileInp.value = '';
+            return;
+          }
+
+          // Находим все числовые поля ввода на панели объекта и заполняем их по порядку
+          var objView = document.getElementById('view-object') || document;
+          var numInputs = objView.querySelectorAll('input[type="number"]');
+          var count = Math.min(numInputs.length, extractedNums.length);
+
+          for (var k = 0; k < count; k++) {
+            numInputs[k].value = extractedNums[k];
+            numInputs[k].dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
+          if (typeof recalc === 'function') recalc();
+          alert('✅ Данные из файла «' + file.name + '» успешно загружены (' + count + ' показателей). Все KPI пересчитаны!');
+        } catch (err) {
+          alert('Ошибка при чтении файла: ' + err.message);
+        }
+        fileInp.value = '';
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  setInterval(initExcelImport, 600);
+})();
+</script>
+
 </body>
 </html>
