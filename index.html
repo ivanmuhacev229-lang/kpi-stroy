@@ -1158,16 +1158,21 @@ function renderPortfolioTable() {
                 if (roleType === 'foreman') {
           var objName = visSels.length > 0 ? visSels.at(0).options[visSels.at(0).selectedIndex].text : 'ЖК Онега';
 
-          function getValByRowText(substr, fallback) {
-            var rows = document.querySelectorAll('tr, div');
-            for (var r = 0; r < rows.length; r++) {
-              if (rows[r].offsetParent !== null && rows[r].textContent.indexOf(substr) !== -1) {
-                var inp = rows[r].querySelector('input[type="number"]');
-                if (inp) return +inp.value || 0;
+                    function getValByRowText(substr, fallback) {
+            var labels = document.querySelectorAll('label, td, span, div, p');
+            for (var r = 0; r < labels.length; r++) {
+              if (labels[r].children.length === 0 && labels[r].offsetParent !== null && labels[r].textContent.indexOf(substr) !== -1) {
+                var rowBox = labels[r].closest('tr') || labels[r].parentElement;
+                if (rowBox) {
+                  var inp = rowBox.querySelector('input[type="number"]');
+                  if (!inp && rowBox.parentElement) inp = rowBox.parentElement.querySelector('input[type="number"]');
+                  if (inp) return +inp.value || 0;
+                }
               }
             }
             return fallback;
           }
+
 
           var rent = getValByRowText('Аренда простаивающих', 42);
           var pen = getValByRowText('Штрафные санкции', 15);
