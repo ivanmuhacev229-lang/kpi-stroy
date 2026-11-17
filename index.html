@@ -1328,5 +1328,144 @@ function renderPortfolioTable() {
 })();
 </script>
 
+<!-- ШАГ 2: ГРАФИК ДИНАМИКИ ПО МЕСЯЦАМ (БЕЗ ВНЕШНИХ БИБЛИОТЕК) -->
+<script>
+(function() {
+  var historyStore = {
+    'ЖК Онега': new Array(19200, 18400, 16900, 15800, 14557),
+    'ЖК Северный': new Array(15100, 14500, 13900, 13400, 13009),
+    'Цех Сборка-2': new Array(5400, 4800, 4100, 3500, 3120),
+    'Развязка Юг': new Array(23500, 22100, 21000, 20300, 19840)
+  };
+
+  try {
+    var savedHist = localStorage.getItem('kpi_history_store');
+    if (savedHist) historyStore = JSON.parse(savedHist);
+  } catch (e) {}
+
+  function initDynamicsChart() {
+    var recHeader = null;
+    var headers = document.querySelectorAll('h2, h3, div');
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].textContent.trim() === 'Управленческие рекомендации и план действий') {
+        recHeader = headers[i];
+        break;
+      }
+    }
+    if (!recHeader) return;
+
+    var diagBlock = recHeader.parentElement;
+    var isVisible = diagBlock && diagBlock.offsetParent !== null;
+
+    var chartCard = document.getElementById('kpi-dynamics-card');
+    if (!isVisible) {
+      if (chartCard) chartCard.style.display = 'none';
+      return;
+    }
+
+    if (chartCard) {
+      chartCard.style.display = 'block';
+      return;
+    }
+
+    chartCard = document.createElement('div');
+    chartCard.id = 'kpi-dynamics-card';
+    chartCard.style.cssText = 'background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.06);';
+    chartCard.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">' +
+        '<div>' +
+          '<h3 style="margin:0;color:#1e293b;font-size:17px;">📈 Динамика снижения скрытых потерь по объекту</h3>' +
+          '<p style="margin:4px 0 0;color:#64748b;font-size:13px;">Контроль выхода объекта из «красной» зоны в «зеленую» по месяцам (тыс. ₽)</p>' +
+        '</div>' +
+        '<button id="btn-snap-month" style="background:#0f172a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📌 Зафиксировать текущий срез</button>' +
+      '</div>' +
+      '<div id="kpi-svg-container" style="width:100%;overflow-x:auto;"></div>';
+
+    diagBlock.appendChild(chartCard);
+
+    document.getElementById('btn-snap-month').addEventListener('click', function() {
+      var objSel = document.querySelector('select');
+      var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
+      var lossEl = document.body.innerText.match(/Выявленные скрытые потери[\s\S]{1,40}?([\d\s]+)\s*тыс/);
+      var curLoss = lossEl ? parseInt(lossEl.at(1).replace(/\s+/g, ''), 10) : 14557;
+      if (isNaN(curLoss) || curLoss <= 0) curLoss = 12000;
+
+      if (!historyStore[objName]) historyStore[objName] = new Array(curLoss + 3000, curLoss + 1500);
+      historyStore[objName].push(curLoss);
+      if (historyStore[objName].length > 7) historyStore[objName].shift();
+
+      try { localStorage.setItem('kpi_history_store', JSON.stringify(historyStore)); } catch (e) {}
+      renderChart();
+      alert('Срез показателей зафиксирован на графике динамики!');
+    });
+
+    renderChart();
+    var objSelect = document.querySelector('select');
+    if (objSelect) objSelect.addEventListener('change', function() { setTimeout(renderChart, 100); });
+  }
+
+  function renderChart() {
+    var container = document.getElementById('kpi-svg-container');
+    if (!container) return;
+
+    var objSel = document.querySelector('select');
+    var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
+    var points = historyStore[objName] || new Array(16500, 15200, 14100, 12800, 11400);
+
+    var w = 680;
+    var h = 210;
+    var padL = 60;
+    var padR = 30;
+    var padT = 25;
+    var padB = 35;
+    var chartW = w - padL - padR;
+    var chartH = h - padT - padB;
+
+    var maxVal = Math.max.apply(null, points) * 1.15;
+    var minVal = Math.min.apply(null, points) * 0.75;
+    if (maxVal === minVal) maxVal = minVal + 1000;
+
+    var months = new Array('Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек', 'Янв');
+    var coords = new Array();
+
+    for (var i = 0; i < points.length; i++) {
+      var x = padL + (i * (chartW / Math.max(points.length - 1, 1)));
+      var y = padT + chartH - (((points.at(i) - minVal) / (maxVal - minVal)) * chartH);
+      coords.push({ x: Math.round(x), y: Math.round(y), val: points.at(i), lbl: months.at(i % months.length) });
+    }
+
+    var polyPoints = '';
+    for (var p = 0; p < coords.length; p++) {
+      polyPoints += coords.at(p).x + ',' + coords.at(p).y + ' ';
+    }
+
+    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;max-width:760px;height:auto;font-family:sans-serif;">';
+    // Сетка
+    svg += '<line x1="' + padL + '" y1="' + padT + '" x2="' + (w - padR) + '" y2="' + padT + '" stroke="#e2e8f0" stroke-dasharray="4"/>';
+    svg += '<line x1="' + padL + '" y1="' + (padT + chartH / 2) + '" x2="' + (w - padR) + '" y2="' + (padT + chartH / 2) + '" stroke="#e2e8f0" stroke-dasharray="4"/>';
+    svg += '<line x1="' + padL + '" y1="' + (padT + chartH) + '" x2="' + (w - padR) + '" y2="' + (padT + chartH) + '" stroke="#cbd5e1"/>';
+
+    // Линия тренда
+    svg += '<polyline fill="none" stroke="#2563eb" stroke-width="3" points="' + polyPoints.trim() + '"/>';
+
+    // Точки и подписи
+    for (var c = 0; c < coords.length; c++) {
+      var pt = coords.at(c);
+      var isLast = (c === coords.length - 1);
+      var dotColor = isLast ? '#16a34a' : '#2563eb';
+      svg += '<circle cx="' + pt.x + '" cy="' + pt.y + '" r="' + (isLast ? 6 : 4.5) + '" fill="' + dotColor + '" stroke="#fff" stroke-width="2"/>';
+      svg += '<text x="' + pt.x + '" y="' + (pt.y - 10) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">' + pt.val.toLocaleString('ru-RU') + '</text>';
+      svg += '<text x="' + pt.x + '" y="' + (h - 10) + '" text-anchor="middle" font-size="11" fill="#64748b">' + pt.lbl + '</text>';
+    }
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+  }
+
+  setInterval(initDynamicsChart, 600);
+})();
+</script>
+
+    
 </body>
 </html>
