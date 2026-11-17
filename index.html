@@ -1343,16 +1343,11 @@ function renderPortfolioTable() {
     if (savedHist) historyStore = JSON.parse(savedHist);
   } catch (e) {}
 
-   function initDynamicsChart() {
-    // Проверяем, видна ли вкладка "Портфель объектов" (она есть только у Директора)
-    var isDirector = false;
-    var allBtns = document.querySelectorAll('button');
-    for (var b = 0; b < allBtns.length; b++) {
-      if (allBtns[b].textContent.indexOf('Портфель объектов') !== -1 && allBtns[b].offsetParent !== null) {
-        isDirector = true;
-        break;
-      }
-    }
+    function initDynamicsChart() {
+    // Проверяем текст в шапке сайта: слово "Директор" там есть только в роли Директора
+    var topHeader = document.querySelector('header') || document.querySelector('.topbar');
+    var headerTxt = topHeader ? topHeader.innerText : '';
+    var isDirector = headerTxt.indexOf('Директор') !== -1;
 
     var recHeader = null;
     var headers = document.querySelectorAll('h2, h3, div');
