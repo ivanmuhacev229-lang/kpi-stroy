@@ -1048,25 +1048,50 @@ function renderPortfolioTable() {
     return 'guest';
   }
 
-      function hideSectionByTitle(titleSubstr, shouldHide) {
-    var els = document.querySelectorAll('h1, h2, h3, h4, div, p, span');
-    for (var i = 0; i < els.length; i++) {
-      if (els[i].children.length === 0 && els[i].textContent.indexOf(titleSubstr) !== -1) {
-        // Прячем только сам заголовок и следующий сразу за ним блок (таблицу/текст)
-        if (shouldHide) {
-          els[i].style.setProperty('display', 'none', 'important');
-          if (els[i].nextElementSibling && els[i].nextElementSibling.innerText.indexOf('Исходные данные') === -1) {
-            els[i].nextElementSibling.style.setProperty('display', 'none', 'important');
-          }
-        } else {
-          els[i].style.removeProperty('display');
-          if (els[i].nextElementSibling) {
-            els[i].nextElementSibling.style.removeProperty('display');
-          }
+        function hideSectionByTitle(titleSubstr, shouldHide) {
+    // 1. Прячем правую колонку с таблицей KPI и шкалами потерь у Прораба
+    var tds = document.querySelectorAll('td, div');
+    for (var i = 0; i < tds.length; i++) {
+      var txt = tds[i].textContent;
+      if (txt.indexOf('Коэффициент «съеденной» маржи') !== -1 || txt.indexOf('Внутреннее снижение маржи (MEI)') !== -1) {
+        // Ищем белую карточку правой колонки (в ней нет текста "Исходные данные объекта")
+        var card = tds[i].closest('div[style*="background"], div[class*="card"], div[class*="box"]') || tds[i].parentElement;
+        while (card && card.parentElement && card.parentElement.innerText.indexOf('Исходные данные объекта') === -1) {
+          card = card.parentElement;
+        }
+        if (card && card.innerText.indexOf('Исходные данные объекта') === -1) {
+          if (shouldHide) card.style.setProperty('display', 'none', 'important');
+          else card.style.removeProperty('display');
+        }
+      }
+
+      // 2. Прячем нижний блок с рекомендациями (где есть текст "MEI (Снижение маржинальности)")
+      if (txt.indexOf('MEI (Снижение маржинальности)') !== -1) {
+        var recCard = tds[i].parentElement;
+        while (recCard && recCard.parentElement && recCard.parentElement.innerText.indexOf('Исходные данные объекта') === -1) {
+          recCard = recCard.parentElement;
+        }
+        if (recCard && recCard.innerText.indexOf('Исходные данные объекта') === -1) {
+          if (shouldHide) recCard.style.setProperty('display', 'none', 'important');
+          else recCard.style.removeProperty('display');
         }
       }
     }
+
+    // 3. Растягиваем левую карточку Прораба на всю ширину, когда правая скрыта
+    var leftHeaders = document.querySelectorAll('h2, h3, div');
+    for (var k = 0; k < leftHeaders.length; k++) {
+      if (leftHeaders[k].children.length === 0 && leftHeaders[k].textContent.trim() === 'Исходные данные объекта') {
+        var leftCol = leftHeaders[k].parentElement;
+        if (leftCol && leftCol.parentElement) {
+          if (shouldHide) leftCol.parentElement.style.setProperty('grid-template-columns', '1fr', 'important');
+          else leftCol.parentElement.style.removeProperty('grid-template-columns');
+        }
+        break;
+      }
+    }
   }
+
 
 
 
