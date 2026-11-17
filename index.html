@@ -1048,18 +1048,33 @@ function renderPortfolioTable() {
     return 'guest';
   }
 
-  function hideSectionByTitle(titleSubstr, shouldHide) {
-    var els = document.querySelectorAll('h1, h2, h3, h4');
+    function hideSectionByTitle(titleSubstr, shouldHide) {
+    var els = document.querySelectorAll('h1, h2, h3, h4, div, p');
     for (var i = 0; i < els.length; i++) {
-      if (els[i].textContent.indexOf(titleSubstr) !== -1) {
+      if (els[i].children.length === 0 && els[i].textContent.indexOf(titleSubstr) !== -1) {
+        // Поднимаемся вверх до блока карточки, но останавливаемся до главного экрана
         var box = els[i].parentElement;
-        if (box && box.id !== 'app-screen' && box.tagName !== 'MAIN' && box.tagName !== 'BODY') {
+        while (box && box.parentElement && box.parentElement.id !== 'app-screen' && box.parentElement.tagName !== 'MAIN' && box.parentElement.tagName !== 'BODY') {
+          if (box.innerText.indexOf('Исходные данные объекта') !== -1) {
+            box = els[i].parentElement;
+            break;
+          }
+          box = box.parentElement;
+        }
+        if (box && box.innerText.indexOf('Исходные данные объекта') === -1) {
           if (shouldHide) box.style.setProperty('display', 'none', 'important');
           else box.style.removeProperty('display');
+        }
+        // Также скрываем следующий за заголовком элемент (например, таблицу), если они лежат в одном списке
+        var nextEl = els[i].nextElementSibling;
+        if (nextEl && nextEl.innerText.indexOf('Исходные данные объекта') === -1) {
+          if (shouldHide) nextEl.style.setProperty('display', 'none', 'important');
+          else nextEl.style.removeProperty('display');
         }
       }
     }
   }
+
 
   function applyRoleArchitecture() {
     var role = getCurrentRole();
@@ -1157,6 +1172,9 @@ function renderPortfolioTable() {
       hideSectionByTitle('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ', true);
       hideSectionByTitle('5 авторских показателей', true);
       hideSectionByTitle('Управленческие рекомендации', true);
+      hideSectionByTitle('Структура скрытых потерь', true);
+      hideSectionByTitle('Руководитель проекта', true);
+
 
       if (!foremanBanner) {
         var saveBtn = null;
@@ -1209,6 +1227,9 @@ function renderPortfolioTable() {
     hideSectionByTitle('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ', false);
     hideSectionByTitle('5 авторских показателей', false);
     hideSectionByTitle('Управленческие рекомендации', false);
+          hideSectionByTitle('Структура скрытых потерь', false);
+    hideSectionByTitle('Руководитель проекта', false);
+
   }
 
   window._kpiAuditData = { log: auditLog, save: saveLog, apply: applyRoleArchitecture };
