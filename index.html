@@ -1048,32 +1048,26 @@ function renderPortfolioTable() {
     return 'guest';
   }
 
-    function hideSectionByTitle(titleSubstr, shouldHide) {
-    var els = document.querySelectorAll('h1, h2, h3, h4, div, p');
+      function hideSectionByTitle(titleSubstr, shouldHide) {
+    var els = document.querySelectorAll('h1, h2, h3, h4, div, p, span');
     for (var i = 0; i < els.length; i++) {
       if (els[i].children.length === 0 && els[i].textContent.indexOf(titleSubstr) !== -1) {
-        // Поднимаемся вверх до блока карточки, но останавливаемся до главного экрана
-        var box = els[i].parentElement;
-        while (box && box.parentElement && box.parentElement.id !== 'app-screen' && box.parentElement.tagName !== 'MAIN' && box.parentElement.tagName !== 'BODY') {
-          if (box.innerText.indexOf('Исходные данные объекта') !== -1) {
-            box = els[i].parentElement;
-            break;
+        // Прячем только сам заголовок и следующий сразу за ним блок (таблицу/текст)
+        if (shouldHide) {
+          els[i].style.setProperty('display', 'none', 'important');
+          if (els[i].nextElementSibling && els[i].nextElementSibling.innerText.indexOf('Исходные данные') === -1) {
+            els[i].nextElementSibling.style.setProperty('display', 'none', 'important');
           }
-          box = box.parentElement;
-        }
-        if (box && box.innerText.indexOf('Исходные данные объекта') === -1) {
-          if (shouldHide) box.style.setProperty('display', 'none', 'important');
-          else box.style.removeProperty('display');
-        }
-        // Также скрываем следующий за заголовком элемент (например, таблицу), если они лежат в одном списке
-        var nextEl = els[i].nextElementSibling;
-        if (nextEl && nextEl.innerText.indexOf('Исходные данные объекта') === -1) {
-          if (shouldHide) nextEl.style.setProperty('display', 'none', 'important');
-          else nextEl.style.removeProperty('display');
+        } else {
+          els[i].style.removeProperty('display');
+          if (els[i].nextElementSibling) {
+            els[i].nextElementSibling.style.removeProperty('display');
+          }
         }
       }
     }
   }
+
 
 
   function applyRoleArchitecture() {
