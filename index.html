@@ -1343,7 +1343,17 @@ function renderPortfolioTable() {
     if (savedHist) historyStore = JSON.parse(savedHist);
   } catch (e) {}
 
-  function initDynamicsChart() {
+   function initDynamicsChart() {
+    // Проверяем, видна ли вкладка "Портфель объектов" (она есть только у Директора)
+    var isDirector = false;
+    var allBtns = document.querySelectorAll('button');
+    for (var b = 0; b < allBtns.length; b++) {
+      if (allBtns[b].textContent.indexOf('Портфель объектов') !== -1 && allBtns[b].offsetParent !== null) {
+        isDirector = true;
+        break;
+      }
+    }
+
     var recHeader = null;
     var headers = document.querySelectorAll('h2, h3, div');
     for (var i = 0; i < headers.length; i++) {
@@ -1355,16 +1365,16 @@ function renderPortfolioTable() {
     if (!recHeader) return;
 
     var diagBlock = recHeader.parentElement;
-    var isVisible = diagBlock && diagBlock.offsetParent !== null;
+    var isVisible = isDirector && diagBlock && diagBlock.offsetParent !== null;
 
     var chartCard = document.getElementById('kpi-dynamics-card');
     if (!isVisible) {
-      if (chartCard) chartCard.style.display = 'none';
+      if (chartCard) chartCard.style.setProperty('display', 'none', 'important');
       return;
     }
 
     if (chartCard) {
-      chartCard.style.display = 'block';
+      chartCard.style.removeProperty('display');
       return;
     }
 
