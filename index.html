@@ -1474,11 +1474,16 @@ function renderPortfolioTable() {
 <!-- ШАГ 3: УМНЫЙ ЭКСПЕРТНЫЙ ДВИЖОК АНАЛИЗА СВЯЗОК KPI -->
 <script>
 (function() {
-  function initSmartAdvisor() {
+    function initSmartAdvisor() {
+    // Показываем только Директору и Инженеру ПТО (проверяем по тексту в шапке)
+    var topHeader = document.querySelector('header') || document.querySelector('.topbar');
+    var hTxt = topHeader ? topHeader.innerText : '';
+    var hasAccess = (hTxt.indexOf('Директор') !== -1 || hTxt.indexOf('ПТО') !== -1);
+
     var recHeader = null;
-    var headers = document.querySelectorAll('h2, h3, div');
+    var headers = document.querySelectorAll('h1, h2, h3, h4, div, p, span');
     for (var i = 0; i < headers.length; i++) {
-      if (headers[i].textContent.trim() === 'Управленческие рекомендации и план действий') {
+      if (headers[i].children.length === 0 && headers[i].textContent.indexOf('Управленческие рекомендации') !== -1) {
         recHeader = headers[i];
         break;
       }
@@ -1486,7 +1491,7 @@ function renderPortfolioTable() {
     if (!recHeader) return;
 
     var parent = recHeader.parentElement;
-    var isVisible = parent && parent.offsetParent !== null;
+    var isVisible = hasAccess && parent && parent.offsetParent !== null;
 
     var smartBox = document.getElementById('smart-ai-advisor-box');
     if (!isVisible) {
