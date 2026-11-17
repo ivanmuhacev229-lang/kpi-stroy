@@ -1143,28 +1143,54 @@ function renderPortfolioTable() {
         reader.readAsDataURL(f);
       });
 
-      document.getElementById(containerId + '-send').addEventListener('click', function(e) {
+           document.getElementById(containerId + '-send').addEventListener('click', function(e) {
         e.preventDefault();
         var commentVal = document.getElementById(containerId + '-txt').value.trim();
         var now = new Date();
         var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 
+        // Берем только видимые на экране поля ввода и выпадающие списки
+        var visSelects = new Array();
+        var allSels = document.querySelectorAll('select');
+        for (var s = 0; s < allSels.length; s++) {
+          if (allSels[s].offsetParent !== null) visSelects.push(allSels[s]);
+        }
+
+        var visNums = new Array();
+        var allNums = document.querySelectorAll('input[type="number"]');
+        for (var n = 0; n < allNums.length; n++) {
+          if (allNums[n].offsetParent !== null) visNums.push(allNums[n]);
+        }
+
         if (roleType === 'foreman') {
-          var inps = document.querySelectorAll('input[type="number"]');
-          var objSel = document.querySelector('select');
-          var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
-          var idle = inps.length > 8 ? (+inps.item(8).value || 0) : 0;
-          var rework = inps.length > 13 ? (+inps.item(13).value || 0) : 0;
-          var total = inps.length > 14 ? (+inps.item(14).value || 0) : 0;
-          var first = inps.length > 15 ? (+inps.item(15).value || 0) : 0;
+          var objName = visSelects.length > 0 ? visSelects.at(0).options[visSelects.at(0).selectedIndex].text : 'ЖК Онега';
+          // У Прораба видны только 6 активных полей площадки (индексы 0..5 среди видимых enabled-полей)
+          var enabledNums = new Array();
+          for (var k = 0; k < visNums.length; k++) {
+            if (!visNums.at(k).disabled) enabledNums.push(visNums.at(k));
+          }
+          var rent = enabledNums.length > 0 ? (+enabledNums.at(0).value || 0) : 42;
+          var pen = enabledNums.length > 1 ? (+enabledNums.at(1).value || 0) : 15;
+          var idle = enabledNums.length > 2 ? (+enabledNums.at(2).value || 0) : 0;
+          var rework = enabledNums.length > 3 ? (+enabledNums.at(3).value || 0) : 0;
+          var total = enabledNums.length > 4 ? (+enabledNums.at(4).value || 0) : 0;
+          var first = enabledNums.length > 5 ? (+enabledNums.at(5).value || 0) : 0;
+          var ftriPct = total > 0 ? ((first / total) * 100).toFixed(1) : '0.0';
+
+          var metricsHtml =
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:4px;">' +
+              '<div>⏱ <strong>Простои:</strong> ' + idle + ' дн.</div>' +
+              '<div>🔨 <strong>Брак ФОТ:</strong> ' + rework.toLocaleString('ru-RU') + ' тыс. ₽</div>' +
+              '<div>✅ <strong>Приемка 1-й раз:</strong> ' + first.toLocaleString('ru-RU') + ' / ' + total.toLocaleString('ru-RU') + ' тыс. ₽ (' + ftriPct + '%)</div>' +
+            '</div>';
 
           workflowStore.unshift({
             id: Date.now(),
             date: 'Сегодня, ' + timeStr,
-            author: 'Прораб (Участок)',
+            author: 'Прораб (Дмитрий Соколов)',
             roleType: 'foreman',
             obj: objName,
-            metrics: 'Простои: ' + idle + ' дн., Брак ФОТ: ' + rework + ' тыс. ₽, Сдано с 1-го раза: ' + first + ' из ' + total + ' тыс. ₽',
+            metrics: metricsHtml,
             comment: commentVal || 'Оперативные данные с площадки за смену.',
             photo: currentPhotoBase64,
             status: 'pending',
@@ -1172,21 +1198,38 @@ function renderPortfolioTable() {
             data: { idle: idle, rework: rework, total: total, first: first }
           });
         } else {
-          var cInputs = document.querySelectorAll('input');
-          var orgName = 'Подрядная организация';
-          for (var j = 0; j < cInputs.length; j++) {
-            if (cInputs[j].offsetParent !== null && cInputs[j].type === 'text' && cInputs[j].value.trim()) {
-              orgName = cInputs[j].value.trim();
-              break;
-            }
+          var visTexts = new Array();
+          var allTxts = document.querySelectorAll('input[type="text"]');
+          for (var j = 0; j < allTxts.length; j++) {
+            if (allTxts[j].offsetParent !== null && allTxts[j].value.trim()) visTexts.push(allTxts[j].value.trim());
           }
+          var orgName = visTexts.length > 0 ? visTexts.at(0) : 'ООО «МонолитГрупп»';
+          var workType = visTexts.length > 1 ? visTexts.at(1) : 'Монолитные работы';
+          var subObj = visSelects.length > 0 ? visSelects.at(0).options[visSelects.at(0).selectedIndex].text : 'ЖК Онега';
+
+          var sTotal = visNums.length > 0 ? (+visNums.at(0).value || 0) : 25000;
+          var sFirst = visNums.length > 1 ? (+visNums.at(1).value || 0) : 22500;
+          var sFot = visNums.length > 2 ? (+visNums.at(2).value || 1) : 6000;
+          var sRework = visNums.length > 3 ? (+visNums.at(3).value || 0) : 350;
+          var sDelay = visNums.length > 4 ? (+visNums.at(4).value || 0) : 1;
+          var sFtri = sTotal > 0 ? ((sFirst / sTotal) * 100).toFixed(1) : '100.0';
+          var sCle = sFot > 0 ? ((sRework / sFot) * 100).toFixed(1) : '0.0';
+
+          var subMetricsHtml =
+            '<div style="margin-bottom:4px;color:#475569;"><strong>Вид работ:</strong> ' + workType + '</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;">' +
+              '<div>📋 <strong>Сдача (FTRI):</strong> ' + sFirst.toLocaleString('ru-RU') + ' / ' + sTotal.toLocaleString('ru-RU') + ' тыс. ₽ (<strong>' + sFtri + '%</strong>)</div>' +
+              '<div>🔨 <strong>Брак ФОТ (CLE):</strong> ' + sRework.toLocaleString('ru-RU') + ' тыс. ₽ (<strong>' + sCle + '%</strong>)</div>' +
+              '<div>⏱ <strong>Срыв графика:</strong> ' + sDelay + ' дн.</div>' +
+            '</div>';
+
           workflowStore.unshift({
             id: Date.now(),
             date: 'Сегодня, ' + timeStr,
             author: 'Подрядчик: ' + orgName,
             roleType: 'contractor',
-            obj: 'ЖК Онега (Субподряд)',
-            metrics: 'Оперативный отчет подрядчика по выполненным объемам и приемке',
+            obj: subObj,
+            metrics: subMetricsHtml,
             comment: commentVal || 'Отчет по закрытию этапа работ направлен генподрядчику.',
             photo: currentPhotoBase64,
             status: 'pending',
@@ -1195,7 +1238,6 @@ function renderPortfolioTable() {
           });
         }
 
-        saveStore();
         document.getElementById(containerId + '-txt').value = '';
         document.getElementById(containerId + '-fname').textContent = 'Файл не выбран';
         currentPhotoBase64 = '';
