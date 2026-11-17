@@ -1471,6 +1471,120 @@ function renderPortfolioTable() {
 })();
 </script>
 
+<!-- ШАГ 3: УМНЫЙ ЭКСПЕРТНЫЙ ДВИЖОК АНАЛИЗА СВЯЗОК KPI -->
+<script>
+(function() {
+  function initSmartAdvisor() {
+    var recHeader = null;
+    var headers = document.querySelectorAll('h2, h3, div');
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].textContent.trim() === 'Управленческие рекомендации и план действий') {
+        recHeader = headers[i];
+        break;
+      }
+    }
+    if (!recHeader) return;
+
+    var parent = recHeader.parentElement;
+    var isVisible = parent && parent.offsetParent !== null;
+
+    var smartBox = document.getElementById('smart-ai-advisor-box');
+    if (!isVisible) {
+      if (smartBox) smartBox.style.display = 'none';
+      return;
+    }
+
+    if (smartBox) {
+      smartBox.style.display = 'block';
+      return;
+    }
+
+    smartBox = document.createElement('div');
+    smartBox.id = 'smart-ai-advisor-box';
+    smartBox.style.cssText = 'background:linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:18px 20px;margin-bottom:16px;';
+    smartBox.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">' +
+        '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">🧠 Интеллектуальный анализ связок KPI и приоритетов</div>' +
+        '<button id="btn-run-smart-ai" style="background:#2563eb;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">⚡ Пересчитать приоритеты</button>' +
+      '</div>' +
+      '<div id="smart-ai-output" style="font-size:13.5px;color:#1e293b;line-height:1.55;"></div>';
+
+    recHeader.insertAdjacentElement('afterend', smartBox);
+
+    document.getElementById('btn-run-smart-ai').addEventListener('click', runSmartAnalysis);
+    runSmartAnalysis();
+
+    // Автоматический пересчет при изменении цифр в полях
+    document.addEventListener('input', function(e) {
+      if (e.target && e.target.type === 'number') {
+        setTimeout(runSmartAnalysis, 150);
+      }
+    });
+    var sel = document.querySelector('select');
+    if (sel) sel.addEventListener('change', function() { setTimeout(runSmartAnalysis, 150); });
+  }
+
+  function runSmartAnalysis() {
+    var out = document.getElementById('smart-ai-output');
+    if (!out) return;
+
+    var objView = document.getElementById('view-object') || document;
+    var inps = objView.querySelectorAll('input[type="number"]');
+    if (inps.length < 16) return;
+
+    var budget = +inps.item(0).value || 0;
+    var planProfit = +inps.item(1).value || 0;
+    var factProfit = +inps.item(2).value || 0;
+    var inflation = +inps.item(3).value || 0;
+    var fixedCost = +inps.item(4).value || 0;
+    var workDays = +inps.item(5).value || 22;
+    var rentCost = +inps.item(6).value || 0;
+    var penalty = +inps.item(7).value || 0;
+    var idleDays = +inps.item(8).value || 0;
+    var ksDays = +inps.item(9).value || 0;
+    var nzp = +inps.item(10).value || 0;
+    var rate = +inps.item(11).value || 21;
+    var totalFot = +inps.item(12).value || 1;
+    var reworkFot = +inps.item(13).value || 0;
+    var totalWork = +inps.item(14).value || 1;
+    var firstWork = +inps.item(15).value || 0;
+
+    var mei = planProfit > 0 ? ((planProfit - factProfit - inflation) / planProfit) * 100 : 0;
+    var dcc = Math.round(nzp * (rate / 100) * (ksDays / 365));
+    var cod = (fixedCost / workDays) + rentCost + penalty;
+    var cle = (reworkFot / totalFot) * 100;
+    var ftri = (firstWork / totalWork) * 100;
+
+    var insights = new Array();
+
+    // Проверка системных связок
+    if (ftri < 85 && ksDays > 25) {
+      var saveKs = Math.round(nzp * (rate / 100) * (Math.max(ksDays - 14, 0) / 365));
+      insights.push('<strong>🔗 Системная связка «Брак → Заморозка КС-2»:</strong> Низкая приемка с 1-го раза (' + ftri.toFixed(1) + '%) тормозит подписание актов (' + ksDays + ' дн.). Внедрение фотофиксации скрытых работ и чек-листов до вызова технадзора ускорит закрытие КС-2 до 14 дней и высвободит <strong>~' + saveKs.toLocaleString('ru-RU') + ' тыс. ₽</strong>.');
+    }
+
+    if (cle > 5 && idleDays >= 3) {
+      var saveRework = Math.round(reworkFot * 0.65);
+      insights.push('<strong>🔗 Связка «Штурмовщина после простоев → Переделки»:</strong> После ' + idleDays + ' дн. простоя бригады наверстывают график с потерей качества (брак в ФОТ: ' + cle.toFixed(1) + '%). Переход на недельно-суточное планирование (Last Planner) и удержание штрафов за брак с подрядчиков вернет <strong>~' + saveRework.toLocaleString('ru-RU') + ' тыс. ₽</strong>.');
+    }
+
+    if (dcc >= cod * idleDays && dcc > 500) {
+      insights.push('<strong>🎯 Главный финансовый приоритет (Узкое горлышко):</strong> Наибольший прямой убыток сейчас генерирует «бумажный тромб» в ПТО (<strong>' + dcc.toLocaleString('ru-RU') + ' тыс. ₽</strong> процентов за оборотный капитал). Рекомендуется перевести акты в ЭДО и разбить этапы приемки на декадные.');
+    } else if (cod * idleDays > 500) {
+      insights.push('<strong>🎯 Главный финансовый приоритет (Узкое горлышко):</strong> Критическая потеря денег идет от простоев площадки (<strong>' + Math.round(cod * idleDays).toLocaleString('ru-RU') + ' тыс. ₽</strong>). Необходимо создать 5-дневный буфер материалов на объекте и пересмотреть график поставки кранов.');
+    }
+
+    if (insights.length === 0) {
+      insights.push('<strong>✅ Сбалансированный профиль объекта:</strong> Критических системных перекосов между ПТО, снабжением и качеством СМР не выявлено. Рекомендуется поддерживать текущий ритм закрытия КС-2 (' + ksDays + ' дн.) и премировать ИТР за сохранение показателей в зеленой зоне.');
+    }
+
+    out.innerHTML = insights.join('<br><br>');
+  }
+
+  setInterval(initSmartAdvisor, 600);
+})();
+</script>
+
     
 </body>
 </html>
