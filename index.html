@@ -1021,573 +1021,270 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-<!-- МОДУЛЬ НАСТРОЕК МЕТОДИКИ (СТРОГО ТОЛЬКО ДЛЯ РОЛИ ДИРЕКТОРА) -->
+<!-- ЕДИНЫЙ МОДУЛЬ: РОЛЕВАЯ ИЗОЛЯЦИЯ, ЖУРНАЛ ИЗМЕНЕНИЙ И СОГЛАСОВАНИЕ (ЧАСТЬ 1) -->
 <script>
 (function() {
-    setInterval(function() {
+  var auditLog = new Array(
+    { id: 1, date: 'Сегодня, 10:15', author: 'Прораб (Участок №2)', obj: 'ЖК Онега', desc: 'Простои: 5 дн., Брак ФОТ: 3 900 тыс. ₽, Сдано с 1-го раза: 128 000 тыс. ₽', status: 'approved', data: { idle: 5, rework: 3900, total: 165000, first: 128000 } }
+  );
+
+  try {
+    var savedLog = localStorage.getItem('kpi_audit_workflow');
+    if (savedLog) auditLog = JSON.parse(savedLog);
+  } catch (e) {}
+
+  function saveLog() {
+    try { localStorage.setItem('kpi_audit_workflow', JSON.stringify(auditLog)); } catch (e) {}
+  }
+
+  function getCurrentRole() {
+    var topHeader = document.querySelector('header') || document.body;
+    var txt = topHeader ? topHeader.innerText : '';
+    if (txt.indexOf('Подрядчик') !== -1 || txt.indexOf('Подрядная организация') !== -1) return 'contractor';
+    if (txt.indexOf('Прораб') !== -1) return 'foreman';
+    if (txt.indexOf('ПТО') !== -1) return 'pto';
+    if (txt.indexOf('Директор') !== -1) return 'director';
+    return 'guest';
+  }
+
+  function applyRoleArchitecture() {
+    var role = getCurrentRole();
+    if (role === 'guest') return;
+
     var diagBtn = null;
-    var portfolioVisible = false;
+    var contractorTabBtn = null;
     var allBtns = document.querySelectorAll('button');
+
     for (var i = 0; i < allBtns.length; i++) {
-      var txt = allBtns[i].textContent;
-      if (txt.indexOf('Диагностика объекта') !== -1) {
-        diagBtn = allBtns[i];
-      }
-      if (txt.indexOf('Портфель объектов') !== -1 && allBtns[i].offsetParent !== null) {
-        portfolioVisible = true;
-      }
+      var t = allBtns[i].textContent;
+      if (t.indexOf('Диагностика объекта') !== -1) diagBtn = allBtns[i];
+      if (t.indexOf('Кабинет подрядчика') !== -1) contractorTabBtn = allBtns[i];
     }
     if (!diagBtn || !diagBtn.parentElement) return;
-
     var nav = diagBtn.parentElement;
-    var admBtn = document.getElementById('adm-tab-btn');
-    var admPanel = document.getElementById('view-settings-admin');
 
-    // Если вкладки "Портфель объектов" нет на экране (значит вошел не Директор) — прячем настройки
-    if (!portfolioVisible) {
-      if (admBtn) admBtn.style.setProperty('display', 'none', 'important');
-      if (admPanel) admPanel.style.setProperty('display', 'none', 'important');
-      return;
-    }
+    var auditBtn = document.getElementById('tab-audit-btn');
+    var auditPanel = document.getElementById('view-audit-panel');
 
-    if (admBtn) {
-      admBtn.style.removeProperty('display');
-      return;
-    }
-    var btn = document.createElement('button');
-    btn.id = 'adm-tab-btn';
-    btn.className = diagBtn.className.replace('active', '').trim();
-    btn.textContent = '⚙️ 4. Настройки методики';
-    btn.style.cursor = 'pointer';
+    if (!auditBtn) {
+      auditBtn = document.createElement('button');
+      auditBtn.id = 'tab-audit-btn';
+      auditBtn.className = diagBtn.className.replace('active', '').trim();
+      auditBtn.style.cursor = 'pointer';
 
-    var panel = document.createElement('div');
-    panel.id = 'view-settings-admin';
-    panel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
-    panel.innerHTML =
-      '<h2 style="margin-top:0;color:#1e293b;">⚙️ Настройки методики и нормативов «Светофора»</h2>' +
-      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Раздел доступен только Директору. Измените граничные значения для перехода показателей между зонами.</p>' +
-      '<div style="margin-bottom:16px;">' +
-        '<label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;color:#475569;">ПРОФИЛЬ СТРОИТЕЛЬСТВА:</label>' +
-        '<select id="adm-prof" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;font-weight:600;font-size:14px;">' +
-          '<option value="residential">Жилое строительство</option>' +
-          '<option value="industrial">Промышленное строительство</option>' +
-          '<option value="road">Дорожное и инфраструктурное</option>' +
-        '</select>' +
-      '</div>' +
-      '<div style="overflow-x:auto;">' +
-        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-          '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;text-align:left;">' +
-            '<th style="padding:12px;">Код KPI</th>' +
-            '<th style="padding:12px;">Показатель эффективности</th>' +
-            '<th style="padding:12px;color:#166534;">Порог Зеленой зоны</th>' +
-            '<th style="padding:12px;color:#854d0e;">Порог Желтой зоны (далее Красная)</th>' +
-          '</tr></thead>' +
-          '<tbody id="adm-tbody"></tbody>' +
-        '</table>' +
-      '</div>' +
-      '<div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">' +
-        '<button id="adm-save" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">💾 Применить и сохранить нормативы</button>' +
-        '<button id="adm-reset" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">↺ Сбросить к базовым стандартам</button>' +
-      '</div>';
+      auditPanel = document.createElement('div');
+      auditPanel.id = 'view-audit-panel';
+      auditPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
 
-    nav.parentElement.insertBefore(panel, nav.nextSibling);
-    nav.appendChild(btn);
+      nav.parentElement.insertBefore(auditPanel, nav.nextSibling);
+      nav.appendChild(auditBtn);
 
-    var defaults = {
-      residential: { mei_g: 8, mei_y: 15, dcc_g: 500, dcc_y: 1000, cod_g: 120, cod_y: 200, cle_g: 5, cle_y: 10, ftri_g: 85, ftri_y: 70 },
-      industrial:  { mei_g: 10, mei_y: 18, dcc_g: 800, dcc_y: 1500, cod_g: 180, cod_y: 300, cle_g: 6, cle_y: 12, ftri_g: 82, ftri_y: 68 },
-      road:        { mei_g: 9, mei_y: 16, dcc_g: 1000, dcc_y: 2000, cod_g: 220, cod_y: 350, cle_g: 5.5, cle_y: 10, ftri_g: 85, ftri_y: 70 }
-    };
+      auditBtn.addEventListener('click', function() {
+        var ch = nav.children;
+        for (var k = 0; k < ch.length; k++) ch[k].classList.remove('active');
+        auditBtn.classList.add('active');
+        var sibs = nav.parentElement.children;
+        for (var j = 0; j < sibs.length; j++) {
+          if (sibs[j] !== nav && sibs[j] !== auditPanel && sibs[j].tagName === 'DIV') {
+            sibs[j].style.setProperty('display', 'none', 'important');
+          }
+        }
+        auditPanel.style.display = 'block';
+        if (window._renderAuditPanel) window._renderAuditPanel();
+      });
 
-    var saved = localStorage.getItem('kpi_custom_norms');
-    var norms = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaults));
-
-    var meta = new Array(
-      { k: 'mei', name: 'MEI — Коэффициент «съеденной» маржи (%) — не более' },
-      { k: 'dcc', name: 'DCC — Цена заморозки капитала в КС-2 (тыс. ₽) — не более' },
-      { k: 'cod', name: 'CoD — Стоимость одного дня простоя (тыс. ₽/дн) — не более' },
-      { k: 'cle', name: 'CLE — Доля ФОТ на переделки и брак (%) — не более' },
-      { k: 'ftri', name: 'FTRI — Приемка работ с первого раза (%) — не менее' }
-    );
-
-    function renderTable() {
-      var p = document.getElementById('adm-prof').value;
-      var cur = norms[p] || defaults[p];
-      var tb = document.getElementById('adm-tbody');
-      tb.innerHTML = '';
-      for (var idx = 0; idx < meta.length; idx++) {
-        var m = meta[idx];
-        var tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid #e2e8f0';
-        tr.innerHTML =
-          '<td style="padding:12px;"><strong>' + m.k.toUpperCase() + '</strong></td>' +
-          '<td style="padding:12px;">' + m.name + '</td>' +
-          '<td style="padding:12px;"><input type="number" step="0.5" data-k="' + m.k + '_g" value="' + cur[m.k + '_g'] + '" style="width:110px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;"></td>' +
-          '<td style="padding:12px;"><input type="number" step="0.5" data-k="' + m.k + '_y" value="' + cur[m.k + '_y'] + '" style="width:110px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;"></td>';
-        tb.appendChild(tr);
-      }
-    }
-
-    document.getElementById('adm-prof').addEventListener('change', renderTable);
-
-    document.getElementById('adm-save').addEventListener('click', function() {
-      var p = document.getElementById('adm-prof').value;
-      var inputs = document.querySelectorAll('#adm-tbody input');
-      for (var i = 0; i < inputs.length; i++) {
-        norms[p][inputs[i].dataset.k] = parseFloat(inputs[i].value) || 0;
-      }
-      localStorage.setItem('kpi_custom_norms', JSON.stringify(norms));
-      if (typeof THRESHOLDS !== 'undefined' && THRESHOLDS[p]) {
-        THRESHOLDS[p].mei = new Array(norms[p].mei_g, norms[p].mei_y);
-        THRESHOLDS[p].dcc = new Array(norms[p].dcc_g, norms[p].dcc_y);
-        THRESHOLDS[p].cod = new Array(norms[p].cod_g, norms[p].cod_y);
-        THRESHOLDS[p].cle = new Array(norms[p].cle_g, norms[p].cle_y);
-        THRESHOLDS[p].ftri = new Array(norms[p].ftri_g, norms[p].ftri_y);
-      }
-      if (typeof recalc === 'function') recalc();
-      alert('Нормативы «светофора» сохранены и применены!');
-    });
-
-    document.getElementById('adm-reset').addEventListener('click', function() {
-      norms = JSON.parse(JSON.stringify(defaults));
-      localStorage.removeItem('kpi_custom_norms');
-      renderTable();
-      alert('Восстановлены базовые отраслевые нормативы.');
-    });
-
-    btn.addEventListener('click', function() {
-      var children = nav.children;
-      for (var k = 0; k < children.length; k++) children[k].classList.remove('active');
-      btn.classList.add('active');
-      var siblings = nav.parentElement.children;
-      for (var j = 0; j < siblings.length; j++) {
-        if (siblings[j] !== nav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
-          siblings[j].style.display = 'none';
+      var navBtns = nav.children;
+      for (var n = 0; n < navBtns.length; n++) {
+        if (navBtns[n] !== auditBtn) {
+          navBtns[n].addEventListener('click', function() {
+            auditBtn.classList.remove('active');
+            auditPanel.style.display = 'none';
+            var sibs = nav.parentElement.children;
+            for (var j = 0; j < sibs.length; j++) {
+              if (sibs[j] !== nav && sibs[j] !== auditPanel && sibs[j].tagName === 'DIV') {
+                sibs[j].style.removeProperty('display');
+              }
+            }
+          });
         }
       }
-      panel.style.display = 'block';
-      renderTable();
-    });
-
-    var navBtns = nav.children;
-    for (var n = 0; n < navBtns.length; n++) {
-      if (navBtns[n] !== btn) {
-        navBtns[n].addEventListener('click', function() {
-          btn.classList.remove('active');
-          panel.style.display = 'none';
-          var siblings = nav.parentElement.children;
-          for (var j = 0; j < siblings.length; j++) {
-            if (siblings[j] !== nav && siblings[j] !== panel && siblings[j].tagName === 'DIV') {
-              siblings[j].style.display = '';
-            }
-          }
-        });
-      }
     }
-  }, 300);
+
+    var pendingCount = 0;
+    for (var p = 0; p < auditLog.length; p++) {
+      if (auditLog.at(p).status === 'pending') pendingCount++;
+    }
+    auditBtn.textContent = pendingCount > 0 ? ('🔔 Согласование (' + pendingCount + ')') : '📋 Журнал изменений';
+
+    var foremanBanner = document.getElementById('foreman-workflow-bar');
+
+    if (role === 'contractor') {
+      nav.style.setProperty('display', 'none', 'important');
+      if (contractorTabBtn && !contractorTabBtn.classList.contains('active')) contractorTabBtn.click();
+      if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    if (role === 'foreman') {
+      nav.style.setProperty('display', 'none', 'important');
+      if (auditPanel) auditPanel.style.display = 'none';
+
+      var allCards = document.querySelectorAll('h2, h3');
+      for (var c = 0; c < allCards.length; c++) {
+        var hText = allCards[c].textContent;
+        if (hText.indexOf('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ') !== -1 || hText.indexOf('5 авторских показателей') !== -1 || hText.indexOf('Управленческие рекомендации') !== -1) {
+          if (allCards[c].parentElement) allCards[c].parentElement.style.setProperty('display', 'none', 'important');
+        }
+      }
+
+      if (!foremanBanner) {
+        var saveBtn = null;
+        for (var s = 0; s < allBtns.length; s++) {
+          if (allBtns[s].textContent.indexOf('Сохранить изменения') !== -1) { saveBtn = allBtns[s]; break; }
+        }
+        if (saveBtn && saveBtn.parentElement) {
+          foremanBanner = document.createElement('div');
+          foremanBanner.id = 'foreman-workflow-bar';
+          foremanBanner.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;';
+          foremanBanner.innerHTML =
+            '<div><strong style="color:#1e3a8a;">👷 Режим оперативного ввода прораба</strong><br><span style="font-size:13px;color:#475569;">Заполните данные по простоям, браку и приемке технадзора. После отправки цифры поступят на проверку ПТО и Директору.</span></div>' +
+            '<button id="btn-foreman-send" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">📤 Отправить на согласование</button>';
+          saveBtn.parentElement.parentElement.appendChild(foremanBanner);
+
+          document.getElementById('btn-foreman-send').addEventListener('click', function() {
+            var inps = document.querySelectorAll('input[type="number"]');
+            var objSel = document.querySelector('select');
+            var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
+            var idle = inps.length > 8 ? (+inps.item(8).value || 0) : 0;
+            var rework = inps.length > 13 ? (+inps.item(13).value || 0) : 0;
+            var total = inps.length > 14 ? (+inps.item(14).value || 0) : 0;
+            var first = inps.length > 15 ? (+inps.item(15).value || 0) : 0;
+
+            var now = new Date();
+            var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            auditLog.unshift({
+              id: Date.now(),
+              date: 'Сегодня, ' + timeStr,
+              author: 'Прораб (Участок)',
+              obj: objName,
+              desc: 'Простои: ' + idle + ' дн., Брак ФОТ: ' + rework + ' тыс. ₽, Сдано с 1-го раза: ' + first + ' из ' + total + ' тыс. ₽',
+              status: 'pending',
+              data: { idle: idle, rework: rework, total: total, first: first }
+            });
+            saveLog();
+            alert('✅ Данные отправлены! Они появятся в журнале согласования у Инженера ПТО и Директора.');
+          });
+        }
+      } else {
+        foremanBanner.style.removeProperty('display');
+      }
+      return;
+    }
+
+    nav.style.removeProperty('display');
+    if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
+    var restored = document.querySelectorAll('h2, h3');
+    for (var r = 0; r < restored.length; r++) {
+      if (restored[r].parentElement) restored[r].parentElement.style.removeProperty('display');
+    }
+  }
+
+  window._kpiAuditData = { log: auditLog, save: saveLog, apply: applyRoleArchitecture };
 })();
 </script>
-  <!-- ШАГ 1: ИМПОРТ ИЗ EXCEL (CSV) — ТОЛЬКО ДЛЯ ДИРЕКТОРА И ПТО -->
+<!-- ЕДИНЫЙ МОДУЛЬ: ОТРИСОВКА ЖУРНАЛА И КНОПКИ СОГЛАСОВАНИЯ (ЧАСТЬ 2) -->
 <script>
 (function() {
-     setInterval(function() {
-    var anchorBtn = null;
-    var btns = document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.indexOf('Новый объект') !== -1) {
-        anchorBtn = btns[i];
+  window._renderAuditPanel = function() {
+    var panel = document.getElementById('view-audit-panel');
+    var store = window._kpiAuditData;
+    if (!panel || !store) return;
+
+    var auditLog = store.log;
+    var html = '<h2 style="margin-top:0;color:#1e293b;">🔔 Согласование данных с площадки и журнал изменений</h2>' +
+      '<p style="color:#64748b;font-size:14px;margin-bottom:16px;">Все корректировки от прорабов и отчеты подрядчиков проходят проверку ПТО или Директора перед включением в финансовый расчет.</p>' +
+      '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+      '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;text-align:left;">' +
+        '<th style="padding:12px;">Дата / Время</th>' +
+        '<th style="padding:12px;">Автор изменения</th>' +
+        '<th style="padding:12px;">Объект</th>' +
+        '<th style="padding:12px;">Внесенные показатели</th>' +
+        '<th style="padding:12px;">Статус / Действие</th>' +
+      '</tr></thead><tbody>';
+
+    for (var i = 0; i < auditLog.length; i++) {
+      var item = auditLog.at(i);
+      var actionHtml = '';
+      if (item.status === 'pending') {
+        actionHtml =
+          '<button onclick="window._approveAudit(' + item.id + ')" style="background:#16a34a;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer;margin-right:6px;">✅ Утвердить</button>' +
+          '<button onclick="window._rejectAudit(' + item.id + ')" style="background:#ef4444;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer;">❌ Отклонить</button>';
+      } else if (item.status === 'approved') {
+        actionHtml = '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-weight:600;">Утверждено и применено</span>';
+      } else {
+        actionHtml = '<span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:12px;font-weight:600;">Отклонено</span>';
+      }
+
+      html += '<tr style="border-bottom:1px solid #e2e8f0;">' +
+        '<td style="padding:12px;color:#64748b;">' + item.date + '</td>' +
+        '<td style="padding:12px;"><strong>' + item.author + '</strong></td>' +
+        '<td style="padding:12px;">' + item.obj + '</td>' +
+        '<td style="padding:12px;">' + item.desc + '</td>' +
+        '<td style="padding:12px;">' + actionHtml + '</td>' +
+      '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+    panel.innerHTML = html;
+  };
+
+  window._approveAudit = function(id) {
+    var store = window._kpiAuditData;
+    if (!store) return;
+    for (var i = 0; i < store.log.length; i++) {
+      if (store.log.at(i).id === id) {
+        store.log.at(i).status = 'approved';
+        var d = store.log.at(i).data;
+        if (d) {
+          var inps = document.querySelectorAll('input[type="number"]');
+          if (inps.length > 15) {
+            inps.item(8).value = d.idle;
+            inps.item(13).value = d.rework;
+            inps.item(14).value = d.total;
+            inps.item(15).value = d.first;
+            inps.item(8).dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (typeof recalc === 'function') recalc();
+        }
         break;
       }
     }
-    if (!anchorBtn || !anchorBtn.parentElement) return;
+    store.save();
+    window._renderAuditPanel();
+    alert('✅ Данные утверждены! Показатели объекта и расчет KPI обновлены.');
+  };
 
-    var isVisible = anchorBtn.offsetParent !== null;
-    var impBtn = document.getElementById('btn-import-xlsx');
-    var tplBtn = document.getElementById('btn-tpl-xlsx');
-
-    if (!isVisible) {
-      if (impBtn) impBtn.style.setProperty('display', 'none', 'important');
-      if (tplBtn) tplBtn.style.setProperty('display', 'none', 'important');
-      return;
+  window._rejectAudit = function(id) {
+    var store = window._kpiAuditData;
+    if (!store) return;
+    for (var i = 0; i < store.log.length; i++) {
+      if (store.log.at(i).id === id) {
+        store.log.at(i).status = 'rejected';
+        break;
+      }
     }
+    store.save();
+    window._renderAuditPanel();
+  };
 
-    if (impBtn && tplBtn) {
-      impBtn.style.removeProperty('display');
-      tplBtn.style.removeProperty('display');
-      return;
-    }
-
-    var bar = anchorBtn.parentElement;
-
-    var fileInp = document.createElement('input');
-    fileInp.type = 'file';
-    fileInp.id = 'xlsx-file-input';
-    fileInp.accept = '.csv, .txt';
-    fileInp.style.display = 'none';
-
-    impBtn = document.createElement('button');
-    impBtn.id = 'btn-import-xlsx';
-    impBtn.className = anchorBtn.className;
-    impBtn.style.cssText = 'background:#16a34a;color:#fff;border:none;cursor:pointer;';
-    impBtn.textContent = '📥 Загрузить из Excel (CSV)';
-
-    tplBtn = document.createElement('button');
-    tplBtn.id = 'btn-tpl-xlsx';
-    tplBtn.className = anchorBtn.className;
-    tplBtn.style.cssText = 'background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;cursor:pointer;';
-    tplBtn.textContent = '📄 Шаблон для Excel';
-
-    bar.appendChild(fileInp);
-    bar.appendChild(impBtn);
-    bar.appendChild(tplBtn);
-
-    tplBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      var csvLines = new Array(
-        'Показатель;Значение;Ед. изм.',
-        'Сметная стоимость проекта (бюджет);750000;тыс. руб.',
-        'Плановая валовая прибыль;115000;тыс. руб.',
-        'Фактическая валовая прибыль;94000;тыс. руб.',
-        'Удорожание из-за рыночных цен (инфляция);7000;тыс. руб.',
-        'Постоянные накладные расходы в месяц;2800;тыс. руб.',
-        'Рабочих дней в месяце;22;дн.',
-        'Аренда простаивающих механизмов в день;45;тыс. руб./дн',
-        'Штрафные санкции за день срыва срока;20;тыс. руб./дн',
-        'Количество дней организационного простоя;4;дн.',
-        'Средний срок закрытия актов КС-2 / КС-3;32;дн.',
-        'Незакрытый объем НЗП (выполнено без КС-2);60000;тыс. руб.',
-        'Ставка привлечения оборотного капитала;21;% год.',
-        'Общий ФОТ основных рабочих за период;38000;тыс. руб.',
-        'ФОТ ушедший на переделки и брак;2900;тыс. руб.',
-        'Общий объем предъявленных технадзору работ;180000;тыс. руб.',
-        'Объем работ принятых с 1-го раза;152000;тыс. руб.'
-      );
-      var csvContent = '\uFEFF' + csvLines.join('\r\n');
-      var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'Shablon_KPI_Stroy.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    impBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      fileInp.click();
-    });
-
-    fileInp.addEventListener('change', function(e) {
-      var file = e.target.files.item(0);
-      if (!file) return;
-
-      var reader = new FileReader();
-      reader.onload = function(evt) {
-        var text = evt.target.result;
-        var lines = text.split(/\r?\n/);
-        var extractedNums = new Array();
-
-        for (var r = 1; r < lines.length; r++) {
-          var line = lines.at(r);
-          if (!line || !line.trim()) continue;
-          var parts = line.split(/[;,]/);
-          for (var c = 1; c < parts.length; c++) {
-            var clean = parts.at(c).replace(/["'\s]/g, '').replace(',', '.');
-            var val = parseFloat(clean);
-            if (!isNaN(val)) {
-              extractedNums.push(val);
-              break;
-            }
-          }
-        }
-
-        if (extractedNums.length < 10) {
-          alert('Не удалось распознать числа в файле. Скачайте «Шаблон для Excel», отредактируйте цифры во втором столбце и загрузите снова.');
-          fileInp.value = '';
-          return;
-        }
-
-        var objView = document.getElementById('view-object') || document;
-        var numInputs = objView.querySelectorAll('input[type="number"]');
-        var count = Math.min(numInputs.length, extractedNums.length);
-
-        for (var k = 0; k < count; k++) {
-          numInputs.item(k).value = extractedNums.at(k);
-          numInputs.item(k).dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        if (typeof recalc === 'function') recalc();
-        alert('✅ Данные из таблицы «' + file.name + '» загружены (' + count + ' показателей). Все KPI пересчитаны!');
-        fileInp.value = '';
-      };
-      reader.readAsText(file, 'UTF-8');
-    });
+  setInterval(function() {
+    if (window._kpiAuditData) window._kpiAuditData.apply();
   }, 400);
 })();
 </script>
 
-<!-- ШАГ 2: ГРАФИК ДИНАМИКИ ПО МЕСЯЦАМ (БЕЗ ВНЕШНИХ БИБЛИОТЕК) -->
-<script>
-(function() {
-  var historyStore = {
-    'ЖК Онега': new Array(19200, 18400, 16900, 15800, 14557),
-    'ЖК Северный': new Array(15100, 14500, 13900, 13400, 13009),
-    'Цех Сборка-2': new Array(5400, 4800, 4100, 3500, 3120),
-    'Развязка Юг': new Array(23500, 22100, 21000, 20300, 19840)
-  };
 
-  try {
-    var savedHist = localStorage.getItem('kpi_history_store');
-    if (savedHist) historyStore = JSON.parse(savedHist);
-  } catch (e) {}
-
-    function initDynamicsChart() {
-    // Проверяем текст в шапке сайта: слово "Директор" там есть только в роли Директора
-    var topHeader = document.querySelector('header') || document.querySelector('.topbar');
-    var headerTxt = topHeader ? topHeader.innerText : '';
-    var isDirector = headerTxt.indexOf('Директор') !== -1;
-
-    var recHeader = null;
-    var headers = document.querySelectorAll('h2, h3, div');
-    for (var i = 0; i < headers.length; i++) {
-      if (headers[i].textContent.trim() === 'Управленческие рекомендации и план действий') {
-        recHeader = headers[i];
-        break;
-      }
-    }
-    if (!recHeader) return;
-
-    var diagBlock = recHeader.parentElement;
-    var isVisible = isDirector && diagBlock && diagBlock.offsetParent !== null;
-
-    var chartCard = document.getElementById('kpi-dynamics-card');
-    if (!isVisible) {
-      if (chartCard) chartCard.style.setProperty('display', 'none', 'important');
-      return;
-    }
-
-    if (chartCard) {
-      chartCard.style.removeProperty('display');
-      return;
-    }
-
-    chartCard = document.createElement('div');
-    chartCard.id = 'kpi-dynamics-card';
-    chartCard.style.cssText = 'background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.06);';
-    chartCard.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">' +
-        '<div>' +
-          '<h3 style="margin:0;color:#1e293b;font-size:17px;">📈 Динамика снижения скрытых потерь по объекту</h3>' +
-          '<p style="margin:4px 0 0;color:#64748b;font-size:13px;">Контроль выхода объекта из «красной» зоны в «зеленую» по месяцам (тыс. ₽)</p>' +
-        '</div>' +
-        '<button id="btn-snap-month" style="background:#0f172a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📌 Зафиксировать текущий срез</button>' +
-      '</div>' +
-      '<div id="kpi-svg-container" style="width:100%;overflow-x:auto;"></div>';
-
-    diagBlock.appendChild(chartCard);
-
-    document.getElementById('btn-snap-month').addEventListener('click', function() {
-      var objSel = document.querySelector('select');
-      var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
-      var lossEl = document.body.innerText.match(/Выявленные скрытые потери[\s\S]{1,40}?([\d\s]+)\s*тыс/);
-      var curLoss = lossEl ? parseInt(lossEl.at(1).replace(/\s+/g, ''), 10) : 14557;
-      if (isNaN(curLoss) || curLoss <= 0) curLoss = 12000;
-
-      if (!historyStore[objName]) historyStore[objName] = new Array(curLoss + 3000, curLoss + 1500);
-      historyStore[objName].push(curLoss);
-      if (historyStore[objName].length > 7) historyStore[objName].shift();
-
-      try { localStorage.setItem('kpi_history_store', JSON.stringify(historyStore)); } catch (e) {}
-      renderChart();
-      alert('Срез показателей зафиксирован на графике динамики!');
-    });
-
-    renderChart();
-    var objSelect = document.querySelector('select');
-    if (objSelect) objSelect.addEventListener('change', function() { setTimeout(renderChart, 100); });
-  }
-
-  function renderChart() {
-    var container = document.getElementById('kpi-svg-container');
-    if (!container) return;
-
-    var objSel = document.querySelector('select');
-    var objName = objSel ? objSel.options[objSel.selectedIndex].text : 'ЖК Онега';
-    var points = historyStore[objName] || new Array(16500, 15200, 14100, 12800, 11400);
-
-    var w = 680;
-    var h = 210;
-    var padL = 60;
-    var padR = 30;
-    var padT = 25;
-    var padB = 35;
-    var chartW = w - padL - padR;
-    var chartH = h - padT - padB;
-
-    var maxVal = Math.max.apply(null, points) * 1.15;
-    var minVal = Math.min.apply(null, points) * 0.75;
-    if (maxVal === minVal) maxVal = minVal + 1000;
-
-    var months = new Array('Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек', 'Янв');
-    var coords = new Array();
-
-    for (var i = 0; i < points.length; i++) {
-      var x = padL + (i * (chartW / Math.max(points.length - 1, 1)));
-      var y = padT + chartH - (((points.at(i) - minVal) / (maxVal - minVal)) * chartH);
-      coords.push({ x: Math.round(x), y: Math.round(y), val: points.at(i), lbl: months.at(i % months.length) });
-    }
-
-    var polyPoints = '';
-    for (var p = 0; p < coords.length; p++) {
-      polyPoints += coords.at(p).x + ',' + coords.at(p).y + ' ';
-    }
-
-    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;max-width:760px;height:auto;font-family:sans-serif;">';
-    // Сетка
-    svg += '<line x1="' + padL + '" y1="' + padT + '" x2="' + (w - padR) + '" y2="' + padT + '" stroke="#e2e8f0" stroke-dasharray="4"/>';
-    svg += '<line x1="' + padL + '" y1="' + (padT + chartH / 2) + '" x2="' + (w - padR) + '" y2="' + (padT + chartH / 2) + '" stroke="#e2e8f0" stroke-dasharray="4"/>';
-    svg += '<line x1="' + padL + '" y1="' + (padT + chartH) + '" x2="' + (w - padR) + '" y2="' + (padT + chartH) + '" stroke="#cbd5e1"/>';
-
-    // Линия тренда
-    svg += '<polyline fill="none" stroke="#2563eb" stroke-width="3" points="' + polyPoints.trim() + '"/>';
-
-    // Точки и подписи
-    for (var c = 0; c < coords.length; c++) {
-      var pt = coords.at(c);
-      var isLast = (c === coords.length - 1);
-      var dotColor = isLast ? '#16a34a' : '#2563eb';
-      svg += '<circle cx="' + pt.x + '" cy="' + pt.y + '" r="' + (isLast ? 6 : 4.5) + '" fill="' + dotColor + '" stroke="#fff" stroke-width="2"/>';
-      svg += '<text x="' + pt.x + '" y="' + (pt.y - 10) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">' + pt.val.toLocaleString('ru-RU') + '</text>';
-      svg += '<text x="' + pt.x + '" y="' + (h - 10) + '" text-anchor="middle" font-size="11" fill="#64748b">' + pt.lbl + '</text>';
-    }
-
-    svg += '</svg>';
-    container.innerHTML = svg;
-  }
-
-  setInterval(initDynamicsChart, 600);
-})();
-</script>
-
-<!-- ШАГ 3: УМНЫЙ ЭКСПЕРТНЫЙ ДВИЖОК АНАЛИЗА СВЯЗОК KPI -->
-<script>
-(function() {
-    function initSmartAdvisor() {
-    // Показываем только Директору и Инженеру ПТО (проверяем по тексту в шапке)
-    var topHeader = document.querySelector('header') || document.querySelector('.topbar');
-    var hTxt = topHeader ? topHeader.innerText : '';
-    var hasAccess = (hTxt.indexOf('Директор') !== -1 || hTxt.indexOf('ПТО') !== -1);
-
-    var recHeader = null;
-    var headers = document.querySelectorAll('h1, h2, h3, h4, div, p, span');
-    for (var i = 0; i < headers.length; i++) {
-      if (headers[i].children.length === 0 && headers[i].textContent.indexOf('Управленческие рекомендации') !== -1) {
-        recHeader = headers[i];
-        break;
-      }
-    }
-    if (!recHeader) return;
-
-    var parent = recHeader.parentElement;
-    var isVisible = hasAccess && parent && parent.offsetParent !== null;
-
-    var smartBox = document.getElementById('smart-ai-advisor-box');
-    if (!isVisible) {
-      if (smartBox) smartBox.style.display = 'none';
-      return;
-    }
-
-    if (smartBox) {
-      smartBox.style.display = 'block';
-      return;
-    }
-
-    smartBox = document.createElement('div');
-    smartBox.id = 'smart-ai-advisor-box';
-    smartBox.style.cssText = 'background:linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:18px 20px;margin-bottom:16px;';
-    smartBox.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">' +
-        '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">🧠 Интеллектуальный анализ связок KPI и приоритетов</div>' +
-        '<button id="btn-run-smart-ai" style="background:#2563eb;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">⚡ Пересчитать приоритеты</button>' +
-      '</div>' +
-      '<div id="smart-ai-output" style="font-size:13.5px;color:#1e293b;line-height:1.55;"></div>';
-
-    recHeader.insertAdjacentElement('afterend', smartBox);
-
-    document.getElementById('btn-run-smart-ai').addEventListener('click', runSmartAnalysis);
-    runSmartAnalysis();
-
-    // Автоматический пересчет при изменении цифр в полях
-    document.addEventListener('input', function(e) {
-      if (e.target && e.target.type === 'number') {
-        setTimeout(runSmartAnalysis, 150);
-      }
-    });
-    var sel = document.querySelector('select');
-    if (sel) sel.addEventListener('change', function() { setTimeout(runSmartAnalysis, 150); });
-  }
-
-  function runSmartAnalysis() {
-    var out = document.getElementById('smart-ai-output');
-    if (!out) return;
-
-    var objView = document.getElementById('view-object') || document;
-    var inps = objView.querySelectorAll('input[type="number"]');
-    if (inps.length < 16) return;
-
-    var budget = +inps.item(0).value || 0;
-    var planProfit = +inps.item(1).value || 0;
-    var factProfit = +inps.item(2).value || 0;
-    var inflation = +inps.item(3).value || 0;
-    var fixedCost = +inps.item(4).value || 0;
-    var workDays = +inps.item(5).value || 22;
-    var rentCost = +inps.item(6).value || 0;
-    var penalty = +inps.item(7).value || 0;
-    var idleDays = +inps.item(8).value || 0;
-    var ksDays = +inps.item(9).value || 0;
-    var nzp = +inps.item(10).value || 0;
-    var rate = +inps.item(11).value || 21;
-    var totalFot = +inps.item(12).value || 1;
-    var reworkFot = +inps.item(13).value || 0;
-    var totalWork = +inps.item(14).value || 1;
-    var firstWork = +inps.item(15).value || 0;
-
-    var mei = planProfit > 0 ? ((planProfit - factProfit - inflation) / planProfit) * 100 : 0;
-    var dcc = Math.round(nzp * (rate / 100) * (ksDays / 365));
-    var cod = (fixedCost / workDays) + rentCost + penalty;
-    var cle = (reworkFot / totalFot) * 100;
-    var ftri = (firstWork / totalWork) * 100;
-
-    var insights = new Array();
-
-    // Проверка системных связок
-    if (ftri < 85 && ksDays > 25) {
-      var saveKs = Math.round(nzp * (rate / 100) * (Math.max(ksDays - 14, 0) / 365));
-      insights.push('<strong>🔗 Системная связка «Брак → Заморозка КС-2»:</strong> Низкая приемка с 1-го раза (' + ftri.toFixed(1) + '%) тормозит подписание актов (' + ksDays + ' дн.). Внедрение фотофиксации скрытых работ и чек-листов до вызова технадзора ускорит закрытие КС-2 до 14 дней и высвободит <strong>~' + saveKs.toLocaleString('ru-RU') + ' тыс. ₽</strong>.');
-    }
-
-    if (cle > 5 && idleDays >= 3) {
-      var saveRework = Math.round(reworkFot * 0.65);
-      insights.push('<strong>🔗 Связка «Штурмовщина после простоев → Переделки»:</strong> После ' + idleDays + ' дн. простоя бригады наверстывают график с потерей качества (брак в ФОТ: ' + cle.toFixed(1) + '%). Переход на недельно-суточное планирование (Last Planner) и удержание штрафов за брак с подрядчиков вернет <strong>~' + saveRework.toLocaleString('ru-RU') + ' тыс. ₽</strong>.');
-    }
-
-    if (dcc >= cod * idleDays && dcc > 500) {
-      insights.push('<strong>🎯 Главный финансовый приоритет (Узкое горлышко):</strong> Наибольший прямой убыток сейчас генерирует «бумажный тромб» в ПТО (<strong>' + dcc.toLocaleString('ru-RU') + ' тыс. ₽</strong> процентов за оборотный капитал). Рекомендуется перевести акты в ЭДО и разбить этапы приемки на декадные.');
-    } else if (cod * idleDays > 500) {
-      insights.push('<strong>🎯 Главный финансовый приоритет (Узкое горлышко):</strong> Критическая потеря денег идет от простоев площадки (<strong>' + Math.round(cod * idleDays).toLocaleString('ru-RU') + ' тыс. ₽</strong>). Необходимо создать 5-дневный буфер материалов на объекте и пересмотреть график поставки кранов.');
-    }
-
-    if (insights.length === 0) {
-      insights.push('<strong>✅ Сбалансированный профиль объекта:</strong> Критических системных перекосов между ПТО, снабжением и качеством СМР не выявлено. Рекомендуется поддерживать текущий ритм закрытия КС-2 (' + ksDays + ' дн.) и премировать ИТР за сохранение показателей в зеленой зоне.');
-    }
-
-    out.innerHTML = insights.join('<br><br>');
-  }
-
-  setInterval(initSmartAdvisor, 600);
-})();
 </script>
 
     
