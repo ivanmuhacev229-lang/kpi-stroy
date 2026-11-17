@@ -1155,16 +1155,28 @@ function renderPortfolioTable() {
         var allN = document.querySelectorAll('input[type="number"]');
         for (var n = 0; n < allN.length; n++) { if (allN[n].offsetParent !== null) visNums.push(allN[n]); }
 
-         if (roleType === 'foreman') {
+                if (roleType === 'foreman') {
           var objName = visSels.length > 0 ? visSels.at(0).options[visSels.at(0).selectedIndex].text : 'ЖК Онега';
-          // У Прораба скрытые поля имеют type="text", поэтому среди visNums ровно 6 открытых полей (индексы 0..5)
-          var rent = visNums.length > 0 ? (+visNums.at(0).value || 0) : 42;
-          var pen = visNums.length > 1 ? (+visNums.at(1).value || 0) : 15;
-          var idle = visNums.length > 2 ? (+visNums.at(2).value || 0) : 0;
-          var rework = visNums.length > 3 ? (+visNums.at(3).value || 0) : 0;
-          var total = visNums.length > 4 ? (+visNums.at(4).value || 0) : 0;
-          var first = visNums.length > 5 ? (+visNums.at(5).value || 0) : 0;
+
+          function getValByRowText(substr, fallback) {
+            var rows = document.querySelectorAll('tr, div');
+            for (var r = 0; r < rows.length; r++) {
+              if (rows[r].offsetParent !== null && rows[r].textContent.indexOf(substr) !== -1) {
+                var inp = rows[r].querySelector('input[type="number"]');
+                if (inp) return +inp.value || 0;
+              }
+            }
+            return fallback;
+          }
+
+          var rent = getValByRowText('Аренда простаивающих', 42);
+          var pen = getValByRowText('Штрафные санкции', 15);
+          var idle = getValByRowText('организационного простоя', 0);
+          var rework = getValByRowText('переделки и брак', 0);
+          var total = getValByRowText('предъявленных технадзору', 0);
+          var first = getValByRowText('принятых с 1-го раза', 0);
           var ftriPct = total > 0 ? ((first / total) * 100).toFixed(1) : '0.0';
+
 
 
           var tbl = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;">' +
