@@ -1155,17 +1155,15 @@ function renderPortfolioTable() {
         var allN = document.querySelectorAll('input[type="number"]');
         for (var n = 0; n < allN.length; n++) { if (allN[n].offsetParent !== null) visNums.push(allN[n]); }
 
-        if (roleType === 'foreman') {
+                if (roleType === 'foreman') {
           var objName = visSels.length > 0 ? visSels.at(0).options[visSels.at(0).selectedIndex].text : 'ЖК Онега';
-          var enNums = new Array();
-          for (var k = 0; k < visNums.length; k++) { if (!visNums.at(k).disabled) enNums.push(visNums.at(k)); }
-
-          var rent = enNums.length > 0 ? (+enNums.at(0).value || 0) : 42;
-          var pen = enNums.length > 1 ? (+enNums.at(1).value || 0) : 15;
-          var idle = enNums.length > 2 ? (+enNums.at(2).value || 0) : 0;
-          var rework = enNums.length > 3 ? (+enNums.at(3).value || 0) : 0;
-          var total = enNums.length > 4 ? (+enNums.at(4).value || 0) : 0;
-          var first = enNums.length > 5 ? (+enNums.at(5).value || 0) : 0;
+          // Берем точные индексы полей из формы объекта (6: аренда, 7: штраф, 8: дни простоя, 13: брак ФОТ, 14: предъявлено, 15: принято с 1-го раза)
+          var rent = visNums.length > 6 ? (+visNums.at(6).value || 0) : 42;
+          var pen = visNums.length > 7 ? (+visNums.at(7).value || 0) : 15;
+          var idle = visNums.length > 8 ? (+visNums.at(8).value || 0) : 0;
+          var rework = visNums.length > 13 ? (+visNums.at(13).value || 0) : 0;
+          var total = visNums.length > 14 ? (+visNums.at(14).value || 0) : 0;
+          var first = visNums.length > 15 ? (+visNums.at(15).value || 0) : 0;
           var ftriPct = total > 0 ? ((first / total) * 100).toFixed(1) : '0.0';
 
           var tbl = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;">' +
