@@ -1021,7 +1021,7 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-<!-- ЕДИНЫЙ МОДУЛЬ: РОЛЕВАЯ ИЗОЛЯЦИЯ, ЖУРНАЛ ИЗМЕНЕНИЙ И СОГЛАСОВАНИЕ (ЧАСТЬ 1) -->
+<!-- ЕДИНЫЙ МОДУЛЬ: РОЛЕВАЯ ИЗОЛЯЦИЯ, ЖУРНАЛ ИЗМЕНЕНИЙ И СОГЛАСОВАНИЕ (ЧАСТЬ 1 - ИСПРАВЛЕНО) -->
 <script>
 (function() {
   var auditLog = new Array(
@@ -1038,8 +1038,9 @@ function renderPortfolioTable() {
   }
 
   function getCurrentRole() {
-    var topHeader = document.querySelector('header') || document.body;
-    var txt = topHeader ? topHeader.innerText : '';
+    var topHeader = document.querySelector('header');
+    if (!topHeader || topHeader.offsetParent === null) return 'guest';
+    var txt = topHeader.innerText || '';
     if (txt.indexOf('Подрядчик') !== -1 || txt.indexOf('Подрядная организация') !== -1) return 'contractor';
     if (txt.indexOf('Прораб') !== -1) return 'foreman';
     if (txt.indexOf('ПТО') !== -1) return 'pto';
@@ -1118,22 +1119,31 @@ function renderPortfolioTable() {
 
     var foremanBanner = document.getElementById('foreman-workflow-bar');
 
+    // РОЛЬ: ПОДРЯДНАЯ ОРГАНИЗАЦИЯ
     if (role === 'contractor') {
+      if (contractorTabBtn && !contractorTabBtn.classList.contains('active')) {
+        contractorTabBtn.click();
+      }
       nav.style.setProperty('display', 'none', 'important');
-      if (contractorTabBtn && !contractorTabBtn.classList.contains('active')) contractorTabBtn.click();
+      if (auditPanel) auditPanel.style.display = 'none';
       if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
       return;
     }
 
+    // РОЛЬ: ПРОРАБ
     if (role === 'foreman') {
+      if (!diagBtn.classList.contains('active')) {
+        diagBtn.click();
+      }
       nav.style.setProperty('display', 'none', 'important');
       if (auditPanel) auditPanel.style.display = 'none';
 
-      var allCards = document.querySelectorAll('h2, h3');
-      for (var c = 0; c < allCards.length; c++) {
-        var hText = allCards[c].textContent;
-        if (hText.indexOf('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ') !== -1 || hText.indexOf('5 авторских показателей') !== -1 || hText.indexOf('Управленческие рекомендации') !== -1) {
-          if (allCards[c].parentElement) allCards[c].parentElement.style.setProperty('display', 'none', 'important');
+      // Точечно скрываем только карточки с отчетом KPI, таблицей 5 KPI и рекомендациями
+      var cards = document.querySelectorAll('.card');
+      for (var c = 0; c < cards.length; c++) {
+        var cTxt = cards[c].textContent;
+        if (cTxt.indexOf('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ') !== -1 || cTxt.indexOf('5 авторских показателей') !== -1 || cTxt.indexOf('Управленческие рекомендации') !== -1) {
+          cards[c].style.setProperty('display', 'none', 'important');
         }
       }
 
@@ -1149,7 +1159,7 @@ function renderPortfolioTable() {
           foremanBanner.innerHTML =
             '<div><strong style="color:#1e3a8a;">👷 Режим оперативного ввода прораба</strong><br><span style="font-size:13px;color:#475569;">Заполните данные по простоям, браку и приемке технадзора. После отправки цифры поступят на проверку ПТО и Директору.</span></div>' +
             '<button id="btn-foreman-send" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">📤 Отправить на согласование</button>';
-          saveBtn.parentElement.parentElement.appendChild(foremanBanner);
+          saveBtn.parentElement.insertAdjacentElement('afterend', foremanBanner);
 
           document.getElementById('btn-foreman-send').addEventListener('click', function() {
             var inps = document.querySelectorAll('input[type="number"]');
@@ -1182,11 +1192,12 @@ function renderPortfolioTable() {
       return;
     }
 
+    // РОЛИ: ДИРЕКТОР И ИНЖЕНЕР ПТО
     nav.style.removeProperty('display');
     if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
-    var restored = document.querySelectorAll('h2, h3');
-    for (var r = 0; r < restored.length; r++) {
-      if (restored[r].parentElement) restored[r].parentElement.style.removeProperty('display');
+    var allCardsRestore = document.querySelectorAll('.card');
+    for (var r = 0; r < allCardsRestore.length; r++) {
+      allCardsRestore[r].style.removeProperty('display');
     }
   }
 
