@@ -1721,21 +1721,24 @@ function renderPortfolioTable() {
       admPanel.style.display = 'block';
     });
 
-    var navBtns = nav.children;
+        var navBtns = nav.children;
     for (var n = 0; n < navBtns.length; n++) {
       if (navBtns[n] !== admBtn) {
         navBtns[n].addEventListener('click', function() {
           admBtn.classList.remove('active');
-          admPanel.style.display = 'none';
-          var sibs = nav.parentElement.children;
-          for (var j = 0; j < sibs.length; j++) {
-            if (sibs[j] !== nav && sibs[j] !== admPanel && sibs[j].tagName === 'DIV') sibs[j].style.removeProperty('display');
+          admPanel.style.setProperty('display', 'none', 'important');
+          if (this.id !== 'tab-audit-btn') {
+            var sibs = nav.parentElement.children;
+            for (var j = 0; j < sibs.length; j++) {
+              if (sibs[j] !== nav && sibs[j] !== admPanel && sibs[j].id !== 'view-audit-panel' && sibs[j].tagName === 'DIV') {
+                sibs[j].style.removeProperty('display');
+              }
+            }
           }
         });
       }
     }
-  }, 500);
-})();
+
 </script>
 <!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 4.3: ГРАФИК ДИНАМИКИ (ТОЛЬКО ДИРЕКТОР) -->
 <script>
@@ -1885,25 +1888,39 @@ function renderPortfolioTable() {
     }
   });
 
-  setInterval(function() {
+    setInterval(function() {
     var c = window._kpiCore;
     if (!c) return;
     var role = c.getRole();
-    if (role !== 'director' && role !== 'pto') return;
+    var existingCard = document.getElementById('sub-dynamics-card');
 
-    // Ищем таблицу рейтинга подрядных организаций
+    if (role !== 'director' && role !== 'pto') {
+      if (existingCard) existingCard.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    // Ищем точный заголовок со 2-го скриншота: "Мониторинг и оценка эффективности подрядных организаций"
     var ratingTitle = null;
     var els = document.querySelectorAll('h2, h3, div');
     for (var i = 0; i < els.length; i++) {
-      if (els[i].children.length === 0 && els[i].textContent.indexOf('Рейтинг подрядных организаций') !== -1) {
+      if (els[i].children.length === 0 && els[i].textContent.indexOf('Мониторинг и оценка эффективности подрядных') !== -1) {
         ratingTitle = els[i];
         break;
       }
     }
-    if (!ratingTitle || ratingTitle.offsetParent === null) return;
+
+    if (!ratingTitle || ratingTitle.offsetParent === null) {
+      if (existingCard) existingCard.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    if (existingCard) {
+      existingCard.style.removeProperty('display');
+      return;
+    }
 
     var container = ratingTitle.parentElement;
-    if (!container || document.getElementById('sub-dynamics-card')) return;
+    if (!container) return;
 
     var card = document.createElement('div');
     card.id = 'sub-dynamics-card';
@@ -1973,6 +1990,7 @@ function renderPortfolioTable() {
   }, 600);
 })();
 </script>
+
 
 </body>
 </html>
