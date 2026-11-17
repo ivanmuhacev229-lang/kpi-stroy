@@ -1190,10 +1190,16 @@ function renderPortfolioTable() {
   <!-- ШАГ 1: ИМПОРТ ИЗ EXCEL (CSV) — ТОЛЬКО ДЛЯ ДИРЕКТОРА И ПТО -->
 <script>
 (function() {
-  setInterval(function() {
-    // Проверяем, открыт ли финансовый блок (у Прораба и Подрядчика он скрыт)
-    var finBlock = document.getElementById('finance-inputs');
-    var canImport = finBlock && finBlock.offsetParent !== null;
+    setInterval(function() {
+    // Проверяем по тексту: у Прораба и Подрядчика нет видимого поля "Сметная стоимость"
+    var canImport = false;
+    var allLabels = document.querySelectorAll('label, td, div, span');
+    for (var L = 0; L < allLabels.length; L++) {
+      if (allLabels[L].textContent.indexOf('Сметная стоимость') !== -1 && allLabels[L].offsetParent !== null) {
+        canImport = true;
+        break;
+      }
+    }
 
     var impBtn = document.getElementById('btn-import-xlsx');
     var tplBtn = document.getElementById('btn-tpl-xlsx');
