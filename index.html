@@ -1021,7 +1021,7 @@ function renderPortfolioTable() {
     tbody.innerHTML = rowsHtml + totalRow;
 }
 </script>
-<!-- ЕДИНЫЙ МОДУЛЬ: РОЛЕВАЯ ИЗОЛЯЦИЯ, ЖУРНАЛ ИЗМЕНЕНИЙ И СОГЛАСОВАНИЕ (ЧАСТЬ 1 - ИСПРАВЛЕНО) -->
+<!-- ЕДИНЫЙ МОДУЛЬ: РОЛЕВАЯ ИЗОЛЯЦИЯ И СОГЛАСОВАНИЕ (ЧАСТЬ 1 - ФИНАЛ) -->
 <script>
 (function() {
   var auditLog = new Array(
@@ -1046,6 +1046,19 @@ function renderPortfolioTable() {
     if (txt.indexOf('ПТО') !== -1) return 'pto';
     if (txt.indexOf('Директор') !== -1) return 'director';
     return 'guest';
+  }
+
+  function hideSectionByTitle(titleSubstr, shouldHide) {
+    var els = document.querySelectorAll('h1, h2, h3, h4');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].textContent.indexOf(titleSubstr) !== -1) {
+        var box = els[i].parentElement;
+        if (box && box.id !== 'app-screen' && box.tagName !== 'MAIN' && box.tagName !== 'BODY') {
+          if (shouldHide) box.style.setProperty('display', 'none', 'important');
+          else box.style.removeProperty('display');
+        }
+      }
+    }
   }
 
   function applyRoleArchitecture() {
@@ -1119,8 +1132,9 @@ function renderPortfolioTable() {
 
     var foremanBanner = document.getElementById('foreman-workflow-bar');
 
-    // РОЛЬ: ПОДРЯДНАЯ ОРГАНИЗАЦИЯ
+    // 1. РОЛЬ: ПОДРЯДНАЯ ОРГАНИЗАЦИЯ
     if (role === 'contractor') {
+      nav.style.removeProperty('display');
       if (contractorTabBtn && !contractorTabBtn.classList.contains('active')) {
         contractorTabBtn.click();
       }
@@ -1130,22 +1144,19 @@ function renderPortfolioTable() {
       return;
     }
 
-    // РОЛЬ: ПРОРАБ
+    // 2. РОЛЬ: ПРОРАБ
     if (role === 'foreman') {
+      nav.style.removeProperty('display');
       if (!diagBtn.classList.contains('active')) {
         diagBtn.click();
       }
       nav.style.setProperty('display', 'none', 'important');
       if (auditPanel) auditPanel.style.display = 'none';
 
-      // Точечно скрываем только карточки с отчетом KPI, таблицей 5 KPI и рекомендациями
-      var cards = document.querySelectorAll('.card');
-      for (var c = 0; c < cards.length; c++) {
-        var cTxt = cards[c].textContent;
-        if (cTxt.indexOf('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ') !== -1 || cTxt.indexOf('5 авторских показателей') !== -1 || cTxt.indexOf('Управленческие рекомендации') !== -1) {
-          cards[c].style.setProperty('display', 'none', 'important');
-        }
-      }
+      // Прячем блоки с отчетом KPI, таблицей 5 показателей и рекомендациями
+      hideSectionByTitle('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ', true);
+      hideSectionByTitle('5 авторских показателей', true);
+      hideSectionByTitle('Управленческие рекомендации', true);
 
       if (!foremanBanner) {
         var saveBtn = null;
@@ -1192,13 +1203,12 @@ function renderPortfolioTable() {
       return;
     }
 
-    // РОЛИ: ДИРЕКТОР И ИНЖЕНЕР ПТО
+    // 3. РОЛИ: ДИРЕКТОР И ИНЖЕНЕР ПТО
     nav.style.removeProperty('display');
     if (foremanBanner) foremanBanner.style.setProperty('display', 'none', 'important');
-    var allCardsRestore = document.querySelectorAll('.card');
-    for (var r = 0; r < allCardsRestore.length; r++) {
-      allCardsRestore[r].style.removeProperty('display');
-    }
+    hideSectionByTitle('ОТЧЕТ ОБ ЭФФЕКТИВНОСТИ', false);
+    hideSectionByTitle('5 авторских показателей', false);
+    hideSectionByTitle('Управленческие рекомендации', false);
   }
 
   window._kpiAuditData = { log: auditLog, save: saveLog, apply: applyRoleArchitecture };
