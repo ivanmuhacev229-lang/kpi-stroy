@@ -1187,11 +1187,28 @@ function renderPortfolioTable() {
   }, 300);
 })();
 </script>
-   <!-- ШАГ 1: АВТОНОМНЫЙ МОДУЛЬ ИМПОРТА ИЗ EXCEL (CSV) БЕЗ ВНЕШНИХ СЕРВЕРОВ -->
+  <!-- ШАГ 1: ИМПОРТ ИЗ EXCEL (CSV) — ТОЛЬКО ДЛЯ ДИРЕКТОРА И ПТО -->
 <script>
 (function() {
-  function initCsvImport() {
-    if (document.getElementById('btn-import-xlsx')) return;
+  setInterval(function() {
+    // Проверяем, открыт ли финансовый блок (у Прораба и Подрядчика он скрыт)
+    var finBlock = document.getElementById('finance-inputs');
+    var canImport = finBlock && finBlock.offsetParent !== null;
+
+    var impBtn = document.getElementById('btn-import-xlsx');
+    var tplBtn = document.getElementById('btn-tpl-xlsx');
+
+    if (!canImport) {
+      if (impBtn) impBtn.style.setProperty('display', 'none', 'important');
+      if (tplBtn) tplBtn.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    if (impBtn && tplBtn) {
+      impBtn.style.removeProperty('display');
+      tplBtn.style.removeProperty('display');
+      return;
+    }
 
     var anchorBtn = null;
     var btns = document.querySelectorAll('button');
@@ -1211,13 +1228,13 @@ function renderPortfolioTable() {
     fileInp.accept = '.csv, .txt';
     fileInp.style.display = 'none';
 
-    var impBtn = document.createElement('button');
+    impBtn = document.createElement('button');
     impBtn.id = 'btn-import-xlsx';
     impBtn.className = anchorBtn.className;
     impBtn.style.cssText = 'background:#16a34a;color:#fff;border:none;cursor:pointer;';
     impBtn.textContent = '📥 Загрузить из Excel (CSV)';
 
-    var tplBtn = document.createElement('button');
+    tplBtn = document.createElement('button');
     tplBtn.id = 'btn-tpl-xlsx';
     tplBtn.className = anchorBtn.className;
     tplBtn.style.cssText = 'background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;cursor:pointer;';
@@ -1227,7 +1244,6 @@ function renderPortfolioTable() {
     bar.appendChild(impBtn);
     bar.appendChild(tplBtn);
 
-    // Скачивание шаблона в кодировке UTF-8 с BOM (Excel на Mac и Windows открывает его сразу по колонкам)
     tplBtn.addEventListener('click', function(e) {
       e.preventDefault();
       var csvLines = new Array(
@@ -1311,12 +1327,9 @@ function renderPortfolioTable() {
       };
       reader.readAsText(file, 'UTF-8');
     });
-  }
-
-  setInterval(initCsvImport, 500);
+  }, 400);
 })();
 </script>
-
 
 </body>
 </html>
