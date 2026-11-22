@@ -2000,6 +2000,261 @@ function renderPortfolioTable() {
   }, 600);
 })();
 </script>
+<!-- ПЕРСОНАЛЬНЫЕ ДОЛЖНОСТНЫЕ ИНСТРУКЦИИ ВНУТРИ КАБИНЕТОВ -->
+<script>
+(function() {
+  var roleGuides = {
+    foreman: {
+      title: '👷 Ваша должностная инструкция: Прораб / Начальник участка',
+      freq: 'Регламент ввода: Раз в неделю (по пятницам до 16:00) + оперативно при ЧП',
+      tasks: '1. Фиксируйте дни организационных простоев, простой техники и затраты ФОТ на переделки.<br>2. Указывайте объемы работ, предъявленных технадзору и принятых с 1-го раза.<br>3. Прикрепите фото с площадки, напишите комментарий и нажмите «📤 Отправить на согласование».'
+    },
+    contractor: {
+      title: '🏗️ Ваша должностная инструкция: Подрядная организация',
+      freq: 'Регламент ввода: 2 раза в месяц (15-го числа и 25–28-го числа перед закрытием КС-2)',
+      tasks: '1. Укажите наименование организации, вид работ, предъявленные и принятые с 1-го раза объемы.<br>2. Внесите данные по переделкам (браку) и количеству дней отставания от графика.<br>3. Приложите фотофиксацию этапа и отправьте отчет генподрядчику. Статус проверки отобразится ниже.'
+    },
+    pto: {
+      title: '📐 Ваша должностная инструкция: Инженер ПТО / Экономист',
+      freq: 'Регламент ввода: Еженедельно (после отчетов прорабов) и перед закрытием актов КС-2/КС-3',
+      tasks: '1. Откройте вкладку «🔔 Согласование» — проверьте фотоотчеты прорабов и подрядчиков, утвердите или верните на доработку.<br>2. Обновите сметную стоимость, прибыль, срок закрытия КС-2 и объем НЗП (можно через «📥 Загрузить из Excel»).<br>3. При ручной корректировке цифр обязательно укажите причину для журнала аудита.'
+    },
+    director: {
+      title: '👔 Ваша должностная инструкция: Генеральный директор / Руководитель',
+      freq: 'Регламент контроля: Еженедельно (утренняя планерка 15 мин) и раз в месяц (фиксация среза)',
+      tasks: '1. Контролируйте «светофор» по всем объектам во вкладке «Портфель объектов» и динамику качества подрядчиков.<br>2. Утверждайте спорные отклонения во вкладке «Согласование и Журнал».<br>3. Раз в месяц нажимайте «📌 Зафиксировать срез» на графике диагностики, чтобы отслеживать возврат прибыли.'
+    }
+  };
+
+  setInterval(function() {
+    var landing = document.getElementById('saas-landing-page');
+    if (landing && landing.style.display !== 'none') return;
+
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    var box = document.getElementById('personal-role-guide-box');
+
+    if (role === 'guest' || !roleGuides[role]) {
+      if (box) box.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    var diagBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = btns[i]; break; }
+    }
+    if (!diagBtn || !diagBtn.parentElement) return;
+    var targetParent = diagBtn.parentElement.parentElement;
+
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'personal-role-guide-box';
+      box.style.cssText = 'background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0284c7;border-radius:10px;padding:14px 18px;margin:14px 0 18px;font-size:13px;color:#0f172a;line-height:1.5;';
+      targetParent.insertBefore(box, diagBtn.parentElement);
+    }
+
+    if (box.dataset.currentRole !== role) {
+      var info = roleGuides[role];
+      box.dataset.currentRole = role;
+      box.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">' +
+          '<strong style="color:#0369a1;font-size:14px;">' + info.title + '</strong>' +
+          '<span style="background:#e0f2fe;color:#0369a1;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">⏱ ' + info.freq + '</span>' +
+        '</div>' +
+        '<div style="color:#334155;">' + info.tasks + '</div>';
+    }
+    box.style.removeProperty('display');
+  }, 400);
+})();
+</script>
+<!-- ИНТЕРАКТИВНАЯ МИНИ-ПРЕЗЕНТАЦИЯ ДЛЯ ЗАКАЗЧИКОВ (ЧАСТЬ 1) -->
+<script>
+(function() {
+  if (document.getElementById('saas-landing-page')) return;
+
+  var landing = document.createElement('div');
+  landing.id = 'saas-landing-page';
+  landing.style.cssText = 'background:#f1f5f9;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0f172a;display:flex;flex-direction:column;';
+
+  landing.innerHTML =
+    '<!-- ВЕРХНЯЯ ПАНЕЛЬ -->' +
+    '<div style="background:#0f172a;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+      '<div style="font-size:18px;font-weight:800;">🏗️ СтройЭффект <span style="color:#38bdf8;">KPI</span> <span style="font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px;">Презентация продукта</span></div>' +
+      '<button class="btn-enter-system" style="background:#16a34a;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:700;cursor:pointer;">🚀 Войти в рабочую систему</button>' +
+    '</div>' +
+
+    '<!-- ПЕРЕКЛЮЧАТЕЛЬ СЛАЙДОВ -->' +
+    '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 16px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">' +
+      '<button class="pres-tab" data-slide="0" style="padding:8px 14px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">1. О продукте и экономия</button>' +
+      '<button class="pres-tab" data-slide="1" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer;">2. 5 точек контроля бюджета</button>' +
+      '<button class="pres-tab" data-slide="2" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer;">3. Как работают 4 роли</button>' +
+      '<button class="pres-tab" data-slide="3" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#334155;font-size:13px;font-weight:600;cursor:pointer;">4. Внедрение и Тарифы</button>' +
+    '</div>' +
+
+    '<!-- КОНТЕЙНЕР СЛАЙДОВ -->' +
+    '<div style="max-width:980px;width:100%;margin:24px auto;padding:0 16px;flex:1;box-sizing:border-box;">' +
+
+      '<!-- СЛАЙД 1 -->' +
+      '<div class="pres-slide" style="background:#fff;border-radius:16px;padding:36px 28px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(15,23,42,0.05);">' +
+        '<span style="background:#eff6ff;color:#1d4ed8;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;">Слайд 1 из 4 • Назначение системы</span>' +
+        '<h1 style="font-size:28px;margin:14px 0 12px;line-height:1.25;">Облачная система управления организационно-экономической эффективностью стройки</h1>' +
+        '<p style="font-size:15.5px;color:#475569;line-height:1.6;margin-bottom:24px;">«СтройЭффект KPI» помогает собственникам и директорам строительных компаний в реальном времени видеть, где на объектах теряется плановая прибыль, и принимать точные управленческие решения до закрытия актов.</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:12px;"><div style="font-size:24px;font-weight:800;color:#15803d;">2% — 5%</div><div style="font-size:13px;color:#166534;margin-top:4px;"><strong>Экономия сметного бюджета</strong> за счет сокращения простоев, переделок и заморозки денег в КС-2</div></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:18px;border-radius:12px;"><div style="font-size:24px;font-weight:800;color:#1d4ed8;">1 день</div><div style="font-size:13px;color:#1e40af;margin-top:4px;"><strong>Быстрый запуск</strong> без сложной перестройки 1С — достаточно загрузить данные из Excel</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:18px;border-radius:12px;"><div style="font-size:24px;font-weight:800;color:#0f172a;">100%</div><div style="font-size:13px;color:#334155;margin-top:4px;"><strong>Прозрачность стройки:</strong> фотофиксация со стройплощадки и журнал всех правок</div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<!-- СЛАЙД 2 -->' +
+      '<div class="pres-slide" style="display:none;background:#fff;border-radius:16px;padding:36px 28px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(15,23,42,0.05);">' +
+        '<span style="background:#eff6ff;color:#1d4ed8;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;">Слайд 2 из 4 • Методика расчетов</span>' +
+        '<h2 style="font-size:25px;margin:14px 0 10px;">Какие 5 скрытых «дыр» в бюджете закрывает система</h2>' +
+        '<p style="font-size:14.5px;color:#475569;margin-bottom:20px;">Вместо десятков сложных графиков руководитель видит 5 конкретных финансовых показателей и понятный «светофор» (Зеленая, Желтая, Красная зона):</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">' +
+          '<div style="padding:14px;border:1px solid #e2e8f0;border-radius:10px;"><strong>1. MEI — «Съеденная» маржа</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Отделяет удорожание материалов от внутренних потерь из-за плохой организации работ.</p></div>' +
+          '<div style="padding:14px;border:1px solid #e2e8f0;border-radius:10px;"><strong>2. DCC — Заморозка в КС-2/КС-3</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Считает, сколько процентов по кредитам компания переплачивает из-за задержки подписания актов.</p></div>' +
+          '<div style="padding:14px;border:1px solid #e2e8f0;border-radius:10px;"><strong>3. CoD — Цена дня простоя</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Показывает точную сумму убытка за каждый день остановки объекта (накладные, краны, штрафы).</p></div>' +
+          '<div style="padding:14px;border:1px solid #e2e8f0;border-radius:10px;"><strong>4. CLE — Доля переделок в ФОТ</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Выявляет, какой процент зарплатного фонда уходит на исправление брака и дефектов.</p></div>' +
+          '<div style="padding:14px;border:1px solid #e2e8f0;border-radius:10px;"><strong>5. FTRI — Приемка с 1-го раза</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Формирует объективный рейтинг подрядчиков по качеству сдачи работ технадзору.</p></div>' +
+          '<div style="padding:14px;background:#fefce8;border:1px solid #fde047;border-radius:10px;"><strong>💡 Пример расчета:</strong><p style="font-size:13px;color:#713f12;margin:6px 0 0;">На объекте с бюджетом 680 млн ₽ устранение «красных» зон по этим 5 метрикам позволяет вернуть в прибыль <strong>~14–20 млн ₽ (около 2,5% бюджета)</strong>.</p></div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="pres-slides-3-4"></div>' +
+    '</div>' +
+
+    '<!-- НИЖНЯЯ НАВИГАЦИЯ СЛАЙДОВ -->' +
+    '<div style="background:#fff;border-top:1px solid #e2e8f0;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;max-width:980px;width:100%;margin:0 auto 24px;border-radius:12px;box-sizing:border-box;">' +
+      '<button id="btn-prev-slide" style="padding:10px 18px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-weight:600;cursor:pointer;">← Назад</button>' +
+      '<span id="slide-counter-lbl" style="font-size:13px;color:#64748b;font-weight:600;">Слайд 1 из 4</span>' +
+      '<button id="btn-next-slide" style="padding:10px 20px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600;cursor:pointer;">Далее →</button>' +
+    '</div>';
+
+  document.body.insertBefore(landing, document.body.firstChild);
+})();
+</script>
+<!-- ИНТЕРАКТИВНАЯ МИНИ-ПРЕЗЕНТАЦИЯ ДЛЯ ЗАКАЗЧИКОВ (ЧАСТЬ 2) -->
+<script>
+(function() {
+  var slot = document.getElementById('pres-slides-3-4');
+  if (!slot) return;
+
+  slot.innerHTML =
+    '<!-- СЛАЙД 3 -->' +
+    '<div class="pres-slide" style="display:none;background:#fff;border-radius:16px;padding:36px 28px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(15,23,42,0.05);">' +
+      '<span style="background:#eff6ff;color:#1d4ed8;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;">Слайд 3 из 4 • Безопасность и контроль</span>' +
+      '<h2 style="font-size:25px;margin:14px 0 10px;">Как устроена работа внутри: 4 кабинета и защита от искажений</h2>' +
+      '<p style="font-size:14.5px;color:#475569;margin-bottom:20px;">Каждый участник видит только свой участок. Подрядчик и прораб не могут «подкрутить» общие финансы без проверки ПТО или директора:</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:18px;">' +
+        '<div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid #0284c7;"><strong>👷 Прораб</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Вносит простои, переделки и приемку технадзора. Прикрепляет фото с площадки.</p></div>' +
+        '<div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid #d97706;"><strong>🏗️ Подрядчик</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Сдает отчеты по объемам и качеству в отдельном окне без доступа к данным генподрядчика.</p></div>' +
+        '<div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid #4f46e5;"><strong>📐 Инженер ПТО</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Проверяет фотоотчеты, загружает сметы из Excel и следит за закрытием КС-2.</p></div>' +
+        '<div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid #16a34a;"><strong>👔 Директор</strong><p style="font-size:13px;color:#475569;margin:6px 0 0;">Видит портфель объектов, рейтинг подрядчиков, графики динамики и журнал всех правок.</p></div>' +
+      '</div>' +
+      '<div style="background:#eff6ff;padding:14px 18px;border-radius:10px;font-size:13.5px;color:#1e3a8a;"><strong>🔒 Журнал аудита:</strong> любое изменение цифр («Было → Стало») фиксируется с указанием автора, времени и причины корректировки.</div>' +
+    '</div>' +
+
+    '<!-- СЛАЙД 4 -->' +
+    '<div class="pres-slide" style="display:none;background:#fff;border-radius:16px;padding:36px 28px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(15,23,42,0.05);">' +
+      '<span style="background:#dcfce7;color:#166534;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;">Слайд 4 из 4 • Тарифы и запуск</span>' +
+      '<h2 style="font-size:25px;margin:14px 0 10px;">Тарифы на подключение и обслуживание</h2>' +
+      '<p style="font-size:14px;color:#475569;margin-bottom:20px;">Безлимитное число прорабов, инженеров ПТО и подрядчиков на любом тарифе — оплата зависит только от числа активных строек:</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-bottom:20px;">' +
+        '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:20px;"><strong>Тариф «Старт»</strong><div style="font-size:24px;font-weight:800;margin:8px 0;">7 900 ₽/мес.</div><div style="font-size:13px;color:#475569;margin-bottom:14px;">До <strong>2 объектов</strong>. Все 5 KPI, фотофиксация, кабинеты прораба и подрядчиков.</div><button onclick="window._openTariffModal(\'Тариф Старт (7 900 ₽/мес.)\')" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2563eb;background:#fff;color:#2563eb;font-weight:700;cursor:pointer;">Выбрать «Старт»</button></div>' +
+        '<div style="border:2px solid #2563eb;border-radius:12px;padding:20px;background:#f8fafc;"><strong>Тариф «Бизнес» (Хит)</strong><div style="font-size:24px;font-weight:800;margin:8px 0;color:#2563eb;">19 900 ₽/мес.</div><div style="font-size:13px;color:#475569;margin-bottom:14px;">До <strong>7 объектов</strong> + импорт из Excel/1С, графики динамики и настройка порогов.</div><button onclick="window._openTariffModal(\'Тариф Бизнес (19 900 ₽/мес.)\')" style="width:100%;padding:10px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;">Выбрать «Бизнес»</button></div>' +
+        '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:20px;"><strong>Тариф «Корпорация»</strong><div style="font-size:24px;font-weight:800;margin:8px 0;">45 000 ₽/мес.</div><div style="font-size:13px;color:#475569;margin-bottom:14px;">От <strong>15 объектов</strong> + сквозной портфель по регионам и первичный аудит строек.</div><button onclick="window._openTariffModal(\'Тариф Корпорация (45 000 ₽/мес.)\')" style="width:100%;padding:10px;border-radius:8px;border:none;background:#0f172a;color:#fff;font-weight:700;cursor:pointer;">Запросить подключение</button></div>' +
+      '</div>' +
+      '<div style="text-align:center;"><button class="btn-enter-system" style="background:#16a34a;color:#fff;border:none;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🚀 Попробовать систему прямо сейчас (Открыть демо)</button></div>' +
+    '</div>';
+
+  // Логика слайдера и входа в систему
+  var curSlide = 0;
+  var slides = document.querySelectorAll('.pres-slide');
+  var tabs = document.querySelectorAll('.pres-tab');
+  var prevBtn = document.getElementById('btn-prev-slide');
+  var nextBtn = document.getElementById('btn-next-slide');
+  var lbl = document.getElementById('slide-counter-lbl');
+
+  function goSlide(idx) {
+    curSlide = Math.max(0, Math.min(slides.length - 1, idx));
+    for (var i = 0; i < slides.length; i++) {
+      slides[i].style.display = (i === curSlide) ? 'block' : 'none';
+    }
+    for (var t = 0; t < tabs.length; t++) {
+      if (t === curSlide) {
+        tabs[t].style.background = '#2563eb';
+        tabs[t].style.color = '#fff';
+        tabs[t].style.borderColor = '#2563eb';
+      } else {
+        tabs[t].style.background = '#fff';
+        tabs[t].style.color = '#334155';
+        tabs[t].style.borderColor = '#cbd5e1';
+      }
+    }
+    lbl.textContent = 'Слайд ' + (curSlide + 1) + ' из ' + slides.length;
+    prevBtn.style.visibility = (curSlide === 0) ? 'hidden' : 'visible';
+    nextBtn.textContent = (curSlide === slides.length - 1) ? '🚀 Перейти в систему' : 'Далее →';
+  }
+
+  for (var t = 0; t < tabs.length; t++) {
+    tabs[t].addEventListener('click', function() { goSlide(+this.dataset.slide); });
+  }
+  prevBtn.addEventListener('click', function() { goSlide(curSlide - 1); });
+  nextBtn.addEventListener('click', function() {
+    if (curSlide === slides.length - 1) showSystem();
+    else goSlide(curSlide + 1);
+  });
+  goSlide(0);
+
+  var landingEl = document.getElementById('saas-landing-page');
+  var appSiblings = new Array();
+  for (var i = 0; i < document.body.children.length; i++) {
+    var el = document.body.children[i];
+    if (el !== landingEl && el.tagName !== 'SCRIPT') {
+      appSiblings.push(el);
+      el.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+  function showSystem() {
+    landingEl.style.setProperty('display', 'none', 'important');
+    for (var j = 0; j < appSiblings.length; j++) appSiblings.at(j).style.removeProperty('display');
+    window.scrollTo(0, 0);
+  }
+
+  function showLanding() {
+    for (var j = 0; j < appSiblings.length; j++) appSiblings.at(j).style.setProperty('display', 'none', 'important');
+    landingEl.style.removeProperty('display');
+    window.scrollTo(0, 0);
+  }
+
+  var enterBtns = document.querySelectorAll('.btn-enter-system');
+  for (var b = 0; b < enterBtns.length; b++) enterBtns[b].addEventListener('click', showSystem);
+
+  window._openTariffModal = function(tariffName) {
+    var contact = prompt('Вы выбрали: ' + tariffName + '\n\nОставьте название вашей компании и телефон / Telegram для связи:', '');
+    if (contact && contact.trim()) alert('✅ Заявка принята! Мы свяжемся с вами (' + contact.trim() + ') для запуска пилота.');
+  };
+
+  setInterval(function() {
+    if (landingEl.style.display !== 'none' || document.getElementById('btn-back-landing')) return;
+    var hs = document.querySelectorAll('h1, h2');
+    for (var k = 0; k < hs.length; k++) {
+      if (hs[k].textContent.indexOf('Выберите вашу роль') !== -1 || hs[k].textContent.indexOf('СтройЭффект KPI') !== -1) {
+        var backBtn = document.createElement('button');
+        backBtn.id = 'btn-back-landing';
+        backBtn.textContent = '← Вернуться к презентации продукта и тарифам';
+        backBtn.style.cssText = 'display:block;margin:0 auto 16px;background:#e2e8f0;color:#0f172a;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;';
+        backBtn.addEventListener('click', showLanding);
+        hs[k].parentElement.insertBefore(backBtn, hs[k]);
+        break;
+      }
+    }
+  }, 600);
+})();
+</script>
 
 
 </body>
