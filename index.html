@@ -2767,23 +2767,48 @@ function renderPortfolioTable() {
   }, 450);
 })();
 </script>
-<!-- БЛОК Б.1.2: 3 ОТДЕЛЬНЫЕ ВКЛАДКИ И РАЗГРАНИЧЕНИЕ ДОСТУПА ПО РОЛЯМ -->
+<!-- БЛОК Б.1.2 v4: ЧИСТЫЕ 3 ОТДЕЛЬНЫЕ ВКЛАДКИ БЕЗ СТАРОГО ДУБЛЯ -->
 <script>
 (function() {
-  function hideAllCustomPanels() {
-    var ids = ['view-cloud-exchange', 'view-cloud-penalties', 'view-cloud-chat', 'view-settings-admin', 'view-audit-panel'];
-    for (var i = 0; i < ids.length; i++) {
-      var el = document.getElementById(ids[i]);
-      if (el) el.style.setProperty('display', 'none', 'important');
+  var customPanelIds = ['view-cloud-exchange', 'view-cloud-penalties', 'view-cloud-chat', 'view-settings-admin', 'view-audit-panel', 'view-cloud-hub-panel'];
+  var customTabIds = ['tab-cloud-ex-btn', 'tab-cloud-pay-btn', 'tab-cloud-chat-btn', 'adm-tab-btn', 'tab-audit-btn', 'tab-cloud-hub-btn'];
+
+  function showOnlyCustom(nav, targetPanel) {
+    var root = nav.parentElement;
+    if (!root) return;
+    var sibs = root.children;
+    for (var i = 0; i < sibs.length; i++) {
+      var el = sibs[i];
+      if (el === nav || el.id === 'personal-role-guide-box' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+      if (el === targetPanel) {
+        el.style.setProperty('display', 'block', 'important');
+      } else {
+        el.style.setProperty('display', 'none', 'important');
+      }
     }
-    var tabIds = ['tab-cloud-ex-btn', 'tab-cloud-pay-btn', 'tab-cloud-chat-btn', 'adm-tab-btn', 'tab-audit-btn'];
-    for (var t = 0; t < tabIds.length; t++) {
-      var tb = document.getElementById(tabIds[t]);
-      if (tb) tb.classList.remove('active');
+  }
+
+  function showOnlyNative(nav) {
+    var root = nav.parentElement;
+    if (!root) return;
+    var sibs = root.children;
+    for (var i = 0; i < sibs.length; i++) {
+      var el = sibs[i];
+      if (customPanelIds.indexOf(el.id) !== -1) {
+        el.style.setProperty('display', 'none', 'important');
+      } else if (el !== nav && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+        el.style.removeProperty('display');
+      }
     }
   }
 
   setInterval(function() {
+    // Удаляем старую общую кнопку и панель, если они остались
+    var oldBtn = document.getElementById('tab-cloud-hub-btn');
+    if (oldBtn) oldBtn.remove();
+    var oldPnl = document.getElementById('view-cloud-hub-panel');
+    if (oldPnl) oldPnl.remove();
+
     var c = window._kpiCore;
     if (!c) return;
     var role = c.getRole();
@@ -2829,15 +2854,8 @@ function renderPortfolioTable() {
       btn.addEventListener('click', function() {
         var ch = nav.children;
         for (var k = 0; k < ch.length; k++) ch[k].classList.remove('active');
-        hideAllCustomPanels();
         btn.classList.add('active');
-        var sibs = nav.parentElement.children;
-        for (var j = 0; j < sibs.length; j++) {
-          if (sibs[j] !== nav && sibs[j] !== pnl && sibs[j].tagName === 'DIV') {
-            sibs[j].style.setProperty('display', 'none', 'important');
-          }
-        }
-        pnl.style.display = 'block';
+        showOnlyCustom(nav, pnl);
         if (renderFn) renderFn(pnl);
       });
     }
@@ -2849,25 +2867,21 @@ function renderPortfolioTable() {
     var navBtns = nav.children;
     for (var n = 0; n < navBtns.length; n++) {
       var bid = navBtns[n].id;
-      if (bid !== 'tab-cloud-ex-btn' && bid !== 'tab-cloud-pay-btn' && bid !== 'tab-cloud-chat-btn' && !navBtns[n].dataset.boundHide) {
-        navBtns[n].dataset.boundHide = '1';
+      if (customTabIds.indexOf(bid) === -1 && !navBtns[n].dataset.boundV4) {
+        navBtns[n].dataset.boundV4 = '1';
         navBtns[n].addEventListener('click', function() {
-          var customPanels = ['view-cloud-exchange', 'view-cloud-penalties', 'view-cloud-chat'];
-          for (var p = 0; p < customPanels.length; p++) {
-            var el = document.getElementById(customPanels[p]);
-            if (el) el.style.setProperty('display', 'none', 'important');
-          }
-          var customTabs = ['tab-cloud-ex-btn', 'tab-cloud-pay-btn', 'tab-cloud-chat-btn'];
-          for (var t = 0; t < customTabs.length; t++) {
-            var tb = document.getElementById(customTabs[t]);
+          for (var t = 0; t < customTabIds.length; t++) {
+            var tb = document.getElementById(customTabIds[t]);
             if (tb) tb.classList.remove('active');
           }
+          showOnlyNative(nav);
         });
       }
     }
-  }, 450);
+  }, 400);
 })();
 </script>
+
 <!-- БЛОК Б.2.1: КОНТЕНТ БИРЖИ ПОДРЯДЧИКОВ И КОНТРОЛЯ ШТРАФОВ -->
 <script>
 (function() {
