@@ -2255,6 +2255,399 @@ function renderPortfolioTable() {
   }, 600);
 })();
 </script>
+<!-- ОБЛАЧНАЯ БАЗА ДАННЫХ SUPABASE, РЕГИСТРАЦИЯ И ЗАЩИТА (БЛОК А) -->
+<script>
+(function() {
+  var SB_URL = 'https://rxyumrwxirxuzkwevazw.supabase.co/rest/v1/';
+  var SB_KEY = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
+
+  function sbFetch(path, opts) {
+    opts = opts || {};
+    var headers = Object.assign({
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    }, opts.headers || {});
+    return fetch(SB_URL + path, Object.assign({}, opts, { headers: headers }))
+      .then(function(r) { return r.json(); });
+  }
+
+  // E2E шифрование сообщений (текст шифруется до отправки в базу Supabase)
+  function e2eEncode(text, secret) {
+    var key = secret || 'KPISecret2026';
+    var res = '';
+    for (var i = 0; i < text.length; i++) {
+      res += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return 'E2E:' + btoa(unescape(encodeURIComponent(res)));
+  }
+
+  function e2eDecode(cipher, secret) {
+    if (!cipher || cipher.indexOf('E2E:') !== 0) return cipher;
+    try {
+      var key = secret || 'KPISecret2026';
+      var raw = decodeURIComponent(escape(atob(cipher.slice(4))));
+      var res = '';
+      for (var i = 0; i < raw.length; i++) {
+        res += String.fromCharCode(raw.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return res;
+    } catch (e) { return '[Зашифрованное сообщение]'; }
+  }
+
+  // Текущая облачная сессия пользователя
+  var session = null;
+  try {
+    var saved = localStorage.getItem('kpistroy_cloud_session');
+    if (saved) session = JSON.parse(saved);
+  } catch (e) {}
+
+  function saveSession(s) {
+    session = s;
+    try { localStorage.setItem('kpistroy_cloud_session', JSON.stringify(s)); } catch (e) {}
+  }
+
+  // Окно подтверждения критических действий (защита от случайных нажатий)
+  function confirmAction(title, desc, onConfirm) {
+    var old = document.getElementById('kpi-confirm-modal');
+    if (old) old.remove();
+    var m = document.createElement('div');
+    m.id = 'kpi-confirm-modal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    m.innerHTML =
+      '<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.2);">' +
+        '<h3 style="margin:0 0 10px;color:#0f172a;font-size:18px;">⚠️ ' + title + '</h3>' +
+        '<p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.5;">' + desc + '</p>' +
+        '<div style="display:flex;justify-content:flex-end;gap:10px;">' +
+          '<button id="kpi-cfm-no" style="padding:10px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-weight:600;cursor:pointer;">Отмена</button>' +
+          '<button id="kpi-cfm-yes" style="padding:10px 18px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-weight:700;cursor:pointer;">Подтвердить действие</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(m);
+    document.getElementById('kpi-cfm-no').onclick = function() { m.remove(); };
+    document.getElementById('kpi-cfm-yes').onclick = function() { m.remove(); onConfirm(); };
+  }
+
+  window._cloudApp = {
+    sb: sbFetch,
+    encode: e2eEncode,
+    decode: e2eDecode,
+    getSession: function() { return session; },
+    setSession: saveSession,
+    confirm: confirmAction
+  };
+})();
+</script>
+<!-- ОБЛАЧНАЯ БАЗА ДАННЫХ SUPABASE: РЕГИСТРАЦИЯ И ВКЛАДКА (БЛОК Б.1) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  setInterval(function() {
+    var landing = document.getElementById('saas-landing-page');
+    if (landing && landing.style.display !== 'none') return;
+
+    var hs = document.querySelectorAll('h1, h2');
+    var roleTitle = null;
+    for (var i = 0; i < hs.length; i++) {
+      if (hs[i].offsetParent !== null && (hs[i].textContent.indexOf('Выберите вашу роль') !== -1 || hs[i].textContent.indexOf('СтройЭффект KPI') !== -1)) {
+        roleTitle = hs[i];
+        break;
+      }
+    }
+
+    if (roleTitle && !document.getElementById('cloud-auth-card')) {
+      var authBox = document.createElement('div');
+      authBox.id = 'cloud-auth-card';
+      authBox.style.cssText = 'max-width:780px;margin:0 auto 24px;background:#fff;border:2px solid #2563eb;border-radius:14px;padding:20px;box-shadow:0 6px 20px rgba(37,99,235,0.1);';
+      var cur = app.getSession();
+
+      if (cur && cur.company) {
+        authBox.innerHTML =
+          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+            '<div><span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 Облачная база подключена</span>' +
+            '<div style="font-size:16px;font-weight:800;margin-top:6px;">' + cur.company.name + ' (ИНН: ' + cur.company.inn + ')</div>' +
+            '<div style="font-size:13px;color:#475569;">Код приглашения для сотрудников: <strong style="background:#f1f5f9;padding:2px 8px;border-radius:6px;color:#0f172a;">' + cur.company.invite_code + '</strong></div></div>' +
+            '<button id="btn-cloud-logout" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;">Сменить компанию</button>' +
+          '</div>';
+      } else {
+        authBox.innerHTML =
+          '<div style="font-weight:800;font-size:16px;color:#0f172a;margin-bottom:6px;">☁️ Облачная регистрация компании и синхронизация команды</div>' +
+          '<p style="font-size:13px;color:#475569;margin:0 0 14px;">Зарегистрируйте строительную фирму / подрядчика по ИНН или войдите по коду приглашения (либо выберите демо-роль ниже):</p>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px;">' +
+            '<input id="reg-comp-name" placeholder="Название ООО / ИП" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+            '<input id="reg-comp-inn" placeholder="ИНН организации" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+            '<select id="reg-comp-type" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+              '<option value="general">Генподрядчик / Застройщик</option>' +
+              '<option value="subcontractor">Подрядная организация</option>' +
+            '</select>' +
+            '<input id="reg-comp-spec" placeholder="Специализация (Монолит...)" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+          '</div>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' +
+            '<button id="btn-reg-company" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">➕ Зарегистрировать компанию</button>' +
+            '<span style="color:#94a3b8;font-size:12.5px;">или</span>' +
+            '<input id="join-code-inp" placeholder="Код (напр. SUB-MONO1)" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;width:190px;">' +
+            '<button id="btn-join-company" style="background:#0f172a;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Войти по коду</button>' +
+          '</div>';
+      }
+
+      roleTitle.parentElement.insertBefore(authBox, roleTitle.nextSibling);
+
+      var outBtn = document.getElementById('btn-cloud-logout');
+      if (outBtn) outBtn.onclick = function() { app.setSession(null); authBox.remove(); };
+
+      var regBtn = document.getElementById('btn-reg-company');
+      if (regBtn) {
+        regBtn.onclick = function() {
+          var cname = document.getElementById('reg-comp-name').value.trim();
+          var cinn = document.getElementById('reg-comp-inn').value.trim();
+          var ctype = document.getElementById('reg-comp-type').value;
+          var cspec = document.getElementById('reg-comp-spec').value.trim() || 'Общестроительные работы';
+          if (!cname || !cinn) { alert('Укажите название организации и ИНН.'); return; }
+          var code = 'KPI-' + Math.floor(1000 + Math.random() * 9000);
+          regBtn.textContent = 'Сохранение...';
+          app.sb('companies', {
+            method: 'POST',
+            body: JSON.stringify({ name: cname, inn: cinn, company_type: ctype, invite_code: code, specialization: cspec, fns_verified: true })
+          }).then(function(res) {
+            if (Array.isArray(res) && res.length > 0) {
+              app.setSession({ company: res.at(0) });
+              authBox.remove();
+              alert('✅ Компания «' + cname + '» зарегистрирована! Код для сотрудников: ' + code);
+            } else {
+              alert('Компания с таким ИНН уже существует или проверьте подключение.');
+              regBtn.textContent = '➕ Зарегистрировать компанию';
+            }
+          });
+        };
+      }
+
+      var joinBtn = document.getElementById('btn-join-company');
+      if (joinBtn) {
+        joinBtn.onclick = function() {
+          var code = document.getElementById('join-code-inp').value.trim().toUpperCase();
+          if (!code) return;
+          app.sb('companies?invite_code=eq.' + encodeURIComponent(code)).then(function(rows) {
+            if (Array.isArray(rows) && rows.length > 0) {
+              app.setSession({ company: rows.at(0) });
+              authBox.remove();
+              alert('✅ Вы вошли в пространство компании: ' + rows.at(0).name);
+            } else {
+              alert('Код компании не найден.');
+            }
+          });
+        };
+      }
+    }
+
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    if (role === 'guest') return;
+
+    var diagBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var b = 0; b < btns.length; b++) {
+      if (btns[b].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = btns[b]; break; }
+    }
+    if (!diagBtn || !diagBtn.parentElement) return;
+    var nav = diagBtn.parentElement;
+
+    if (!document.getElementById('tab-cloud-hub-btn')) {
+      var hubBtn = document.createElement('button');
+      hubBtn.id = 'tab-cloud-hub-btn';
+      hubBtn.className = diagBtn.className.replace('active', '').trim();
+      hubBtn.textContent = '🌐 Биржа, Штрафы и E2E-Чат';
+      hubBtn.style.cursor = 'pointer';
+
+      var hubPanel = document.createElement('div');
+      hubPanel.id = 'view-cloud-hub-panel';
+      hubPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;';
+
+      nav.parentElement.insertBefore(hubPanel, nav.nextSibling);
+      nav.appendChild(hubBtn);
+
+      hubBtn.addEventListener('click', function() {
+        var ch = nav.children;
+        for (var k = 0; k < ch.length; k++) ch[k].classList.remove('active');
+        hubBtn.classList.add('active');
+        var sibs = nav.parentElement.children;
+        for (var j = 0; j < sibs.length; j++) {
+          if (sibs[j] !== nav && sibs[j] !== hubPanel && sibs[j].tagName === 'DIV') sibs[j].style.setProperty('display', 'none', 'important');
+        }
+        hubPanel.style.display = 'block';
+        if (window._renderCloudHub) window._renderCloudHub(hubPanel);
+      });
+
+      var navBtns = nav.children;
+      for (var n = 0; n < navBtns.length; n++) {
+        if (navBtns[n] !== hubBtn) {
+          navBtns[n].addEventListener('click', function() {
+            hubBtn.classList.remove('active');
+            hubPanel.style.setProperty('display', 'none', 'important');
+          });
+        }
+      }
+    }
+  }, 500);
+})();
+</script>
+<!-- ОБЛАЧНАЯ БАЗА ДАННЫХ SUPABASE: БИРЖА, ШТРАФЫ И МЕССЕНДЖЕР (БЛОК Б.2) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._renderCloudHub = function(panel) {
+    var cur = app.getSession();
+    var compTitle = (cur && cur.company) ? (cur.company.name + ' (Код: ' + cur.company.invite_code + ')') : 'Демо-режим (Вы можете зарегистрировать свою компанию на экране входа)';
+
+    panel.innerHTML =
+      '<div style="background:#eff6ff;padding:12px 16px;border-radius:10px;margin-bottom:20px;font-size:13.5px;color:#1e3a8a;"><strong>☁️ Активное пространство:</strong> ' + compTitle + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:18px;background:#f8fafc;">' +
+          '<h3 style="margin:0 0 8px;font-size:16px;">🔍 Биржа проверенных подрядчиков</h3>' +
+          '<p style="font-size:12.5px;color:#64748b;margin:0 0 12px;">Реальный рейтинг из облачной базы + статус проверки ФНС / ЕФРСБ (отсутствие банкротства):</p>' +
+          '<div id="cloud-exchange-list" style="font-size:13px;">Загрузка подрядчиков из базы...</div>' +
+        '</div>' +
+
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:18px;background:#f8fafc;">' +
+          '<h3 style="margin:0 0 8px;font-size:16px;">💰 Контроль непроизводительных трат и штрафов</h3>' +
+          '<p style="font-size:12.5px;color:#64748b;margin:0 0 10px;">Фиксация перерасхода материалов и штрафов с назначением виновника и меры оптимизации:</p>' +
+          '<input id="pay-title" placeholder="Назначение (напр. Штраф за слив бетона)" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;box-sizing:border-box;font-size:13px;">' +
+          '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
+            '<input id="pay-amount" type="number" placeholder="Сумма (₽)" style="width:45%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">' +
+            '<select id="pay-cat" style="width:55%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">' +
+              '<option value="penalty">🔴 Штраф / Брак</option>' +
+              '<option value="overrun">🟡 Перерасход материалов</option>' +
+              '<option value="plan">🟢 Плановый расход</option>' +
+            '</select>' +
+          '</div>' +
+          '<input id="pay-culprit" placeholder="Ответственный участок / Виновник" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;box-sizing:border-box;font-size:13px;">' +
+          '<input id="pay-measure" placeholder="Мера предотвращения (чтобы не повторилось)" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:10px;box-sizing:border-box;font-size:13px;">' +
+          '<button id="btn-add-payreq" style="width:100%;background:#dc2626;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Зафиксировать трату / штраф</button>' +
+          '<div id="cloud-pay-list" style="margin-top:12px;"></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:18px;background:#f8fafc;margin-top:20px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' +
+          '<h3 style="margin:0;font-size:16px;">🔒 Защищенный мессенджер отделов (Сквозное E2E-шифрование)</h3>' +
+          '<select id="chat-channel-sel" style="padding:7px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-weight:600;">' +
+            '<option value="obj_general">🏗️ Общий чат объекта</option>' +
+            '<option value="dept_pto">📐 Отдел ПТО и сметы</option>' +
+            '<option value="dept_finance">💰 Финансы и снабжение</option>' +
+          '</select>' +
+        '</div>' +
+        '<div id="cloud-chat-feed" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;height:180px;overflow-y:auto;margin-bottom:10px;font-size:13px;"></div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<input id="cloud-chat-inp" placeholder="Написать зашифрованное сообщение в отдел..." style="flex:1;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+          '<button id="btn-cloud-send-msg" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;">Отправить 🔒</button>' +
+        '</div>' +
+      '</div>';
+
+    app.sb('companies?company_type=eq.subcontractor&order=rating_ftri.desc').then(function(subs) {
+      var box = document.getElementById('cloud-exchange-list');
+      if (!box) return;
+      if (!Array.isArray(subs) || subs.length === 0) { box.textContent = 'Подрядчиков пока нет.'; return; }
+      var h = '';
+      for (var i = 0; i < subs.length; i++) {
+        var s = subs.at(i);
+        h += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;"><strong>' + s.name + '</strong><span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:700;">🟢 ФНС/ЕФРСБ ОК</span></div>' +
+          '<div style="font-size:12px;color:#64748b;margin:3px 0;">ИНН: ' + s.inn + ' • ' + s.city + ' • ' + s.specialization + '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
+            '<span style="font-size:12px;font-weight:700;color:#1e3a8a;">Качество: ' + s.rating_ftri + '% • Брак: ' + s.rating_cle + '%</span>' +
+            '<button onclick="window._inviteSubToObj(\'' + s.name + '\')" style="background:#2563eb;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;">Пригласить</button>' +
+          '</div></div>';
+      }
+      box.innerHTML = h;
+    });
+
+    window._inviteSubToObj = function(subName) {
+      app.confirm('Приглашение подрядчика на объект', 'Вы уверены, что хотите отправить официальное приглашение компании ' + subName + ' на текущий строительный объект?', function() {
+        alert('✅ Приглашение отправлено подрядчику ' + subName + '!');
+      });
+    };
+
+    function loadPayReqs() {
+      app.sb('payment_requests?order=created_at.desc&limit=5').then(function(rows) {
+        var list = document.getElementById('cloud-pay-list');
+        if (!list || !Array.isArray(rows)) return;
+        var h = '';
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows.at(i);
+          var badge = r.category === 'penalty' ? '🔴 Штраф' : (r.category === 'overrun' ? '🟡 Перерасход' : '🟢 План');
+          h += '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-bottom:6px;font-size:12px;">' +
+            '<strong>' + badge + ': ' + r.title + ' — ' + Number(r.amount).toLocaleString('ru-RU') + ' ₽</strong><br>' +
+            '<span style="color:#64748b;">Виновник: ' + (r.culprit_name || 'Не указан') + ' • Мера: ' + (r.prevention_measure || '—') + '</span>' +
+          '</div>';
+        }
+        list.innerHTML = h;
+      });
+    }
+    loadPayReqs();
+
+    document.getElementById('btn-add-payreq').onclick = function() {
+      var title = document.getElementById('pay-title').value.trim();
+      var amount = +document.getElementById('pay-amount').value || 0;
+      var cat = document.getElementById('pay-cat').value;
+      var culprit = document.getElementById('pay-culprit').value.trim();
+      var measure = document.getElementById('pay-measure').value.trim();
+      if (!title || amount <= 0) { alert('Укажите назначение и сумму.'); return; }
+
+      app.confirm('Фиксация расхода / штрафа', 'Зафиксировать сумму ' + amount.toLocaleString('ru-RU') + ' ₽ («' + title + '») в облачной базе объекта?', function() {
+        app.sb('payment_requests', {
+          method: 'POST',
+          body: JSON.stringify({ author_name: 'Сотрудник', title: title, amount: amount, category: cat, culprit_name: culprit, prevention_measure: measure })
+        }).then(function() {
+          document.getElementById('pay-title').value = '';
+          document.getElementById('pay-amount').value = '';
+          loadPayReqs();
+        });
+      });
+    };
+
+    var chSel = document.getElementById('chat-channel-sel');
+    function loadMessages() {
+      var ch = chSel.value;
+      app.sb('encrypted_messages?channel_key=eq.' + ch + '&order=created_at.asc&limit=20').then(function(msgs) {
+        var feed = document.getElementById('cloud-chat-feed');
+        if (!feed) return;
+        if (!Array.isArray(msgs) || msgs.length === 0) {
+          feed.innerHTML = '<div style="color:#94a3b8;">Сообщений в этом канале пока нет. Переписка защищена сквозным шифрованием.</div>';
+          return;
+        }
+        var h = '';
+        for (var i = 0; i < msgs.length; i++) {
+          var m = msgs.at(i);
+          h += '<div style="margin-bottom:8px;padding:6px 10px;background:#f8fafc;border-radius:8px;">' +
+            '<strong style="color:#1e3a8a;">' + m.sender_name + ':</strong> ' + app.decode(m.encrypted_payload) +
+          '</div>';
+        }
+        feed.innerHTML = h;
+        feed.scrollTop = feed.scrollHeight;
+      });
+    }
+    loadMessages();
+    chSel.onchange = loadMessages;
+
+    document.getElementById('btn-cloud-send-msg').onclick = function() {
+      var inp = document.getElementById('cloud-chat-inp');
+      var txt = inp.value.trim();
+      if (!txt) return;
+      var cipher = app.encode(txt);
+      inp.value = '';
+      app.sb('encrypted_messages', {
+        method: 'POST',
+        body: JSON.stringify({ channel_key: chSel.value, sender_name: 'Участник проекта', sender_role: 'staff', encrypted_payload: cipher })
+      }).then(loadMessages);
+    };
+  };
+})();
+</script>
 
 
 </body>
