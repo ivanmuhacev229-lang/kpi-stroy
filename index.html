@@ -2892,7 +2892,7 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- КНОПКА ЗАЩИЩЕННОГО ЧАТА ДЛЯ ПРОРАБА И ПОДРЯДЧИКА -->
+<!-- КНОПКА ЗАЩИЩЕННОГО ЧАТА ДЛЯ ПРОРАБА И ПОДРЯДЧИКА (ИСПРАВЛЕНО) -->
 <script>
 (function() {
   setInterval(function() {
@@ -2903,9 +2903,11 @@ function renderPortfolioTable() {
     if (!c) return;
     var role = c.getRole();
     var bar = document.getElementById('field-role-chat-bar');
+    var chatPanel = document.getElementById('view-field-chat-panel');
 
     if (role !== 'foreman' && role !== 'contractor') {
       if (bar) bar.style.setProperty('display', 'none', 'important');
+      if (chatPanel) chatPanel.style.setProperty('display', 'none', 'important');
       return;
     }
 
@@ -2920,9 +2922,9 @@ function renderPortfolioTable() {
         '<button id="btn-field-work" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;">📋 Рабочий экран и отчеты</button>' +
         '<button id="btn-field-chat" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;">💬 Защищенный чат (E2E)</button>';
 
-      var chatPanel = document.createElement('div');
+      chatPanel = document.createElement('div');
       chatPanel.id = 'view-field-chat-panel';
-      chatPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #e2e8f0;';
+      chatPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;border:2px solid #2563eb;box-shadow:0 8px 24px rgba(15,23,42,0.08);';
 
       guideBox.insertAdjacentElement('afterend', bar);
       bar.insertAdjacentElement('afterend', chatPanel);
@@ -2938,13 +2940,7 @@ function renderPortfolioTable() {
         btnWork.style.color = '#0f172a';
         btnWork.style.borderColor = '#cbd5e1';
 
-        var sibs = bar.parentElement.children;
-        for (var i = 0; i < sibs.length; i++) {
-          var el = sibs[i];
-          if (el === guideBox || el === bar || el === chatPanel || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
-          el.style.setProperty('display', 'none', 'important');
-        }
-        chatPanel.style.display = 'block';
+        chatPanel.style.setProperty('display', 'block', 'important');
         if (window._renderChatTab) window._renderChatTab(chatPanel);
       };
 
@@ -2956,13 +2952,7 @@ function renderPortfolioTable() {
         btnChat.style.color = '#0f172a';
         btnChat.style.borderColor = '#cbd5e1';
 
-        chatPanel.style.display = 'none';
-        var sibs = bar.parentElement.children;
-        for (var i = 0; i < sibs.length; i++) {
-          var el = sibs[i];
-          if (el === guideBox || el === bar || el === chatPanel || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
-          el.style.removeProperty('display');
-        }
+        chatPanel.style.setProperty('display', 'none', 'important');
       };
     }
     bar.style.removeProperty('display');
