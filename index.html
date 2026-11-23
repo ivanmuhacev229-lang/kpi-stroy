@@ -2892,6 +2892,83 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- КНОПКА ЗАЩИЩЕННОГО ЧАТА ДЛЯ ПРОРАБА И ПОДРЯДЧИКА -->
+<script>
+(function() {
+  setInterval(function() {
+    var landing = document.getElementById('saas-landing-page');
+    if (landing && landing.style.display !== 'none') return;
+
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    var bar = document.getElementById('field-role-chat-bar');
+
+    if (role !== 'foreman' && role !== 'contractor') {
+      if (bar) bar.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    var guideBox = document.getElementById('personal-role-guide-box');
+    if (!guideBox || !guideBox.parentElement) return;
+
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'field-role-chat-bar';
+      bar.style.cssText = 'display:flex;gap:10px;margin:0 0 18px;flex-wrap:wrap;';
+      bar.innerHTML =
+        '<button id="btn-field-work" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;">📋 Рабочий экран и отчеты</button>' +
+        '<button id="btn-field-chat" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;">💬 Защищенный чат (E2E)</button>';
+
+      var chatPanel = document.createElement('div');
+      chatPanel.id = 'view-field-chat-panel';
+      chatPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #e2e8f0;';
+
+      guideBox.insertAdjacentElement('afterend', bar);
+      bar.insertAdjacentElement('afterend', chatPanel);
+
+      var btnWork = document.getElementById('btn-field-work');
+      var btnChat = document.getElementById('btn-field-chat');
+
+      btnChat.onclick = function() {
+        btnChat.style.background = '#2563eb';
+        btnChat.style.color = '#fff';
+        btnChat.style.borderColor = '#2563eb';
+        btnWork.style.background = '#fff';
+        btnWork.style.color = '#0f172a';
+        btnWork.style.borderColor = '#cbd5e1';
+
+        var sibs = bar.parentElement.children;
+        for (var i = 0; i < sibs.length; i++) {
+          var el = sibs[i];
+          if (el === guideBox || el === bar || el === chatPanel || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+          el.style.setProperty('display', 'none', 'important');
+        }
+        chatPanel.style.display = 'block';
+        if (window._renderChatTab) window._renderChatTab(chatPanel);
+      };
+
+      btnWork.onclick = function() {
+        btnWork.style.background = '#2563eb';
+        btnWork.style.color = '#fff';
+        btnWork.style.borderColor = '#2563eb';
+        btnChat.style.background = '#fff';
+        btnChat.style.color = '#0f172a';
+        btnChat.style.borderColor = '#cbd5e1';
+
+        chatPanel.style.display = 'none';
+        var sibs = bar.parentElement.children;
+        for (var i = 0; i < sibs.length; i++) {
+          var el = sibs[i];
+          if (el === guideBox || el === bar || el === chatPanel || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+          el.style.removeProperty('display');
+        }
+      };
+    }
+    bar.style.removeProperty('display');
+  }, 450);
+})();
+</script>
 
 
 </body>
