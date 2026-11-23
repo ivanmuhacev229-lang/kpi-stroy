@@ -3095,6 +3095,187 @@ function renderPortfolioTable() {
   }, 450);
 })();
 </script>
+<!-- AES-GCM 256-БИТ КРИПТОДВИЖОК ДЛЯ МЕССЕНДЖЕРА (ЧАСТЬ 1) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app || !window.crypto || !window.crypto.subtle) return;
+
+  function getCompanySecret() {
+    var cur = app.getSession();
+    if (cur && cur.company && cur.company.invite_code) {
+      return 'KPIS-E2E-' + cur.company.invite_code + '-' + cur.company.inn;
+    }
+    return 'KPIS-DEMO-E2E-2026';
+  }
+
+  async function getAesKey() {
+    var enc = new TextEncoder();
+    var base = await crypto.subtle.importKey('raw', enc.encode(getCompanySecret()), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: enc.encode('kpistroy-e2e-salt'), iterations: 100000, hash: 'SHA-256' },
+      base,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  window._encryptE2E = async function(text) {
+    var key = await getAesKey();
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(text));
+    var full = new Uint8Array(iv.length + cipherBuf.byteLength);
+    full.set(iv, 0);
+    full.set(new Uint8Array(cipherBuf), iv.length);
+    var bin = '';
+    for (var i = 0; i < full.length; i++) bin += String.fromCharCode(full[i]);
+    return 'AES256:' + btoa(bin);
+  };
+
+  window._decryptE2E = async function(payload) {
+    if (!payload) return '';
+    if (payload.indexOf('AES256:') !== 0) return app.decode(payload);
+    try {
+      var bin = atob(payload.slice(7));
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var key = await getAesKey();
+      var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, key, bytes.slice(12));
+      return new TextDecoder().decode(plainBuf);
+    } catch (e) {
+      return '🔒 [Сообщение зашифровано ключом другой организации]';
+    }
+  };
+})();
+</script>
+<!-- МЕССЕНДЖЕР С AES-GCM 256-БИТ ШИФРОВАНИЕМ (ЧАСТЬ 2) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._initMessengerLogic = function(role, senderLabel) {
+    var deptsBox = document.getElementById('chat-sidebar-depts');
+    var subsWrap = document.getElementById('chat-sidebar-subs-wrap');
+    var subsBox = document.getElementById('chat-sidebar-subs');
+    var rightPane = document.getElementById('chat-right-pane');
+    if (!deptsBox || !rightPane) return;
+
+    var cur = app.getSession();
+    var compPrefix = (cur && cur.company) ? (cur.company.inn + '_') : 'demo_';
+    var activeChannel = (role === 'contractor') ? ('sub_direct_' + (cur && cur.company ? cur.company.inn : 'demo')) : (compPrefix + 'obj_general');
+    var activeTitle = (role === 'contractor') ? '🤝 Прямой чат с Генподрядчиком (ПТО и Директор)' : '🏗️ Общий чат объекта';
+
+    rightPane.innerHTML =
+      '<div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">' +
+        '<strong id="active-chat-header" style="font-size:14px;color:#0f172a;">' + activeTitle + '</strong>' +
+        '<span style="font-size:11.5px;color:#15803d;font-weight:700;">🛡️ AES-GCM 256-bit E2E</span>' +
+      '</div>' +
+      '<div id="cloud-chat-feed" style="flex:1;padding:14px;overflow-y:auto;max-height:270px;background:#f1f5f9;font-size:13.5px;"></div>' +
+      '<div style="padding:10px 12px;border-top:1px solid #e2e8f0;background:#fff;display:flex;gap:8px;">' +
+        '<input id="cloud-chat-inp" placeholder="Написать зашифрованное сообщение..." style="flex:1;padding:10px 12px;border:1px solid #cbd5e1;border-radius:20px;font-size:13px;outline:none;">' +
+        '<button id="btn-cloud-send-msg" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer;">➤</button>' +
+      '</div>';
+
+    function makeChatRow(chKey, title, subtitle) {
+      var item = document.createElement('div');
+      item.className = 'tg-chat-row';
+      item.dataset.key = chKey;
+      item.style.cssText = 'padding:9px 12px;border-radius:8px;cursor:pointer;transition:0.15s;border:1px solid transparent;';
+      item.innerHTML = '<div style="font-size:13px;font-weight:700;color:#0f172a;">' + title + '</div>' +
+        (subtitle ? '<div style="font-size:11.5px;color:#64748b;margin-top:2px;">' + subtitle + '</div>' : '');
+      item.onclick = function() {
+        activeChannel = chKey;
+        activeTitle = title;
+        document.getElementById('active-chat-header').textContent = title;
+        highlightActiveRow();
+        loadMessages();
+      };
+      return item;
+    }
+
+    function highlightActiveRow() {
+      var rows = document.querySelectorAll('.tg-chat-row');
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].dataset.key === activeChannel) {
+          rows[i].style.background = '#dbeafe';
+          rows[i].style.borderColor = '#93c5fd';
+        } else {
+          rows[i].style.background = 'transparent';
+          rows[i].style.borderColor = 'transparent';
+        }
+      }
+    }
+
+    if (role === 'contractor') {
+      subsWrap.style.display = 'none';
+      deptsBox.appendChild(makeChatRow(activeChannel, '🤝 Генподрядчик (ПТО и Директор)', 'Защищенный канал по объекту'));
+      highlightActiveRow();
+    } else {
+      deptsBox.appendChild(makeChatRow(compPrefix + 'obj_general', '🏗️ Общий чат объекта', 'Директор, ПТО, Прораб'));
+      deptsBox.appendChild(makeChatRow(compPrefix + 'dept_pto', '📐 Отдел ПТО и сметы', 'Чертежи, КС-2, объемы'));
+      deptsBox.appendChild(makeChatRow(compPrefix + 'dept_finance', '💰 Финансы и снабжение', 'Заявки на оплату, поставки'));
+      highlightActiveRow();
+
+      app.sb('companies?company_type=eq.subcontractor&order=name.asc').then(function(subs) {
+        subsBox.innerHTML = '';
+        if (!Array.isArray(subs) || subs.length === 0) {
+          subsBox.textContent = 'Нет подключенных подрядчиков';
+          return;
+        }
+        for (var i = 0; i < subs.length; i++) {
+          var s = subs.at(i);
+          subsBox.appendChild(makeChatRow('sub_direct_' + s.inn, '🤝 ' + s.name, s.specialization));
+        }
+        highlightActiveRow();
+      });
+    }
+
+    async function loadMessages() {
+      var msgs = await app.sb('encrypted_messages?channel_key=eq.' + encodeURIComponent(activeChannel) + '&order=created_at.asc&limit=40');
+      var feed = document.getElementById('cloud-chat-feed');
+      if (!feed) return;
+      if (!Array.isArray(msgs) || msgs.length === 0) {
+        feed.innerHTML = '<div style="text-align:center;color:#94a3b8;margin-top:40px;font-size:12.5px;">Сообщений пока нет.<br>Все сообщения шифруются алгоритмом AES-GCM 256-бит на вашем устройстве.</div>';
+        return;
+      }
+      var h = '';
+      for (var i = 0; i < msgs.length; i++) {
+        var m = msgs.at(i);
+        var plain = window._decryptE2E ? await window._decryptE2E(m.encrypted_payload) : app.decode(m.encrypted_payload);
+        var isMe = (m.sender_role === role);
+        var align = isMe ? 'margin-left:auto;background:#dbeafe;border:1px solid #bfdbfe;' : 'margin-right:auto;background:#fff;border:1px solid #e2e8f0;';
+        h += '<div style="max-width:80%;margin-bottom:8px;padding:8px 12px;border-radius:12px;' + align + '">' +
+          '<div style="font-size:11px;font-weight:700;color:#1e3a8a;margin-bottom:2px;">' + m.sender_name + '</div>' +
+          '<div style="color:#0f172a;line-height:1.4;">' + plain + '</div>' +
+        '</div>';
+      }
+      feed.innerHTML = h;
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    async function sendMsg() {
+      var inp = document.getElementById('cloud-chat-inp');
+      var txt = inp.value.trim();
+      if (!txt) return;
+      inp.value = '';
+      var cipher = window._encryptE2E ? await window._encryptE2E(txt) : app.encode(txt);
+      await app.sb('encrypted_messages', {
+        method: 'POST',
+        body: JSON.stringify({ channel_key: activeChannel, sender_name: senderLabel, sender_role: role, encrypted_payload: cipher })
+      });
+      loadMessages();
+    }
+
+    document.getElementById('btn-cloud-send-msg').onclick = sendMsg;
+    document.getElementById('cloud-chat-inp').onkeydown = function(e) {
+      if (e.key === 'Enter') sendMsg();
+    };
+    loadMessages();
+  };
+})();
+</script>
 
 
 </body>
