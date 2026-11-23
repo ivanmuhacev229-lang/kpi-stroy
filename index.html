@@ -3506,6 +3506,38 @@ function renderPortfolioTable() {
   }
 })();
 </script>
+<!-- ФИКС ВКЛАДКИ КОМАНДА И ОЧИСТКА МЕНЮ ДИРЕКТОРА -->
+<script>
+(function() {
+  setInterval(function() {
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+
+    // 1. Убираем вкладку "Кабинет подрядчика" из меню Директора и ПТО
+    if (role === 'director' || role === 'pto') {
+      var btns = document.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].textContent.indexOf('Кабинет подрядчика') !== -1) {
+          btns[i].style.setProperty('display', 'none', 'important');
+        }
+      }
+    }
+
+    // 2. Если открыта вкладка "Команда" — прячем все нижние блоки диагностики
+    var teamPnl = document.getElementById('view-cloud-team');
+    if (teamPnl && teamPnl.style.display === 'block' && teamPnl.parentElement) {
+      var sibs = teamPnl.parentElement.children;
+      for (var j = 0; j < sibs.length; j++) {
+        var el = sibs[j];
+        if (el === teamPnl || el.id === 'personal-role-guide-box' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+        if (el.querySelector && el.querySelector('#tab-cloud-team-btn')) continue;
+        el.style.setProperty('display', 'none', 'important');
+      }
+    }
+  }, 300);
+})();
+</script>
 
 
 </body>
