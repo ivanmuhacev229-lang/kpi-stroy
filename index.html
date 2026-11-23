@@ -3536,29 +3536,29 @@ function renderPortfolioTable() {
   }, 250);
 })();
 </script>
-<!-- ЭТАП 2 (ЧАСТЬ 1 ИЗ 2): ДОБАВЛЕНИЕ РОЛЕЙ ФИНАНСИСТ И ИНВЕСТОР -->
+<!-- ЭТАП 2 (ЧАСТЬ 1 ИЗ 2 v3): НАДЕЖНЫЙ ЗАПУСК РОЛЕЙ ФИНАНСИСТ И ИНВЕСТОР -->
 <script>
 (function() {
   window._openSpecialRole = function(specialRole) {
+    try { sessionStorage.setItem('kpi_special_role', specialRole); } catch (e) {}
+    window._activeSpecialRole = specialRole;
     if (window._kpiCore && typeof window._kpiCore.setRole === 'function') {
       window._kpiCore.setRole('director');
-    } else {
-      var btns = document.querySelectorAll('button');
-      for (var i = 0; i < btns.length; i++) {
-        if (btns[i].textContent.indexOf('Директор / Генподрядчик') !== -1) {
-          btns[i].click();
-          break;
-        }
+      return;
+    }
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent.indexOf('Директор / Генподрядчик') !== -1) {
+        btns[i].click();
+        break;
       }
     }
-    window._activeSpecialRole = specialRole;
   };
 
   setInterval(function() {
     var landing = document.getElementById('saas-landing-page');
     if (landing && landing.style.display !== 'none') return;
 
-    // 1. Добавляем Финансиста и Инвестора в выпадающий список облачного входа
     var roleSel = document.getElementById('login-role-sel');
     if (roleSel && !roleSel.querySelector('option[value="finance"]')) {
       var optFin = document.createElement('option');
@@ -3572,21 +3572,27 @@ function renderPortfolioTable() {
       roleSel.appendChild(optInv);
     }
 
-    // 2. Перехватываем вход для специальных ролей
     var origEnter = window._enterRoleDirectly;
-    if (origEnter && !origEnter._patchedSpecial) {
+    if (origEnter && !origEnter._patchedSpecialV3) {
       window._enterRoleDirectly = function(roleKey) {
         if (roleKey === 'finance' || roleKey === 'investor') {
           window._openSpecialRole(roleKey);
         } else {
+          try { sessionStorage.removeItem('kpi_special_role'); } catch (e) {}
           window._activeSpecialRole = null;
           origEnter(roleKey);
         }
       };
-      window._enterRoleDirectly._patchedSpecial = true;
+      window._enterRoleDirectly._patchedSpecialV3 = true;
     }
 
-    // 3. Добавляем 2 карточки быстрого демо-входа слева на главном экране
+    // Очищаем спецроль при выходе на экран выбора ролей
+    var c = window._kpiCore;
+    if (c && c.getRole() === 'guest') {
+      try { sessionStorage.removeItem('kpi_special_role'); } catch (e) {}
+      window._activeSpecialRole = null;
+    }
+
     var subCardBtn = null;
     var allBtns = document.querySelectorAll('button');
     for (var b = 0; b < allBtns.length; b++) {
@@ -3610,19 +3616,20 @@ function renderPortfolioTable() {
       subCardBtn.parentElement.appendChild(finBtn);
       subCardBtn.parentElement.appendChild(invBtn);
     }
-  }, 400);
+  }, 300);
 })();
 </script>
-<!-- ЭТАП 2 (ЧАСТЬ 2 ИЗ 2 v2): СТАБИЛЬНЫЕ ЭКРАНЫ ФИНАНСИСТА И ИНВЕСТОРА БЕЗ СКАЧКОВ -->
+<!-- ЭТАП 2 (ЧАСТЬ 2 ИЗ 2 v3): ИЗОЛИРОВАННЫЙ ИНТЕРФЕЙС ФИНАНСИСТА И ИНВЕСТОРА -->
 <script>
 (function() {
-  var app = window._cloudApp;
-  if (!app) return;
-
   var renderedSpec = null;
 
   setInterval(function() {
     var spec = window._activeSpecialRole;
+    if (!spec) {
+      try { spec = sessionStorage.getItem('kpi_special_role'); } catch (e) {}
+    }
+
     var c = window._kpiCore;
     var existingWs = document.getElementById('special-role-workspace');
 
@@ -3630,24 +3637,17 @@ function renderPortfolioTable() {
       if (existingWs) {
         existingWs.remove();
         renderedSpec = null;
-        var diagBtn0 = null;
-        var allB0 = document.querySelectorAll('button');
-        for (var k = 0; k < allB0.length; k++) {
-          if (allB0[k].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn0 = allB0[k]; break; }
-        }
-        if (diagBtn0 && diagBtn0.parentElement && diagBtn0.parentElement.parentElement) {
-          var r0 = diagBtn0.parentElement.parentElement;
-          for (var j = 0; j < r0.children.length; j++) {
-            if (r0.children[j].tagName !== 'SCRIPT' && r0.children[j].tagName !== 'STYLE') {
-              r0.children[j].style.removeProperty('display');
-            }
-          }
-        }
       }
       return;
     }
 
-    if (renderedSpec === spec && existingWs) return;
+    // Меняем бейдж роли в верхней шапке с "Директор" на выбранную спецроль
+    var topEls = document.querySelectorAll('span, div, badge');
+    for (var t = 0; t < topEls.length; t++) {
+      if (topEls[t].children.length === 0 && topEls[t].textContent.trim() === 'Директор / Генподрядчик') {
+        topEls[t].textContent = (spec === 'finance') ? '💰 Финансист / Снабженец' : '💼 Инвестор (Только чтение)';
+      }
+    }
 
     var diagBtn = null;
     var btns = document.querySelectorAll('button');
@@ -3659,12 +3659,15 @@ function renderPortfolioTable() {
     var nav = diagBtn.parentElement;
     var root = nav.parentElement;
 
+    // Жестко скрываем меню и все блоки Директора
     for (var i = 0; i < root.children.length; i++) {
       var el = root.children[i];
       if (el.id !== 'special-role-workspace' && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
         el.style.setProperty('display', 'none', 'important');
       }
     }
+
+    if (renderedSpec === spec && existingWs) return;
 
     var ws = existingWs || document.createElement('div');
     ws.id = 'special-role-workspace';
@@ -3706,9 +3709,10 @@ function renderPortfolioTable() {
           '</div>' +
         '</div>';
     }
-  }, 300);
+  }, 250);
 })();
 </script>
+
 
 
 </body>
