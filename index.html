@@ -3506,7 +3506,7 @@ function renderPortfolioTable() {
   }
 })();
 </script>
-<!-- ФИКС ВКЛАДКИ КОМАНДА И ОЧИСТКА МЕНЮ ДИРЕКТОРА -->
+<!-- ФИКС ВКЛАДКИ КОМАНДА И ОЧИСТКА МЕНЮ ДИРЕКТОРА v2 -->
 <script>
 (function() {
   setInterval(function() {
@@ -3514,7 +3514,6 @@ function renderPortfolioTable() {
     if (!c) return;
     var role = c.getRole();
 
-    // 1. Убираем вкладку "Кабинет подрядчика" из меню Директора и ПТО
     if (role === 'director' || role === 'pto') {
       var btns = document.querySelectorAll('button');
       for (var i = 0; i < btns.length; i++) {
@@ -3524,9 +3523,8 @@ function renderPortfolioTable() {
       }
     }
 
-    // 2. Если открыта вкладка "Команда" — прячем все нижние блоки диагностики
     var teamPnl = document.getElementById('view-cloud-team');
-    if (teamPnl && teamPnl.style.display === 'block' && teamPnl.parentElement) {
+    if (teamPnl && teamPnl.offsetParent !== null && teamPnl.parentElement) {
       var sibs = teamPnl.parentElement.children;
       for (var j = 0; j < sibs.length; j++) {
         var el = sibs[j];
@@ -3535,7 +3533,7 @@ function renderPortfolioTable() {
         el.style.setProperty('display', 'none', 'important');
       }
     }
-  }, 300);
+  }, 250);
 })();
 </script>
 
