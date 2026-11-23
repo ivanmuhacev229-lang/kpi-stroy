@@ -4113,159 +4113,120 @@ function renderPortfolioTable() {
   }, 1200);
 })();
 </script>
-<!-- ОБНОВЛЕННАЯ ПРЕЗЕНТАЦИЯ ПРОДУКТА И ПАНЕЛЬ ПРОДАЖ v2 (ЧАСТЬ 1 ИЗ 2) -->
+<!-- ПРЕЗЕНТАЦИЯ v3 (ЧАСТЬ 1 ИЗ 2): КАРКАС И СЛАЙДЫ 1-3 -->
 <script>
 (function() {
-  function upgradeLandingSlides() {
-    var landing = document.getElementById('saas-landing-page');
-    if (!landing || landing.dataset.upgradedV2 === '1') return;
-    landing.dataset.upgradedV2 = '1';
+  var landing = document.getElementById('saas-landing-page');
+  if (!landing) return;
 
-    landing.innerHTML =
-      '<div style="max-width:980px;margin:0 auto;padding:24px 16px;font-family:inherit;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;">' +
-          '<div><span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;">B2B SaaS Платформа • Сделано в России</span>' +
-          '<h1 style="margin:8px 0 4px;font-size:26px;color:#0f172a;">СтройЭффект KPI — цифровой контроль стройки без перегрузки</h1>' +
-          '<p style="margin:0;color:#475569;font-size:14px;">Управленческий контур поверх 1С, сквозной E2E-мессенджер, проверка подрядчиков по ИНН и защита от скрытых потерь</p></div>' +
-          '<button id="btn-launch-demo-v2" style="background:#2563eb;color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.25);">🚀 Открыть рабочую систему →</button>' +
+  landing.style.cssText = 'display:block !important;position:relative;z-index:100;background:#f8fafc;padding:24px 16px;border-bottom:2px solid #e2e8f0;';
+
+  landing.innerHTML =
+    '<div style="max-width:980px;margin:0 auto;font-family:inherit;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">' +
+        '<div><span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;">B2B SaaS Платформа • Сделано в России</span>' +
+        '<h1 style="margin:8px 0 4px;font-size:24px;color:#0f172a;">СтройЭффект KPI — цифровой контроль стройки без перегрузки</h1>' +
+        '<p style="margin:0;color:#475569;font-size:14px;">Управленческий контур поверх 1С, сквозной E2E-мессенджер (AES-256), проверка подрядчиков по ИНН и защита от потерь</p></div>' +
+        '<button id="btn-launch-demo-v3" style="background:#2563eb;color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.25);">🚀 Открыть рабочую систему →</button>' +
+      '</div>' +
+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">' +
+        '<button class="pres-v3-tab" data-slide="1" style="background:#0f172a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">1. Проблема и экономия 2–5%</button>' +
+        '<button class="pres-v3-tab" data-slide="2" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">2. 6 ролей и кабинетов</button>' +
+        '<button class="pres-v3-tab" data-slide="3" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">3. Безопасность, Биржа и Срезы</button>' +
+        '<button class="pres-v3-tab" data-slide="4" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">4. Тарифы и подключение</button>' +
+      '</div>' +
+
+      '<div class="pres-v3-slide" id="pres-v3-s1" style="background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
+        '<h2 style="margin:0 0 10px;font-size:19px;color:#0f172a;">Почему стройка теряет деньги, даже когда в «1С» всё сходится</h2>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px;">' +
+          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:15px;border-radius:12px;"><strong style="color:#991b1b;font-size:14.5px;">🔴 Скрытые потери на площадке</strong><p style="font-size:13px;color:#7f1d1d;margin:6px 0 0;">Простои техники и бригад, перерасход бетона сверх сметы, штрафы за слив остатков и переделки съедают до 5–8% маржи.</p></div>' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:15px;border-radius:12px;"><strong style="color:#166534;font-size:14.5px;">🟢 Эффект внедрения: 2% – 5% сметы</strong><p style="font-size:13px;color:#14532d;margin:6px 0 0;">Светофор платежей, разбор ошибок (CAPA) и контроль закрытия КС-2 сохраняют от 10 до 30 млн ₽ на каждом крупном объекте.</p></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:15px;border-radius:12px;"><strong style="color:#1e40af;font-size:14.5px;">⚡ 5 минут в неделю для прораба</strong><p style="font-size:13px;color:#1e3a8a;margin:6px 0 0;">Мобильное приложение (PWA) для телефона: прораб отправляет фото с площадки и 4 цифры раз в неделю.</p></div>' +
         '</div>' +
+      '</div>' +
 
-        '<!-- НАВИГАЦИЯ ПО 4 СЛАЙДАМ -->' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">' +
-          '<button class="pres-v2-tab" data-slide="1" style="background:#0f172a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">1. Проблема и экономия 2–5%</button>' +
-          '<button class="pres-v2-tab" data-slide="2" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">2. 6 ролей и кабинетов</button>' +
-          '<button class="pres-v2-tab" data-slide="3" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">3. Безопасность, Биржа и Срезы</button>' +
-          '<button class="pres-v2-tab" data-slide="4" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">4. Тарифы и подключение</button>' +
+      '<div class="pres-v3-slide" id="pres-v3-s2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
+        '<h2 style="margin:0 0 12px;font-size:19px;color:#0f172a;">6 специализированных кабинетов — каждый видит только свои задачи</h2>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:13px;">' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>👔 1. Владелец / Гендиректор</strong><div style="color:#475569;margin-top:4px;">Пульт здоровья бизнеса, согласование красных заявок и штрафов, управление командой и срез динамики.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>📐 2. Инженер ПТО</strong><div style="color:#475569;margin-top:4px;">Техническая приемка этапов с фото, контроль объемов сметы (MVR), сроков закрытия КС-2 и отбор подрядчиков.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>👷 3. Прораб / Начальник участка</strong><div style="color:#475569;margin-top:4px;">Облегченный мобильный экран без чужих финансов: фиксация простоев, выработки бригад, фотоотчеты и чат.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>💰 4. Финансист / Снабженец</strong><div style="color:#475569;margin-top:4px;">Учет живых денег (ДДС) без 1С, контроль остатков лимитов материалов по смете и маркировка штрафов.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>💼 5. Инвестор / Заказчик</strong><div style="color:#475569;margin-top:4px;">Защищенный режим «Только чтение»: индекс здоровья объекта (0–100), освоение бюджета и контрольные вехи.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>🤝 6. Подрядная организация</strong><div style="color:#475569;margin-top:4px;">4 модуля: трекер договоров КС-2/КС-3, подача отчетов, прямой чат с заказчиком и паспорт надежности ФНС (ИНН).</div></div>' +
         '</div>' +
+      '</div>' +
 
-        '<!-- СЛАЙД 1 -->' +
-        '<div class="pres-v2-slide" id="pres-v2-s1" style="background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:24px;">' +
-          '<h2 style="margin:0 0 10px;font-size:20px;color:#0f172a;">Почему стройка теряет деньги, даже когда в «1С» всё сходится</h2>' +
-          '<p style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:16px;">Бухгалтерские программы фиксируют расходы постфактум. «СтройЭффект KPI» работает в реальном времени как фильтр управленческих потерь — без двойного ввода данных и без перегрузки сотрудников:</p>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">' +
-            '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;"><strong style="color:#991b1b;font-size:15px;">🔴 Скрытые потери на площадке</strong><p style="font-size:13px;color:#7f1d1d;margin:6px 0 0;">Простои кранов и бригад, перерасход бетона сверх сметы, штрафы за слив остатков и повторные переделки съедают до 5–8% маржи.</p></div>' +
-            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><strong style="color:#166534;font-size:15px;">🟢 Эффект внедрения: 2% – 5% сметы</strong><p style="font-size:13px;color:#14532d;margin:6px 0 0;">Светофор платежей, разбор ошибок (CAPA) и контроль закрытия КС-2 сохраняют от 10 до 30 млн ₽ на каждом крупном объекте.</p></div>' +
-            '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:16px;border-radius:12px;"><strong style="color:#1e40af;font-size:15px;">⚡ 5 минут в неделю для прораба</strong><p style="font-size:13px;color:#1e3a8a;margin:6px 0 0;">Мобильное приложение (PWA) для телефона: прораб отправляет фото с площадки и 4 цифры раз в неделю, а система сама строит аналитику.</p></div>' +
-          '</div>' +
+      '<div class="pres-v3-slide" id="pres-v3-s3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
+        '<h2 style="margin:0 0 12px;font-size:19px;color:#0f172a;">Технологии защиты данных, честный рейтинг и автоматические срезы</h2>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13px;">' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:12px;"><strong>🔒 Защищенный мессенджер (AES-GCM 256-бит)</strong><p style="color:#475569;margin:6px 0 0;">Встроенный корпоративный чат по отделам и подрядчикам. Сообщения шифруются ключом компании прямо в браузере.</p></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:12px;"><strong>🔍 Биржа подрядчиков и проверка ИНН</strong><p style="color:#475569;margin:6px 0 0;">Рейтинг строится только по подтвержденным объемам и сдачам с 1-го раза + проверка по ЕГРЮЛ ФНС и Федресурсу.</p></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:12px;"><strong>📌 Неизменяемые срезы периодов + 2FA</strong><p style="color:#475569;margin:6px 0 0;">Двухфакторный вход по коду компании и заморозка отчетных срезов в конце каждого месяца/этапа.</p></div>' +
         '</div>' +
+      '</div>' +
 
-        '<!-- СЛАЙД 2 -->' +
-        '<div class="pres-v2-slide" id="pres-v2-s2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:24px;">' +
-          '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">6 специализированных кабинетов — каждый видит только свои задачи</h2>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:13px;">' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;"><strong>👔 1. Владелец / Гендиректор</strong><div style="color:#475569;margin-top:4px;">Пульт здоровья бизнеса, согласование красных заявок и штрафов, управление командой и срез динамики.</div></div>' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;"><strong>📐 2. Инженер ПТО</strong><div style="color:#475569;margin-top:4px;">Техническая приемка этапов с фото, контроль объемов сметы (MVR), сроков закрытия актов КС-2 и отбор подрядчиков.</div></div>' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;"><strong>👷 3. Прораб / Начальник участка</strong><div style="color:#475569;margin-top:4px;">Облегченный мобильный экран без чужих финансов: фиксация простоев, выработки бригад, фотоотчеты и чат с ПТО.</div></div>' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;"><strong>💰 4. Финансист / Снабженец</strong><div style="color:#475569;margin-top:4px;">Учет живых денег (ДДС) без 1С, контроль остатков лимитов материалов по смете и маркировка непроизводительных трат.</div></div>' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;"><strong>💼 5. Инвестор / Заказчик</strong><div style="color:#475569;margin-top:4px;">Защищенный режим «Только чтение»: индекс здоровья объекта (0–100), освоение бюджета и контрольные вехи.</div></div>' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;"><strong>🤝 6. Подрядная организация</strong><div style="color:#475569;margin-top:4px;">4 модуля: трекер договоров КС-2/КС-3, подача отчетов, прямой чат с заказчиком и паспорт надежности ФНС (ИНН).</div></div>' +
-          '</div>' +
-        '</div>' +
-
-        '<!-- СЛАЙД 3 -->' +
-        '<div class="pres-v2-slide" id="pres-v2-s3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:24px;">' +
-          '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">Технологии защиты данных, честный рейтинг и автоматические срезы</h2>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13.5px;">' +
-            '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>🔒 Защищенный мессенджер (AES-GCM 256-бит)</strong><p style="color:#475569;margin:6px 0 0;">Встроенный корпоративный чат по отделам и подрядчикам. Сообщения шифруются ключом компании прямо в браузере, история переписки остается внутри фирмы.</p></div>' +
-            '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>🔍 Биржа подрядчиков и проверка ИНН</strong><p style="color:#475569;margin:6px 0 0;">Рейтинг строится только по подтвержденным объемам и сдачам с 1-го раза, дополняется проверкой по ЕГРЮЛ ФНС и Федресурсу (отсутствие банкротств).</p></div>' +
-            '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>📌 Неизменяемые срезы периодов + 2FA</strong><p style="color:#475569;margin:6px 0 0;">Двухфакторный вход по коду компании и заморозка отчетных срезов в конце каждого месяца/этапа защищают статистику от подтасовок задним числом.</p></div>' +
-          '</div>' +
-        '</div>' +
-
-        '<!-- СЛАЙД 4 (ПАНЕЛЬ ТАРИФОВ И ПРЯМОЙ СВЯЗИ С АВТОРОМ) -->' +
-        '<div class="pres-v2-slide" id="pres-v2-s4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:24px;"></div>' +
-      '</div>';
-
-    if (window._initLandingSalesV2) window._initLandingSalesV2();
-  }
-
-  setInterval(upgradeLandingSlides, 350);
+      '<div class="pres-v3-slide" id="pres-v3-s4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"></div>' +
+    '</div>';
 })();
 </script>
-<!-- ОБНОВЛЕННАЯ ПРЕЗЕНТАЦИЯ ПРОДУКТА И ПАНЕЛЬ ПРОДАЖ v2 (ЧАСТЬ 2 ИЗ 2) -->
+<!-- ПРЕЗЕНТАЦИЯ v3 (ЧАСТЬ 2 ИЗ 2): ТАРИФЫ И КОНТАКТЫ АВТОРА (СГУПС ПГС) -->
 <script>
 (function() {
-  window._initLandingSalesV2 = function() {
-    var s4 = document.getElementById('pres-v2-s4');
-    if (s4) {
-      s4.innerHTML =
-        '<h2 style="margin:0 0 6px;font-size:20px;color:#0f172a;">Тарифы, распределение ролей и подключение</h2>' +
-        '<p style="font-size:13.5px;color:#475569;margin:0 0 16px;">Сейчас система работает в режиме прямого B2B-подключения и пилотных запусков с сопровождением автора проекта (без автоматического списания с карт):</p>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:20px;">' +
-          '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:16px;background:#f8fafc;">' +
-            '<span style="background:#e2e8f0;color:#334155;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:700;">Для подрядчиков и малых фирм</span>' +
-            '<h3 style="margin:10px 0 4px;font-size:18px;">Тариф «Старт» — 7 900 ₽/мес.</h3>' +
-            '<div style="font-size:12.5px;color:#475569;line-height:1.55;margin-top:8px;">' +
-              '• <strong>Кто подключает:</strong> Руководитель подрядной организации или ИП.<br>' +
-              '• <strong>Что входит:</strong> 1–2 объекта, кабинеты Прораба, ПТО и Подрядчика, трекер КС-2 и попадание в открытую Биржу подрядчиков.' +
-            '</div>' +
-          '</div>' +
-          '<div style="border:2px solid #2563eb;border-radius:12px;padding:16px;background:#eff6ff;">' +
-            '<span style="background:#2563eb;color:#fff;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:700;">Для генподрядчиков и застройщиков</span>' +
-            '<h3 style="margin:10px 0 4px;font-size:18px;color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</h3>' +
-            '<div style="font-size:12.5px;color:#1e3a8a;line-height:1.55;margin-top:8px;">' +
-              '• <strong>Кто подключает:</strong> Собственник / Гендиректор строительной компании.<br>' +
-              '• <strong>Что входит:</strong> До 10 объектов, все 6 ролей (включая Финансиста без 1С и Инвестора), E2E-чат (AES-256), контроль штрафов и срезы месяцев.' +
-            '</div>' +
-          '</div>' +
-          '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:16px;background:#f8fafc;">' +
-            '<span style="background:#0f172a;color:#fff;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:700;">Для девелоперов и холдингов</span>' +
-            '<h3 style="margin:10px 0 4px;font-size:18px;">Тариф «Корпорация» — от 45 000 ₽</h3>' +
-            '<div style="font-size:12.5px;color:#475569;line-height:1.55;margin-top:8px;">' +
-              '• <strong>Кто подключает:</strong> Директор по строительству / ИТ-директор холдинга.<br>' +
-              '• <strong>Что входит:</strong> Безлимит объектов и подрядчиков, выделенная база данных, интеграция выгрузок с 1С и индивидуальная настройка порогов.' +
-            '</div>' +
-          '</div>' +
+  var s4 = document.getElementById('pres-v3-s4');
+  if (s4) {
+    s4.innerHTML =
+      '<h2 style="margin:0 0 6px;font-size:19px;color:#0f172a;">Тарифы, распределение ролей и прямое подключение</h2>' +
+      '<p style="font-size:13px;color:#475569;margin:0 0 14px;">Платформа работает в режиме прямого B2B-подключения и пилотных запусков с личным сопровождением автора (без автоматических списаний с карт):</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">• <strong>Кто подключает:</strong> Руководитель подрядчика / ИП.<br>• <strong>Входит:</strong> 1–2 объекта, кабинеты Прораба, ПТО и Подрядчика, трекер КС-2 и Биржа.</div></div>' +
+        '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">• <strong>Кто подключает:</strong> Собственник / Гендиректор.<br>• <strong>Входит:</strong> До 10 объектов, все 6 ролей (Финансист без 1С, Инвестор), E2E-чат и срезы.</div></div>' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">• <strong>Кто подключает:</strong> Директор по строительству холдинга.<br>• <strong>Входит:</strong> Безлимит объектов, выделенная база и настройка под регламенты компании.</div></div>' +
+      '</div>' +
+      '<div style="background:#0f172a;color:#fff;border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">' +
+        '<div style="max-width:580px;"><div style="font-size:11.5px;color:#38bdf8;font-weight:700;text-transform:uppercase;">Прямое подключение и бесплатный пилот на 14 дней</div>' +
+        '<h3 style="margin:4px 0 6px;font-size:16px;">Автор и руководитель проекта: Мухачев Иван</h3>' +
+        '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.65;">' +
+          '🎓 г. Новосибирск • СГУПС (факультет ПГС — Промышленное и гражданское строительство)<br>' +
+          '📱 Мессенджер MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>' +
+          '✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 Сайт: <strong style="color:#fff;">https://kpistroy.ru</strong>' +
+        '</div></div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;min-width:210px;">' +
+          '<a href="https://t.me" target="_blank" style="text-align:center;background:#0284c7;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✈️ Написать в Telegram</a>' +
+          '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилот%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✉️ Отправить заявку на Email</a>' +
+          '<button id="btn-s4-open-v3" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:9px 14px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Открыть систему →</button>' +
         '</div>' +
+      '</div>';
+  }
 
-        '<!-- КАРТОЧКА ПРЯМОЙ СВЯЗИ С АВТОРОМ ПРОЕКТА -->' +
-        '<div style="background:#0f172a;color:#fff;border-radius:12px;padding:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">' +
-          '<div style="max-width:560px;">' +
-            '<div style="font-size:12px;color:#38bdf8;font-weight:700;text-transform:uppercase;">Прямое подключение и бесплатный пилот на 14 дней</div>' +
-            '<h3 style="margin:4px 0 8px;font-size:17px;">Автор и руководитель проекта: Мухачев Иван</h3>' +
-            '<div style="font-size:13px;color:#cbd5e1;line-height:1.6;">' +
-              '📍 г. Новосибирск (НГАСУ / Сибстрин) • Разработка и внедрение «СтройЭффект KPI»<br>' +
-              '✉️ Email для заявок и КП: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong><br>' +
-              '🌐 Официальный сайт: <strong style="color:#fff;">https://kpistroy.ru</strong>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;flex-direction:column;gap:8px;min-width:220px;">' +
-            '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилотное%20внедрение%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:11px 16px;border-radius:8px;font-weight:700;font-size:13.5px;">✉️ Запросить пилот / Демо-показ</a>' +
-            '<button id="btn-s4-try-free" style="background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Попробовать систему бесплатно →</button>' +
-          '</div>' +
-        '</div>';
-    }
+  var tabs = document.querySelectorAll('.pres-v3-tab');
+  var slides = document.querySelectorAll('.pres-v3-slide');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].onclick = function() {
+      var num = this.dataset.slide;
+      for (var j = 0; j < tabs.length; j++) {
+        tabs[j].style.background = '#fff';
+        tabs[j].style.color = '#0f172a';
+        tabs[j].style.border = '1px solid #cbd5e1';
+      }
+      this.style.background = '#0f172a';
+      this.style.color = '#fff';
+      this.style.border = 'none';
+      for (var s = 0; s < slides.length; s++) {
+        slides[s].style.display = (slides[s].id === 'pres-v3-s' + num) ? 'block' : 'none';
+      }
+    };
+  }
 
-    var tabs = document.querySelectorAll('.pres-v2-tab');
-    var slides = document.querySelectorAll('.pres-v2-slide');
-    for (var i = 0; i < tabs.length; i++) {
-      tabs[i].onclick = function() {
-        var num = this.dataset.slide;
-        for (var j = 0; j < tabs.length; j++) {
-          tabs[j].style.background = '#fff';
-          tabs[j].style.color = '#0f172a';
-          tabs[j].style.border = '1px solid #cbd5e1';
-        }
-        this.style.background = '#0f172a';
-        this.style.color = '#fff';
-        this.style.border = 'none';
-
-        for (var s = 0; s < slides.length; s++) {
-          slides[s].style.display = (slides[s].id === 'pres-v2-s' + num) ? 'block' : 'none';
-        }
-      };
-    }
-
-    function openAppFromLanding() {
-      var landing = document.getElementById('saas-landing-page');
-      if (landing) landing.style.display = 'none';
-    }
-
-    var btnLaunch = document.getElementById('btn-launch-demo-v2');
-    if (btnLaunch) btnLaunch.onclick = openAppFromLanding;
-    var btnTry = document.getElementById('btn-s4-try-free');
-    if (btnTry) btnTry.onclick = openAppFromLanding;
-  };
+  function closeLanding() {
+    var landing = document.getElementById('saas-landing-page');
+    if (landing) landing.style.setProperty('display', 'none', 'important');
+  }
+  var b1 = document.getElementById('btn-launch-demo-v3');
+  if (b1) b1.onclick = closeLanding;
+  var b2 = document.getElementById('btn-s4-open-v3');
+  if (b2) b2.onclick = closeLanding;
 })();
 </script>
 
