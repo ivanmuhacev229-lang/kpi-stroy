@@ -2494,7 +2494,7 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- БЛОК Б.1.1: ЕДИНАЯ КАРТОЧКА РЕГИСТРАЦИИ И ВХОДА -->
+<!-- БЛОК Б.1.1 v4: ЗАМЕНА ТОЛЬКО ПРАВОЙ КАРТОЧКИ ВХОДА И УДАЛЕНИЕ ЛЕВОГО ДУБЛЯ -->
 <script>
 (function() {
   var app = window._cloudApp;
@@ -2504,104 +2504,99 @@ function renderPortfolioTable() {
     var landing = document.getElementById('saas-landing-page');
     if (landing && landing.style.display !== 'none') return;
 
-    // Убираем дублирующую правую форму старой регистрации
-    var oldInputs = document.querySelectorAll('input');
-    for (var x = 0; x < oldInputs.length; x++) {
-      if (oldInputs[x].placeholder && oldInputs[x].placeholder.indexOf('director@stroy.ru') !== -1) {
-        var rightCard = oldInputs[x].closest('div');
-        while (rightCard && rightCard.parentElement && rightCard.parentElement.children.length < 2) {
-          rightCard = rightCard.parentElement;
-        }
-        if (rightCard && rightCard.id !== 'cloud-auth-card') {
-          rightCard.style.setProperty('display', 'none', 'important');
-        }
-      }
-    }
+    // 1. Удаляем левую дублирующую карточку, если она осталась
+    var leftCard = document.getElementById('cloud-auth-card');
+    if (leftCard) leftCard.remove();
 
-    var hs = document.querySelectorAll('h1, h2');
-    var roleTitle = null;
-    for (var i = 0; i < hs.length; i++) {
-      if (hs[i].offsetParent !== null && (hs[i].textContent.indexOf('Выберите вашу роль') !== -1 || hs[i].textContent.indexOf('СтройЭффект KPI') !== -1)) {
-        roleTitle = hs[i];
+    // 2. Находим правую карточку по кнопкам "Войти в систему" или "Зарегистрироваться и войти"
+    var targetCard = null;
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      var txt = btns[i].textContent.trim();
+      if (txt === 'Войти в систему' || txt === 'Зарегистрироваться и войти') {
+        var card = btns[i].parentElement;
+        while (card && card.parentElement && card.parentElement.children.length < 2) {
+          card = card.parentElement;
+        }
+        targetCard = card;
         break;
       }
     }
 
-    if (roleTitle && !document.getElementById('cloud-auth-card')) {
-      var authBox = document.createElement('div');
-      authBox.id = 'cloud-auth-card';
-      authBox.style.cssText = 'max-width:760px;margin:0 auto 24px;background:#fff;border:2px solid #2563eb;border-radius:14px;padding:20px;box-shadow:0 6px 20px rgba(37,99,235,0.08);';
-      var cur = app.getSession();
+    if (!targetCard || targetCard.offsetParent === null || targetCard.dataset.rightReplaced === '1') return;
+    targetCard.dataset.rightReplaced = '1';
 
+    function renderRightCloudAuth() {
+      var cur = app.getSession();
       if (cur && cur.company) {
-        authBox.innerHTML =
-          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
-            '<div><span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 Облачное пространство активно</span>' +
-            '<div style="font-size:16px;font-weight:800;margin-top:6px;">' + cur.company.name + ' (ИНН: ' + cur.company.inn + ')</div>' +
-            '<div style="font-size:13px;color:#475569;">Код приглашения для сотрудников: <strong style="background:#f1f5f9;padding:2px 8px;border-radius:6px;color:#0f172a;">' + cur.company.invite_code + '</strong></div></div>' +
-            '<button id="btn-cloud-logout" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;">Выйти из компании</button>' +
+        targetCard.innerHTML =
+          '<div style="padding:6px;">' +
+            '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 Облачная база подключена</span>' +
+            '<h3 style="margin:12px 0 6px;font-size:18px;color:#0f172a;">' + cur.company.name + '</h3>' +
+            '<div style="font-size:13px;color:#475569;margin-bottom:14px;">ИНН: ' + cur.company.inn + ' • ' + cur.company.specialization + '</div>' +
+            '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin-bottom:16px;">' +
+              '<div style="font-size:12px;color:#64748b;">Код приглашения для сотрудников:</div>' +
+              '<div style="font-size:18px;font-weight:800;color:#2563eb;margin-top:4px;">' + cur.company.invite_code + '</div>' +
+            '</div>' +
+            '<p style="font-size:12.5px;color:#64748b;margin-bottom:14px;">Выберите нужную роль слева, чтобы перейти в рабочий кабинет компании.</p>' +
+            '<button id="btn-cloud-logout" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:13px;font-weight:600;cursor:pointer;">Выйти из компании</button>' +
           '</div>';
+        document.getElementById('btn-cloud-logout').onclick = function() {
+          app.setSession(null);
+          renderRightCloudAuth();
+        };
       } else {
-        authBox.innerHTML =
-          '<div style="font-weight:800;font-size:16px;color:#0f172a;margin-bottom:4px;">☁️ Вход в компанию или регистрация новой организации</div>' +
-          '<p style="font-size:13px;color:#475569;margin:0 0 14px;">Зарегистрируйте фирму по ИНН, введите код приглашения от руководителя или выберите демо-роль ниже:</p>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:12px;">' +
-            '<input id="reg-comp-name" placeholder="Название ООО / ИП" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
-            '<input id="reg-comp-inn" placeholder="ИНН организации" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
-            '<select id="reg-comp-type" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+        targetCard.innerHTML =
+          '<div style="padding:2px;">' +
+            '<h3 style="margin:0 0 6px;font-size:17px;color:#0f172a;">☁️ Вход и регистрация компании</h3>' +
+            '<p style="font-size:12.5px;color:#64748b;margin:0 0 14px;">Зарегистрируйте фирму по ИНН или введите код приглашения от директора:</p>' +
+            '<input id="reg-comp-name" placeholder="Название ООО / ИП" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:9px;box-sizing:border-box;">' +
+            '<input id="reg-comp-inn" placeholder="ИНН организации" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:9px;box-sizing:border-box;">' +
+            '<select id="reg-comp-type" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:9px;box-sizing:border-box;background:#fff;">' +
               '<option value="general">Генподрядчик / Застройщик</option>' +
               '<option value="subcontractor">Подрядная организация</option>' +
             '</select>' +
-            '<input id="reg-comp-spec" placeholder="Специализация (Монолит...)" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
-          '</div>' +
-          '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' +
-            '<button id="btn-reg-company" style="background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">➕ Зарегистрировать компанию</button>' +
-            '<span style="color:#94a3b8;font-size:12.5px;">или</span>' +
-            '<input id="join-code-inp" placeholder="Код (напр. SUB-MONO1)" style="padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;width:185px;">' +
-            '<button id="btn-join-company" style="background:#0f172a;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Войти по коду</button>' +
+            '<input id="reg-comp-spec" placeholder="Специализация (Монолит, Сети...)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;">' +
+            '<button id="btn-reg-company" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;margin-bottom:16px;">➕ Зарегистрировать компанию</button>' +
+            '<div style="border-top:1px solid #e2e8f0;padding-top:14px;">' +
+              '<div style="font-size:12px;color:#64748b;margin-bottom:6px;">Уже есть код приглашения?</div>' +
+              '<div style="display:flex;gap:8px;">' +
+                '<input id="join-code-inp" placeholder="Напр. SUB-MONO1" style="flex:1;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">' +
+                '<button id="btn-join-company" style="background:#0f172a;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Войти</button>' +
+              '</div>' +
+            '</div>' +
           '</div>';
-      }
 
-      roleTitle.parentElement.insertBefore(authBox, roleTitle.nextSibling);
-
-      var outBtn = document.getElementById('btn-cloud-logout');
-      if (outBtn) outBtn.onclick = function() { app.setSession(null); authBox.remove(); };
-
-      var regBtn = document.getElementById('btn-reg-company');
-      if (regBtn) {
-        regBtn.onclick = function() {
+        document.getElementById('btn-reg-company').onclick = function() {
           var cname = document.getElementById('reg-comp-name').value.trim();
           var cinn = document.getElementById('reg-comp-inn').value.trim();
           var ctype = document.getElementById('reg-comp-type').value;
           var cspec = document.getElementById('reg-comp-spec').value.trim() || 'Общестроительные работы';
           if (!cname || !cinn) { alert('Укажите название организации и ИНН.'); return; }
           var code = 'KPI-' + Math.floor(1000 + Math.random() * 9000);
-          regBtn.textContent = 'Сохранение...';
+          this.textContent = 'Сохранение...';
           app.sb('companies', {
             method: 'POST',
             body: JSON.stringify({ name: cname, inn: cinn, company_type: ctype, invite_code: code, specialization: cspec, fns_verified: true })
           }).then(function(res) {
             if (Array.isArray(res) && res.length > 0) {
               app.setSession({ company: res.at(0) });
-              authBox.remove();
+              renderRightCloudAuth();
               alert('✅ Компания «' + cname + '» зарегистрирована! Код для сотрудников: ' + code);
             } else {
               alert('Компания с таким ИНН уже зарегистрирована.');
-              regBtn.textContent = '➕ Зарегистрировать компанию';
+              renderRightCloudAuth();
             }
           });
         };
-      }
 
-      var joinBtn = document.getElementById('btn-join-company');
-      if (joinBtn) {
-        joinBtn.onclick = function() {
+        document.getElementById('btn-join-company').onclick = function() {
           var code = document.getElementById('join-code-inp').value.trim().toUpperCase();
           if (!code) return;
           app.sb('companies?invite_code=eq.' + encodeURIComponent(code)).then(function(rows) {
             if (Array.isArray(rows) && rows.length > 0) {
               app.setSession({ company: rows.at(0) });
-              authBox.remove();
+              renderRightCloudAuth();
               alert('✅ Вы вошли в пространство компании: ' + rows.at(0).name);
             } else {
               alert('Код компании не найден.');
@@ -2610,7 +2605,9 @@ function renderPortfolioTable() {
         };
       }
     }
-  }, 450);
+
+    renderRightCloudAuth();
+  }, 350);
 })();
 </script>
 <!-- БЛОК Б.1.2 v4: ЧИСТЫЕ 3 ОТДЕЛЬНЫЕ ВКЛАДКИ БЕЗ СТАРОГО ДУБЛЯ -->
