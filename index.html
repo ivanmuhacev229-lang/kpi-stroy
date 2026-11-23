@@ -4229,14 +4229,15 @@ function renderPortfolioTable() {
   if (b2) b2.onclick = closeLanding;
 })();
 </script>
-<!-- ФИКС ОТКРЫТИЯ СИСТЕМЫ С ПРЕЗЕНТАЦИИ v2 -->
+<!-- ФИКС ОТКРЫТИЯ СИСТЕМЫ И 4 РОЛЕЙ v3 -->
 <script>
 (function() {
+  var revealedNodes = [];
+
   function revealApp() {
     var landing = document.getElementById('saas-landing-page');
     if (landing) landing.style.setProperty('display', 'none', 'important');
 
-    // Ищем все скрытые основные экраны (экран выбора роли или шапку программы) и открываем стартовый
     var candidates = document.querySelectorAll('div, section, main');
     for (var i = 0; i < candidates.length; i++) {
       var el = candidates[i];
@@ -4245,7 +4246,8 @@ function renderPortfolioTable() {
         var cur = el;
         while (cur && cur !== document.body) {
           if (getComputedStyle(cur).display === 'none') {
-            cur.style.setProperty('display', 'block', 'important');
+            cur.style.display = 'block';
+            revealedNodes.push(cur);
           }
           cur = cur.parentElement;
         }
@@ -4258,12 +4260,25 @@ function renderPortfolioTable() {
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('button');
     if (!btn) return;
+
     if (btn.id === 'btn-launch-demo-v3' || btn.id === 'btn-s4-open-v3') {
       revealApp();
+      return;
     }
+
     if (btn.textContent.indexOf('О продукте') !== -1 || btn.textContent.indexOf('Презентация') !== -1) {
       var landing = document.getElementById('saas-landing-page');
       if (landing) landing.style.setProperty('display', 'block', 'important');
+      return;
+    }
+
+    // При нажатии на любую из первых 4 ролей снимаем ручной показ экрана входа, чтобы открылся кабинет
+    var txt = btn.textContent || '';
+    if (txt.indexOf('Директор / Генподрядчик') !== -1 || txt.indexOf('Инженер ПТО') !== -1 || txt.indexOf('Прораб / Начальник') !== -1 || txt.indexOf('Подрядная организация') !== -1) {
+      for (var k = 0; k < revealedNodes.length; k++) {
+        revealedNodes[k].style.removeProperty('display');
+      }
+      revealedNodes = [];
     }
   }, true);
 })();
