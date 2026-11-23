@@ -3536,6 +3536,168 @@ function renderPortfolioTable() {
   }, 250);
 })();
 </script>
+<!-- ЭТАП 2 (ЧАСТЬ 1 ИЗ 2): ДОБАВЛЕНИЕ РОЛЕЙ ФИНАНСИСТ И ИНВЕСТОР -->
+<script>
+(function() {
+  window._openSpecialRole = function(specialRole) {
+    if (window._kpiCore && typeof window._kpiCore.setRole === 'function') {
+      window._kpiCore.setRole('director');
+    } else {
+      var btns = document.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].textContent.indexOf('Директор / Генподрядчик') !== -1) {
+          btns[i].click();
+          break;
+        }
+      }
+    }
+    window._activeSpecialRole = specialRole;
+  };
+
+  setInterval(function() {
+    var landing = document.getElementById('saas-landing-page');
+    if (landing && landing.style.display !== 'none') return;
+
+    // 1. Добавляем Финансиста и Инвестора в выпадающий список облачного входа
+    var roleSel = document.getElementById('login-role-sel');
+    if (roleSel && !roleSel.querySelector('option[value="finance"]')) {
+      var optFin = document.createElement('option');
+      optFin.value = 'finance';
+      optFin.textContent = '💰 Финансист / Снабженец (Контур без 1С)';
+      roleSel.appendChild(optFin);
+
+      var optInv = document.createElement('option');
+      optInv.value = 'investor';
+      optInv.textContent = '💼 Инвестор / Заказчик (Только просмотр)';
+      roleSel.appendChild(optInv);
+    }
+
+    // 2. Перехватываем вход для специальных ролей
+    var origEnter = window._enterRoleDirectly;
+    if (origEnter && !origEnter._patchedSpecial) {
+      window._enterRoleDirectly = function(roleKey) {
+        if (roleKey === 'finance' || roleKey === 'investor') {
+          window._openSpecialRole(roleKey);
+        } else {
+          window._activeSpecialRole = null;
+          origEnter(roleKey);
+        }
+      };
+      window._enterRoleDirectly._patchedSpecial = true;
+    }
+
+    // 3. Добавляем 2 карточки быстрого демо-входа слева на главном экране
+    var subCardBtn = null;
+    var allBtns = document.querySelectorAll('button');
+    for (var b = 0; b < allBtns.length; b++) {
+      if (allBtns[b].textContent.indexOf('Подрядная организация') !== -1 && allBtns[b].offsetParent !== null) {
+        subCardBtn = allBtns[b];
+        break;
+      }
+    }
+
+    if (subCardBtn && subCardBtn.parentElement && !document.getElementById('demo-btn-finance')) {
+      var finBtn = subCardBtn.cloneNode(true);
+      finBtn.id = 'demo-btn-finance';
+      finBtn.innerHTML = '<div><div style="font-weight:700;font-size:15px;color:#0f172a;">💰 Финансист / Снабженец</div><div style="font-size:12.5px;color:#64748b;margin-top:3px;">Учет без 1С: живой кошелек (ДДС), контроль сметы закупок и светофор платежей</div></div><span>→</span>';
+      finBtn.onclick = function() { window._openSpecialRole('finance'); };
+
+      var invBtn = subCardBtn.cloneNode(true);
+      invBtn.id = 'demo-btn-investor';
+      invBtn.innerHTML = '<div><div style="font-weight:700;font-size:15px;color:#0f172a;">💼 Инвестор / Заказчик</div><div style="font-size:12.5px;color:#64748b;margin-top:3px;">Режим прозрачности: освоение бюджета, фото вех и индекс здоровья объекта</div></div><span>→</span>';
+      invBtn.onclick = function() { window._openSpecialRole('investor'); };
+
+      subCardBtn.parentElement.appendChild(finBtn);
+      subCardBtn.parentElement.appendChild(invBtn);
+    }
+  }, 400);
+})();
+</script>
+<!-- ЭТАП 2 (ЧАСТЬ 2 ИЗ 2): ЭКРАНЫ ФИНАНСИСТА И ИНВЕСТОРА -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  setInterval(function() {
+    var spec = window._activeSpecialRole;
+    var c = window._kpiCore;
+    if (!c || c.getRole() === 'guest') {
+      window._activeSpecialRole = null;
+      var sp = document.getElementById('special-role-workspace');
+      if (sp) sp.remove();
+      return;
+    }
+
+    if (!spec) return;
+
+    var diagBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var b = 0; b < btns.length; b++) {
+      if (btns[b].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = btns[b]; break; }
+    }
+    if (!diagBtn || !diagBtn.parentElement) return;
+    var nav = diagBtn.parentElement;
+    var root = nav.parentElement;
+
+    // Скрываем меню Директора и рисуем специализированный кабинет
+    nav.style.setProperty('display', 'none', 'important');
+    for (var i = 0; i < root.children.length; i++) {
+      var el = root.children[i];
+      if (el.id !== 'special-role-workspace' && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+        el.style.setProperty('display', 'none', 'important');
+      }
+    }
+
+    var ws = document.getElementById('special-role-workspace');
+    if (ws && ws.dataset.renderedRole === spec) return;
+
+    if (!ws) {
+      ws = document.createElement('div');
+      ws.id = 'special-role-workspace';
+      ws.style.cssText = 'background:#fff;border-radius:14px;padding:24px;margin-top:16px;border:1px solid #cbd5e1;';
+      root.appendChild(ws);
+    }
+    ws.dataset.renderedRole = spec;
+    ws.style.setProperty('display', 'block', 'important');
+
+    if (spec === 'finance') {
+      ws.innerHTML =
+        '<div style="background:#eff6ff;border-left:4px solid #2563eb;padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:13.5px;color:#1e3a8a;">' +
+          '<strong>💰 Кабинет Финансиста и Снабженца (Управленческий контур без 1С):</strong> Контроль живых денег (ДДС), проверка закупок по остаткам сметы (защита от лишнего бетона) и отправка заявок на согласование директору.' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#166534;font-weight:700;">ЖИВЫЕ ДЕНЬГИ ОБЪЕКТА (ДДС)</div><div style="font-size:24px;font-weight:800;color:#14532d;margin-top:4px;">+48 200 тыс. ₽</div><div style="font-size:12px;color:#15803d;margin-top:4px;">🟢 Кассовых разрывов нет</div></div>' +
+          '<div style="background:#fefce8;border:1px solid #fde047;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#854d0e;font-weight:700;">ЛИМИТ ЗАКУПОК БЕТОНА (ОСТАТОК)</div><div style="font-size:24px;font-weight:800;color:#713f12;margin-top:4px;">39.0 м³</div><div style="font-size:12px;color:#a16207;margin-top:4px;">🟡 При заказе > 39 м³ сработает стоп-флаг</div></div>' +
+          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#991b1b;font-weight:700;">НЕПРОИЗВОДИТЕЛЬНЫЕ ТРАТЫ</div><div style="font-size:24px;font-weight:800;color:#7f1d1d;margin-top:4px;">100 000 ₽</div><div style="font-size:12px;color:#b91c1c;margin-top:4px;">🔴 Штрафы и сверхсметный брак</div></div>' +
+        '</div>' +
+        '<div id="fin-penalties-mount"></div>';
+
+      if (window._renderPenaltiesTab) {
+        window._renderPenaltiesTab(document.getElementById('fin-penalties-mount'));
+      }
+    } else if (spec === 'investor') {
+      ws.innerHTML =
+        '<div style="background:#f8fafc;border-left:4px solid #0f172a;padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:13.5px;color:#334155;">' +
+          '<strong>💼 Кабинет Инвестора и Заказчика (Режим прозрачности • Только чтение):</strong> Независимый контроль освоения инвестиций, соблюдения сроков строительства и индекса надежности объекта.' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#1e40af;font-weight:700;">ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</div><div style="font-size:26px;font-weight:800;color:#1e3a8a;margin-top:4px;">84 / 100</div><div style="font-size:12px;color:#2563eb;margin-top:4px;">🟢 Высокая надежность вложений</div></div>' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#166534;font-weight:700;">ОСВОЕНИЕ СМЕТЫ (SPI)</div><div style="font-size:26px;font-weight:800;color:#14532d;margin-top:4px;">64.8%</div><div style="font-size:12px;color:#15803d;margin-top:4px;">🟢 Стройка идет по графику (440.6 млн ₽)</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#475569;font-weight:700;">КАЧЕСТВО ПРИЕМКИ (FTRI)</div><div style="font-size:26px;font-weight:800;color:#0f172a;margin-top:4px;">88.5%</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Технадзор принимает этапы с 1-го раза</div></div>' +
+        '</div>' +
+        '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:18px;background:#f8fafc;">' +
+          '<h3 style="margin:0 0 10px;font-size:16px;">📅 Контрольные вехи строительства (Подтверждено технадзором)</h3>' +
+          '<div style="font-size:13.5px;line-height:1.8;color:#334155;">' +
+            '✅ <strong>Этап 1: Котлован и фундаментная плита</strong> — Сдано в срок (100% закрыто по КС-2)<br>' +
+            '✅ <strong>Этап 2: Монолитный каркас 1–8 этажей</strong> — Сдано в срок (Индекс качества 91.4%)<br>' +
+            '🔄 <strong>Этап 3: Монолитный каркас 9–16 этажей и кладка</strong> — В работе (Выполнено 52%)' +
+          '</div>' +
+        '</div>';
+    }
+  }, 350);
+})();
+</script>
 
 
 </body>
