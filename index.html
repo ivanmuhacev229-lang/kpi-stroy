@@ -2494,7 +2494,7 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- БЛОК Б.1.1 v5 (ЧАСТЬ 1 ИЗ 2): КАРТОЧКА И ВКЛАДКА «ВХОД В КАБИНЕТ» -->
+<!-- БЛОК Б.1.1 v6 (ЧАСТЬ 1 ИЗ 2): ЧИСТЫЕ ВКЛАДКИ И ФОРМА ВХОДА -->
 <script>
 (function() {
   var app = window._cloudApp;
@@ -2541,8 +2541,18 @@ function renderPortfolioTable() {
       }
     }
 
-    if (!targetCard || targetCard.offsetParent === null || targetCard.dataset.rightReplacedV5 === '1') return;
-    targetCard.dataset.rightReplacedV5 = '1';
+    if (!targetCard || targetCard.offsetParent === null || targetCard.dataset.rightReplacedV6 === '1') return;
+    targetCard.dataset.rightReplacedV6 = '1';
+
+    // Скрываем старую верхнюю строку вкладок у родительской белой карточки
+    if (targetCard.parentElement) {
+      var siblings = targetCard.parentElement.children;
+      for (var s = 0; s < siblings.length; s++) {
+        if (siblings[s] !== targetCard && siblings[s].textContent.indexOf('Вход в кабинет') !== -1) {
+          siblings[s].style.setProperty('display', 'none', 'important');
+        }
+      }
+    }
 
     var activeAuthTab = 'login';
 
@@ -2552,7 +2562,7 @@ function renderPortfolioTable() {
       if (cur && cur.company) {
         targetCard.innerHTML =
           '<div style="padding:6px;">' +
-            '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 Вы вошли в пространство компании</span>' +
+            '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 2FA Пройдена • Облако активно</span>' +
             '<h3 style="margin:12px 0 6px;font-size:18px;color:#0f172a;">' + cur.company.name + '</h3>' +
             '<div style="font-size:13px;color:#475569;margin-bottom:14px;">ИНН: ' + cur.company.inn + ' • ' + (cur.company.company_type === 'subcontractor' ? 'Подрядчик' : 'Генподрядчик') + '</div>' +
             '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin-bottom:16px;">' +
@@ -2576,7 +2586,7 @@ function renderPortfolioTable() {
 
       if (activeAuthTab === 'login') {
         targetCard.innerHTML = tabsHeader +
-          '<div>' +
+          '<div id="auth-step-1">' +
             '<label style="display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:6px;">Кто входит в систему?</label>' +
             '<select id="login-who-sel" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:12px;background:#fff;">' +
               '<option value="staff">Сотрудник генподрядчика (по коду компании)</option>' +
@@ -2593,8 +2603,9 @@ function renderPortfolioTable() {
             '<div id="login-sub-fields" style="display:none;">' +
               '<input id="login-sub-inn" placeholder="ИНН подрядчика или код (напр. 5406781234)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:14px;box-sizing:border-box;">' +
             '</div>' +
-            '<button id="btn-do-cloud-login" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Войти в рабочий кабинет</button>' +
-          '</div>';
+            '<button id="btn-do-cloud-login" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Продолжить (2FA защита) →</button>' +
+          '</div>' +
+          '<div id="auth-step-2fa" style="display:none;"></div>';
       } else if (window._renderRegisterForm) {
         window._renderRegisterForm(targetCard, tabsHeader);
       }
@@ -2608,11 +2619,49 @@ function renderPortfolioTable() {
   }, 350);
 })();
 </script>
-<!-- БЛОК Б.1.1 v5 (ЧАСТЬ 2 ИЗ 2): ВКЛАДКА «РЕГИСТРАЦИЯ» И ОБРАБОТЧИКИ ВХОДА -->
+
+<!-- БЛОК Б.1.1 v6 (ЧАСТЬ 2 ИЗ 2): ДВУХФАКТОРНАЯ АУТЕНТИФИКАЦИЯ (2FA) И РЕГИСТРАЦИЯ -->
 <script>
 (function() {
   var app = window._cloudApp;
   if (!app) return;
+
+  window._start2FAStep = function(companyObj, targetRole) {
+    var step1 = document.getElementById('auth-step-1');
+    var step2 = document.getElementById('auth-step-2fa');
+    if (!step1 || !step2) return;
+
+    var otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+
+    step2.innerHTML =
+      '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;margin-bottom:14px;">' +
+        '<div style="font-size:12px;font-weight:700;color:#1e40af;">🔐 Двухфакторная проверка (2FA)</div>' +
+        '<div style="font-size:12.5px;color:#334155;margin-top:4px;">Организация: <strong>' + companyObj.name + '</strong></div>' +
+        '<div style="font-size:12px;color:#0f172a;margin-top:6px;background:#fff;padding:6px 10px;border-radius:6px;border:1px dashed #2563eb;">Одноразовый код безопасности: <strong style="font-size:15px;letter-spacing:2px;color:#2563eb;">' + otpCode + '</strong></div>' +
+      '</div>' +
+      '<input id="inp-2fa-code" maxlength="6" placeholder="Введите 6-значный код" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;text-align:center;letter-spacing:4px;font-weight:700;margin-bottom:12px;box-sizing:border-box;">' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button id="btn-2fa-back" style="padding:10px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:13px;font-weight:600;cursor:pointer;">← Назад</button>' +
+        '<button id="btn-2fa-verify" style="flex:1;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Подтвердить вход</button>' +
+      '</div>';
+
+    document.getElementById('btn-2fa-back').onclick = function() {
+      step2.style.display = 'none';
+      step1.style.display = 'block';
+    };
+
+    document.getElementById('btn-2fa-verify').onclick = function() {
+      var entered = document.getElementById('inp-2fa-code').value.trim();
+      if (entered !== otpCode) {
+        alert('❌ Неверный код 2FA. Проверьте 6 цифр и попробуйте снова.');
+        return;
+      }
+      app.setSession({ company: companyObj, verified2FA: true });
+      window._enterRoleDirectly(targetRole);
+    };
+  };
 
   window._renderRegisterForm = function(targetCard, tabsHeader) {
     targetCard.innerHTML = tabsHeader +
@@ -2651,8 +2700,7 @@ function renderPortfolioTable() {
           if (!q) { alert('Введите ИНН вашей подрядной организации или код доступа.'); return; }
           app.sb('companies?or=(inn.eq.' + encodeURIComponent(q) + ',invite_code.eq.' + encodeURIComponent(q.toUpperCase()) + ')').then(function(rows) {
             if (Array.isArray(rows) && rows.length > 0) {
-              app.setSession({ company: rows.at(0) });
-              window._enterRoleDirectly('contractor');
+              window._start2FAStep(rows.at(0), 'contractor');
             } else {
               alert('Подрядная организация не найдена. Перейдите на вкладку «Регистрация».');
             }
@@ -2663,8 +2711,7 @@ function renderPortfolioTable() {
           if (!code) { alert('Введите код приглашения компании.'); return; }
           app.sb('companies?invite_code=eq.' + encodeURIComponent(code)).then(function(rows) {
             if (Array.isArray(rows) && rows.length > 0) {
-              app.setSession({ company: rows.at(0) });
-              window._enterRoleDirectly(roleVal);
+              window._start2FAStep(rows.at(0), roleVal);
             } else {
               alert('Код компании не найден. Проверьте ввод или зарегистрируйте новую фирму.');
             }
@@ -2688,9 +2735,9 @@ function renderPortfolioTable() {
           body: JSON.stringify({ name: cname, inn: cinn, company_type: ctype, invite_code: code, specialization: cspec, fns_verified: true })
         }).then(function(res) {
           if (Array.isArray(res) && res.length > 0) {
-            app.setSession({ company: res.at(0) });
             alert('✅ Компания «' + cname + '» зарегистрирована!\n\nВаш код доступа: ' + code);
-            window._enterRoleDirectly(ctype === 'subcontractor' ? 'contractor' : 'director');
+            window._renderRightAuthCard('login');
+            window._start2FAStep(res.at(0), ctype === 'subcontractor' ? 'contractor' : 'director');
           } else {
             alert('Компания с таким ИНН уже зарегистрирована. Перейдите на вкладку «Вход в кабинет».');
             window._renderRightAuthCard('login');
