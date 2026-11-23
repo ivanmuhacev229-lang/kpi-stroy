@@ -3952,6 +3952,94 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ШАГ 3.1 (ЧАСТЬ 1 ИЗ 2): МОБИЛЬНАЯ АДАПТАЦИЯ ИНТЕРФЕЙСА (MOBILE-FIRST) -->
+<style>
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden !important;
+    font-size: 14px !important;
+  }
+  /* Горизонтальная удобная прокрутка вкладок на телефоне вместо наложения */
+  button {
+    touch-action: manipulation;
+  }
+  input, select, textarea {
+    font-size: 16px !important; /* Защита от автоматического зума в Safari на iPhone */
+    max-width: 100% !important;
+  }
+  table {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  #view-cloud-exchange, #view-cloud-penalties, #view-cloud-chat, #view-cloud-team, #extended-kpi-snapshots-box {
+    padding: 14px !important;
+    margin-top: 12px !important;
+  }
+  #field-role-chat-bar {
+    flex-direction: column !important;
+  }
+  #field-role-chat-bar button {
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+</style>
+<!-- ШАГ 3.1 (ЧАСТЬ 2 ИЗ 2): ПОДКЛЮЧЕНИЕ PWA И КНОПКИ УСТАНОВКИ НА ТЕЛЕФОН -->
+<script>
+(function() {
+  // 1. Генерируем иконку и PWA-манифест прямо в браузере без отдельных файлов
+  var svgIcon = '<svg xmlns="http://w3.org" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#0f172a"/><path d="M120 360V160l136-60 136 60v200H310V240H202v120H120z" fill="#2563eb"/><circle cx="370" cy="140" r="36" fill="#22c55e"/></svg>';
+  var iconUrl = 'data:image/svg+xml;base64,' + btoa(svgIcon);
+
+  var appleIcon = document.createElement('link');
+  appleIcon.rel = 'apple-touch-icon';
+  appleIcon.href = iconUrl;
+  document.head.appendChild(appleIcon);
+
+  var appleCapable = document.createElement('meta');
+  appleCapable.name = 'apple-mobile-web-app-capable';
+  appleCapable.content = 'yes';
+  document.head.appendChild(appleCapable);
+
+  var appleTitle = document.createElement('meta');
+  appleTitle.name = 'apple-mobile-web-app-title';
+  appleTitle.content = 'СтройЭффект KPI';
+  document.head.appendChild(appleTitle);
+
+  var manifestObj = {
+    name: 'СтройЭффект KPI — Управление стройкой',
+    short_name: 'СтройЭффект',
+    start_url: 'https://kpistroy.ru',
+    display: 'standalone',
+    background_color: '#f1f5f9',
+    theme_color: '#0f172a',
+    icons: [{ src: iconUrl, sizes: '512x512', type: 'image/svg+xml' }]
+  };
+  var manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
+  var manifestLink = document.createElement('link');
+  manifestLink.rel = 'manifest';
+  manifestLink.href = URL.createObjectURL(manifestBlob);
+  document.head.appendChild(manifestLink);
+
+  // 2. Кнопка-подсказка в подвале для установки приложения на смартфон
+  setTimeout(function() {
+    if (document.getElementById('pwa-install-banner')) return;
+    var pwaBar = document.createElement('div');
+    pwaBar.id = 'pwa-install-banner';
+    pwaBar.style.cssText = 'max-width:760px;margin:24px auto 12px;background:#0f172a;color:#fff;border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:13px;';
+    pwaBar.innerHTML =
+      '<div><strong>📱 Мобильное приложение СтройЭффект KPI (PWA)</strong><div style="color:#cbd5e1;font-size:12px;margin-top:2px;">Установите сервис на экран iPhone или Android без App Store для работы на стройплощадке</div></div>' +
+      '<button id="btn-how-install-pwa" style="background:#2563eb;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">Как установить на телефон?</button>';
+    document.body.appendChild(pwaBar);
+
+    document.getElementById('btn-how-install-pwa').onclick = function() {
+      alert('📲 Установка на смартфон (10 секунд):\n\n• На iPhone (Safari): нажмите кнопку «Поделиться» (квадрат со стрелкой вверх внизу экрана) → выберите «На экран „Домой“» → нажмите «Добавить».\n\n• На Android (Chrome): нажмите три точки справа вверху → выберите «Установить приложение» или «Добавить на главный экран».');
+    };
+  }, 1500);
+})();
+</script>
 
 
 
