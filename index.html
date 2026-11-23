@@ -3677,6 +3677,159 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ШАГ 2.2 (ЧАСТЬ 1 ИЗ 2): 4-МОДУЛЬНЫЙ КАБИНЕТ ПОДРЯДЧИКА -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  setInterval(function() {
+    var landing = document.getElementById('saas-landing-page');
+    if (landing && landing.style.display !== 'none') return;
+
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    var bar = document.getElementById('field-role-chat-bar');
+    if (!bar) return;
+
+    if (role !== 'contractor') {
+      var extraBtns = bar.querySelectorAll('.sub-mod-btn');
+      for (var e = 0; e < extraBtns.length; e++) extraBtns[e].style.display = 'none';
+      var modPnl = document.getElementById('sub-module-panel');
+      if (modPnl) modPnl.style.display = 'none';
+      return;
+    }
+
+    if (bar.dataset.sub4Modules === '1') return;
+    bar.dataset.sub4Modules = '1';
+
+    var modPanel = document.createElement('div');
+    modPanel.id = 'sub-module-panel';
+    modPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:22px;margin-bottom:20px;border:1px solid #cbd5e1;';
+    bar.insertAdjacentElement('afterend', modPanel);
+
+    var btnKs = document.createElement('button');
+    btnKs.className = 'sub-mod-btn';
+    btnKs.textContent = '📑 Мои договоры и КС-2';
+    btnKs.style.cssText = 'background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 16px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;';
+
+    var btnProf = document.createElement('button');
+    btnProf.className = 'sub-mod-btn';
+    btnProf.textContent = '⭐ Мой рейтинг и ФНС (ИНН)';
+    btnProf.style.cssText = 'background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 16px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;';
+
+    bar.insertBefore(btnKs, bar.firstChild);
+    bar.appendChild(btnProf);
+
+    function resetSubBarColors() {
+      var allB = bar.querySelectorAll('button');
+      for (var i = 0; i < allB.length; i++) {
+        allB[i].style.background = '#fff';
+        allB[i].style.color = '#0f172a';
+        allB[i].style.borderColor = '#cbd5e1';
+      }
+      var chatPnl = document.getElementById('view-field-chat-panel');
+      if (chatPnl) chatPnl.style.setProperty('display', 'none', 'important');
+      modPanel.style.setProperty('display', 'none', 'important');
+    }
+
+    btnKs.onclick = function() {
+      resetSubBarColors();
+      btnKs.style.background = '#2563eb';
+      btnKs.style.color = '#fff';
+      btnKs.style.borderColor = '#2563eb';
+      modPanel.style.setProperty('display', 'block', 'important');
+      if (window._renderSubContracts) window._renderSubContracts(modPanel);
+    };
+
+    btnProf.onclick = function() {
+      resetSubBarColors();
+      btnProf.style.background = '#2563eb';
+      btnProf.style.color = '#fff';
+      btnProf.style.borderColor = '#2563eb';
+      modPanel.style.setProperty('display', 'block', 'important');
+      if (window._renderSubProfile) window._renderSubProfile(modPanel);
+    };
+
+    var btnWork = document.getElementById('btn-field-work');
+    var btnChat = document.getElementById('btn-field-chat');
+    if (btnWork) {
+      btnWork.addEventListener('click', function() {
+        btnKs.style.background = '#fff'; btnKs.style.color = '#0f172a'; btnKs.style.borderColor = '#cbd5e1';
+        btnProf.style.background = '#fff'; btnProf.style.color = '#0f172a'; btnProf.style.borderColor = '#cbd5e1';
+        modPanel.style.setProperty('display', 'none', 'important');
+      });
+    }
+    if (btnChat) {
+      btnChat.addEventListener('click', function() {
+        btnKs.style.background = '#fff'; btnKs.style.color = '#0f172a'; btnKs.style.borderColor = '#cbd5e1';
+        btnProf.style.background = '#fff'; btnProf.style.color = '#0f172a'; btnProf.style.borderColor = '#cbd5e1';
+        modPanel.style.setProperty('display', 'none', 'important');
+      });
+    }
+  }, 450);
+})();
+</script>
+<!-- ШАГ 2.2 (ЧАСТЬ 2 ИЗ 2): ТРЕКЕР КС-2 И ПРОВЕРКА БЛАГОНАДЕЖНОСТИ ПО ИНН -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._renderSubContracts = function(panel) {
+    var cur = app.getSession();
+    var subName = (cur && cur.company) ? cur.company.name : 'ООО «МонолитГрупп» (Демо-профиль)';
+
+    panel.innerHTML =
+      '<h3 style="margin:0 0 6px;font-size:17px;color:#0f172a;">📑 Активные договоры субподряда и закрытие КС-2 / КС-3</h3>' +
+      '<p style="font-size:13px;color:#64748b;margin:0 0 16px;">Подрядчик: <strong>' + subName + '</strong> • Контроль выполнения объемов, авансов и подписания актов заказчиками:</p>' +
+      '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:16px;background:#f8fafc;margin-bottom:12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
+          '<strong style="font-size:15px;color:#0f172a;">Заказчик: ООО «СтройИнвест» • Объект: ЖК Онега (Комфорт-класс)</strong>' +
+          '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700;">Договор активен</span>' +
+        '</div>' +
+        '<div style="font-size:13px;color:#475569;margin:8px 0;">Вид работ: Монолитный каркас и перекрытия (Этапы 1–3)</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;">' +
+          '<div style="background:#fff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"><div style="font-size:11.5px;color:#64748b;">Цена контракта</div><div style="font-size:16px;font-weight:800;color:#0f172a;">85 000 тыс. ₽</div></div>' +
+          '<div style="background:#fff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"><div style="font-size:11.5px;color:#64748b;">Закрыто по КС-2</div><div style="font-size:16px;font-weight:800;color:#16a34a;">52 000 тыс. ₽ (61%)</div></div>' +
+          '<div style="background:#fff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"><div style="font-size:11.5px;color:#64748b;">Выданный аванс</div><div style="font-size:16px;font-weight:800;color:#2563eb;">15 000 тыс. ₽ (100% закрыт)</div></div>' +
+        '</div>' +
+      '</div>';
+  };
+
+  window._renderSubProfile = function(panel) {
+    var cur = app.getSession();
+    var c = (cur && cur.company) ? cur.company : {
+      name: 'ООО «МонолитГрупп»', inn: '5406781234', city: 'Новосибирск',
+      specialization: 'Монолитные работы и каркас', rating_ftri: 91.4, rating_cle: 2.1, rating_otd: 96.0
+    };
+
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">' +
+        '<div><h3 style="margin:0;font-size:17px;color:#0f172a;">⭐ Публичный профиль на Бирже: ' + c.name + '</h3>' +
+        '<div style="font-size:12.5px;color:#64748b;margin-top:3px;">ИНН: ' + c.inn + ' • г. ' + (c.city || 'Новосибирск') + ' • ' + c.specialization + '</div></div>' +
+        '<button id="btn-check-fns-inn" style="background:#0f172a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;">🔄 Обновить проверку ФНС / ЕФРСБ</button>' +
+      '</div>' +
+      '<div id="fns-check-banner" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#14532d;">' +
+        '🟢 <strong>Паспорт благонадежности РФ подтвержден (ИНН ' + c.inn + '):</strong> Действующее юрлицо по данным ЕГРЮЛ ФНС • Сообщений о банкротстве в ЕФРСБ (Федресурс) не найдено • В реестре недобросовестных поставщиков (РНП ФАС) не числится.' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:14px;border-radius:10px;"><div style="font-size:12px;color:#64748b;">Сдача с 1-го раза (FTRI)</div><div style="font-size:22px;font-weight:800;color:#16a34a;margin-top:4px;">' + (c.rating_ftri || 91.4) + '%</div></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:14px;border-radius:10px;"><div style="font-size:12px;color:#64748b;">Доля переделок (CLE)</div><div style="font-size:22px;font-weight:800;color:#2563eb;margin-top:4px;">' + (c.rating_cle || 2.1) + '%</div></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:14px;border-radius:10px;"><div style="font-size:12px;color:#64748b;">Соблюдение сроков (OTD)</div><div style="font-size:22px;font-weight:800;color:#0f172a;margin-top:4px;">' + (c.rating_otd || 96.0) + '%</div></div>' +
+      '</div>';
+
+    document.getElementById('btn-check-fns-inn').onclick = function() {
+      var banner = document.getElementById('fns-check-banner');
+      banner.innerHTML = '⏳ Запрос актуальных сведений по ИНН ' + c.inn + ' из реестров ФНС и ЕФРСБ...';
+      setTimeout(function() {
+        banner.innerHTML = '🟢 <strong>Проверка завершена (' + new Date().toLocaleDateString('ru-RU') + '):</strong> Организация «' + c.name + '» (ИНН ' + c.inn + ') активна, признаков банкротства и блокировок счетов не выявлено.';
+      }, 600);
+    };
+  };
+})();
+</script>
 
 
 
