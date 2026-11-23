@@ -3276,6 +3276,173 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ШАГ 1.2 (ЧАСТЬ 1 ИЗ 2): ВКЛАДКА «КОМАНДА» ДЛЯ ДИРЕКТОРА -->
+<script>
+(function() {
+  var customPanelIds = ['view-cloud-exchange', 'view-cloud-penalties', 'view-cloud-chat', 'view-cloud-team', 'view-settings-admin', 'view-audit-panel'];
+  var customTabIds = ['tab-cloud-ex-btn', 'tab-cloud-pay-btn', 'tab-cloud-chat-btn', 'tab-cloud-team-btn', 'adm-tab-btn', 'tab-audit-btn'];
+
+  setInterval(function() {
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    var btn = document.getElementById('tab-cloud-team-btn');
+    var pnl = document.getElementById('view-cloud-team');
+
+    if (role !== 'director') {
+      if (btn) btn.style.setProperty('display', 'none', 'important');
+      if (pnl) pnl.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    var diagBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var b = 0; b < btns.length; b++) {
+      if (btns[b].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = btns[b]; break; }
+    }
+    if (!diagBtn || !diagBtn.parentElement) return;
+    var nav = diagBtn.parentElement;
+
+    if (btn) {
+      btn.style.removeProperty('display');
+      return;
+    }
+
+    btn = document.createElement('button');
+    btn.id = 'tab-cloud-team-btn';
+    btn.className = diagBtn.className.replace('active', '').trim();
+    btn.textContent = '👥 Команда';
+    btn.style.cursor = 'pointer';
+
+    pnl = document.createElement('div');
+    pnl.id = 'view-cloud-team';
+    pnl.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;';
+
+    nav.parentElement.insertBefore(pnl, nav.nextSibling);
+    nav.appendChild(btn);
+
+    btn.addEventListener('click', function() {
+      var ch = nav.children;
+      for (var k = 0; k < ch.length; k++) ch[k].classList.remove('active');
+      btn.classList.add('active');
+
+      var root = nav.parentElement;
+      for (var i = 0; i < root.children.length; i++) {
+        var el = root.children[i];
+        if (el === nav || el.id === 'personal-role-guide-box' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+        el.style.setProperty('display', el === pnl ? 'block' : 'none', 'important');
+      }
+      if (window._renderTeamTab) window._renderTeamTab(pnl);
+    });
+
+    // Скрываем панель команды при клике на любую другую вкладку
+    for (var n = 0; n < nav.children.length; n++) {
+      if (nav.children[n] !== btn && !nav.children[n].dataset.boundTeamHide) {
+        nav.children[n].dataset.boundTeamHide = '1';
+        nav.children[n].addEventListener('click', function() {
+          btn.classList.remove('active');
+          pnl.style.setProperty('display', 'none', 'important');
+        });
+      }
+    }
+  }, 450);
+})();
+</script>
+<!-- ШАГ 1.2 (ЧАСТЬ 2 ИЗ 2): ЛОГИКА УПРАВЛЕНИЯ КОМАНДОЙ В SUPABASE -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._renderTeamTab = function(panel) {
+    var cur = app.getSession();
+    var comp = cur && cur.company ? cur.company : null;
+
+    if (!comp) {
+      panel.innerHTML =
+        '<h2 style="margin-top:0;color:#0f172a;">👥 Управление командой компании</h2>' +
+        '<div style="background:#fefce8;border:1px solid #fde047;border-radius:10px;padding:16px;color:#713f12;font-size:13.5px;">' +
+          '<strong>Вы находитесь в демо-режиме.</strong> Чтобы добавлять реальных сотрудников и выдавать им коды доступа, выйдите на главный экран и войдите под своей зарегистрированной компанией (или зарегистрируйте её по ИНН).' +
+        '</div>';
+      return;
+    }
+
+    var roleLabels = {
+      director: '👔 Генеральный директор',
+      pto: '📐 Инженер ПТО',
+      foreman: '👷 Прораб / Начальник участка',
+      finance: '💰 Финансист / Снабженец',
+      investor: '💼 Инвестор (Только чтение)'
+    };
+
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">' +
+        '<div><h2 style="margin:0;color:#0f172a;">👥 Команда организации «' + comp.name + '»</h2>' +
+        '<div style="font-size:13px;color:#475569;margin-top:4px;">Единый код приглашения для входа сотрудников: <strong style="background:#eff6ff;color:#1d4ed8;padding:3px 10px;border-radius:6px;">' + comp.invite_code + '</strong></div></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:18px;">' +
+          '<h3 style="margin:0 0 12px;font-size:15px;">➕ Добавить сотрудника в штат</h3>' +
+          '<input id="team-emp-name" placeholder="ФИО сотрудника (напр. Соколов Д.А.)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:9px;box-sizing:border-box;">' +
+          '<input id="team-emp-email" placeholder="Email или телефон" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:9px;box-sizing:border-box;">' +
+          '<select id="team-emp-role" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;background:#fff;">' +
+            '<option value="pto">📐 Инженер ПТО</option>' +
+            '<option value="foreman">👷 Прораб / Начальник участка</option>' +
+            '<option value="finance">💰 Финансист / Снабженец</option>' +
+            '<option value="investor">💼 Инвестор / Заказчик (Только просмотр)</option>' +
+            '<option value="director">👔 Соучредитель / Директор</option>' +
+          '</select>' +
+          '<button id="btn-add-team-emp" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;">Сохранить и создать доступ</button>' +
+        '</div>' +
+        '<div><h3 style="margin:0 0 12px;font-size:15px;">Действующие сотрудники в облаке</h3><div id="cloud-team-list" style="font-size:13px;">Загрузка списка...</div></div>' +
+      '</div>';
+
+    function loadTeam() {
+      app.sb('app_users?company_id=eq.' + encodeURIComponent(comp.id) + '&order=created_at.desc').then(function(users) {
+        var box = document.getElementById('cloud-team-list');
+        if (!box) return;
+        if (!Array.isArray(users) || users.length === 0) {
+          box.innerHTML = '<div style="color:#64748b;background:#f8fafc;padding:14px;border-radius:8px;border:1px dashed #cbd5e1;">Пока добавлены только вы как владелец. Добавьте первого прораба или инженера ПТО слева.</div>';
+          return;
+        }
+        var h = '';
+        for (var i = 0; i < users.length; i++) {
+          var u = users.at(i);
+          h += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+            '<div><strong>' + u.full_name + '</strong><div style="font-size:12px;color:#64748b;">' + (roleLabels[u.role] || u.role) + ' • ' + u.email + '</div></div>' +
+            '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Активен</span>' +
+          '</div>';
+        }
+        box.innerHTML = h;
+      });
+    }
+    loadTeam();
+
+    document.getElementById('btn-add-team-emp').onclick = function() {
+      var fname = document.getElementById('team-emp-name').value.trim();
+      var fmail = document.getElementById('team-emp-email').value.trim();
+      var frole = document.getElementById('team-emp-role').value;
+      if (!fname || !fmail) { alert('Введите ФИО и контакт сотрудника.'); return; }
+
+      app.confirm('Выдача доступа сотруднику', 'Добавить сотрудника <strong>' + fname + '</strong> (' + (roleLabels[frole] || frole) + ') в облачное пространство «' + comp.name + '»?', function() {
+        app.sb('app_users', {
+          method: 'POST',
+          body: JSON.stringify({ company_id: comp.id, full_name: fname, email: fmail, role: frole })
+        }).then(function(res) {
+          if (Array.isArray(res) && res.length > 0) {
+            document.getElementById('team-emp-name').value = '';
+            document.getElementById('team-emp-email').value = '';
+            loadTeam();
+            alert('✅ Сотрудник ' + fname + ' добавлен!\n\nПередайте ему ссылку https://kpistroy.ru и код компании: ' + comp.invite_code);
+          } else {
+            alert('Сотрудник с таким Email/контактом уже добавлен.');
+          }
+        });
+      });
+    };
+  };
+})();
+</script>
 
 
 </body>
