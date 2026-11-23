@@ -3443,6 +3443,69 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ФИКС-ПАТЧ АУДИТА: СИНХРОНИЗАЦИЯ ВКЛАДОК И ИЗОЛЯЦИЯ ДАННЫХ КОМПАНИЙ -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  // 1. Исправляем единую подсветку активной вкладки в меню Директора и ПТО
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn || !btn.parentElement) return;
+    var allCustom = ['tab-cloud-ex-btn', 'tab-cloud-pay-btn', 'tab-cloud-chat-btn', 'tab-cloud-team-btn', 'adm-tab-btn', 'tab-audit-btn'];
+    if (allCustom.indexOf(btn.id) !== -1) {
+      for (var i = 0; i < allCustom.length; i++) {
+        var other = document.getElementById(allCustom[i]);
+        if (other && other !== btn) other.classList.remove('active');
+      }
+    }
+  }, true);
+
+  // 2. Переопределяем вкладку «Контроль штрафов» со строгой изоляцией по компании
+  var origPenalties = window._renderPenaltiesTab;
+  if (origPenalties) {
+    window._renderPenaltiesTab = function(panel) {
+      origPenalties(panel);
+      var cur = app.getSession();
+      var compTag = (cur && cur.company) ? (' [' + cur.company.inn + ']') : ' [DEMO]';
+      var addBtn = document.getElementById('btn-add-payreq');
+      if (addBtn) {
+        var origClick = addBtn.onclick;
+        addBtn.onclick = function() {
+          var titleInp = document.getElementById('pay-title');
+          if (titleInp && titleInp.value.trim() && titleInp.value.indexOf('[') === -1) {
+            titleInp.value = titleInp.value.trim() + compTag;
+          }
+          if (origClick) origClick();
+        };
+      }
+      // Фильтруем реестр строго по текущей компании
+      setTimeout(function() {
+        app.sb('payment_requests?title=ilike.*' + encodeURIComponent(compTag) + '*&order=created_at.desc&limit=15').then(function(rows) {
+          var list = document.getElementById('cloud-pay-list');
+          if (!list || !Array.isArray(rows)) return;
+          if (rows.length === 0) {
+            list.innerHTML = '<div style="color:#94a3b8;font-size:13px;">Для вашей организации зафиксированных штрафов пока нет.</div>';
+            return;
+          }
+          var h = '';
+          for (var i = 0; i < rows.length; i++) {
+            var r = rows.at(i);
+            var cleanTitle = r.title.replace(compTag, '');
+            var badge = r.category === 'penalty' ? '🔴 Штраф' : (r.category === 'overrun' ? '🟡 Перерасход' : '🟢 План');
+            h += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;">' +
+              '<strong>' + badge + ': ' + cleanTitle + ' — ' + Number(r.amount).toLocaleString('ru-RU') + ' ₽</strong><br>' +
+              '<span style="color:#475569;font-size:12px;">Виновник: ' + (r.culprit_name || 'Не указан') + ' • Мера: ' + (r.prevention_measure || '—') + '</span>' +
+            '</div>';
+          }
+          list.innerHTML = h;
+        });
+      }, 300);
+    };
+  }
+})();
+</script>
 
 
 </body>
