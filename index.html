@@ -3536,22 +3536,12 @@ function renderPortfolioTable() {
   }, 250);
 })();
 </script>
-<!-- ЭТАП 2 (ЧАСТЬ 1 ИЗ 2 v3): НАДЕЖНЫЙ ЗАПУСК РОЛЕЙ ФИНАНСИСТ И ИНВЕСТОР -->
+<!-- ЭТАП 2 (ЧАСТЬ 1 ИЗ 2 v4): БЕЗЛАГОВЫЙ ЗАПУСК РОЛЕЙ ФИНАНСИСТ И ИНВЕСТОР -->
 <script>
 (function() {
   window._openSpecialRole = function(specialRole) {
-    try { sessionStorage.setItem('kpi_special_role', specialRole); } catch (e) {}
-    window._activeSpecialRole = specialRole;
-    if (window._kpiCore && typeof window._kpiCore.setRole === 'function') {
-      window._kpiCore.setRole('director');
-      return;
-    }
-    var btns = document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.indexOf('Директор / Генподрядчик') !== -1) {
-        btns[i].click();
-        break;
-      }
+    if (window._renderSpecialOverlay) {
+      window._renderSpecialOverlay(specialRole);
     }
   };
 
@@ -3559,6 +3549,7 @@ function renderPortfolioTable() {
     var landing = document.getElementById('saas-landing-page');
     if (landing && landing.style.display !== 'none') return;
 
+    // 1. Добавляем Финансиста и Инвестора в выпадающий список облачного входа
     var roleSel = document.getElementById('login-role-sel');
     if (roleSel && !roleSel.querySelector('option[value="finance"]')) {
       var optFin = document.createElement('option');
@@ -3572,27 +3563,20 @@ function renderPortfolioTable() {
       roleSel.appendChild(optInv);
     }
 
+    // 2. Перехватываем вход после 2FA для спецролей
     var origEnter = window._enterRoleDirectly;
-    if (origEnter && !origEnter._patchedSpecialV3) {
+    if (origEnter && !origEnter._patchedV4) {
       window._enterRoleDirectly = function(roleKey) {
         if (roleKey === 'finance' || roleKey === 'investor') {
           window._openSpecialRole(roleKey);
         } else {
-          try { sessionStorage.removeItem('kpi_special_role'); } catch (e) {}
-          window._activeSpecialRole = null;
           origEnter(roleKey);
         }
       };
-      window._enterRoleDirectly._patchedSpecialV3 = true;
+      window._enterRoleDirectly._patchedV4 = true;
     }
 
-    // Очищаем спецроль при выходе на экран выбора ролей
-    var c = window._kpiCore;
-    if (c && c.getRole() === 'guest') {
-      try { sessionStorage.removeItem('kpi_special_role'); } catch (e) {}
-      window._activeSpecialRole = null;
-    }
-
+    // 3. Добавляем 2 карточки быстрого демо-входа слева на главном экране
     var subCardBtn = null;
     var allBtns = document.querySelectorAll('button');
     for (var b = 0; b < allBtns.length; b++) {
@@ -3616,102 +3600,84 @@ function renderPortfolioTable() {
       subCardBtn.parentElement.appendChild(finBtn);
       subCardBtn.parentElement.appendChild(invBtn);
     }
-  }, 300);
+  }, 500);
 })();
 </script>
-<!-- ЭТАП 2 (ЧАСТЬ 2 ИЗ 2 v3): ИЗОЛИРОВАННЫЙ ИНТЕРФЕЙС ФИНАНСИСТА И ИНВЕСТОРА -->
+<!-- ЭТАП 2 (ЧАСТЬ 2 ИЗ 2 v4): ПОЛНОЭКРАННЫЕ КАБИНЕТЫ ФИНАНСИСТА И ИНВЕСТОРА -->
 <script>
 (function() {
-  var renderedSpec = null;
+  var app = window._cloudApp;
 
-  setInterval(function() {
-    var spec = window._activeSpecialRole;
-    if (!spec) {
-      try { spec = sessionStorage.getItem('kpi_special_role'); } catch (e) {}
-    }
+  window._renderSpecialOverlay = function(spec) {
+    var old = document.getElementById('special-role-overlay');
+    if (old) old.remove();
 
-    var c = window._kpiCore;
-    var existingWs = document.getElementById('special-role-workspace');
+    var cur = app ? app.getSession() : null;
+    var compName = (cur && cur.company) ? cur.company.name : 'ООО «СтройИнвест» (Демо-контур)';
+    var roleBadge = (spec === 'finance') ? '💰 Финансист / Снабженец' : '💼 Инвестор / Заказчик';
 
-    if (!c || c.getRole() === 'guest' || !spec) {
-      if (existingWs) {
-        existingWs.remove();
-        renderedSpec = null;
-      }
-      return;
-    }
+    var ov = document.createElement('div');
+    ov.id = 'special-role-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:#f1f5f9;z-index:9000;overflow-y:auto;font-family:inherit;';
 
-    // Меняем бейдж роли в верхней шапке с "Директор" на выбранную спецроль
-    var topEls = document.querySelectorAll('span, div, badge');
-    for (var t = 0; t < topEls.length; t++) {
-      if (topEls[t].children.length === 0 && topEls[t].textContent.trim() === 'Директор / Генподрядчик') {
-        topEls[t].textContent = (spec === 'finance') ? '💰 Финансист / Снабженец' : '💼 Инвестор (Только чтение)';
-      }
-    }
+    var headerHtml =
+      '<div style="background:#0f172a;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+          '<strong style="font-size:17px;">СтройЭффект KPI</strong>' +
+          '<span style="background:#2563eb;padding:4px 12px;border-radius:8px;font-size:12.5px;font-weight:700;">' + roleBadge + '</span>' +
+          '<span style="font-size:13px;color:#cbd5e1;">' + compName + '</span>' +
+        '</div>' +
+        '<button id="btn-exit-special-role" style="background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Сменить роль / Выйти</button>' +
+      '</div>';
 
-    var diagBtn = null;
-    var btns = document.querySelectorAll('button');
-    for (var b = 0; b < btns.length; b++) {
-      if (btns[b].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = btns[b]; break; }
-    }
-    if (!diagBtn || !diagBtn.parentElement || !diagBtn.parentElement.parentElement) return;
-
-    var nav = diagBtn.parentElement;
-    var root = nav.parentElement;
-
-    // Жестко скрываем меню и все блоки Директора
-    for (var i = 0; i < root.children.length; i++) {
-      var el = root.children[i];
-      if (el.id !== 'special-role-workspace' && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
-        el.style.setProperty('display', 'none', 'important');
-      }
-    }
-
-    if (renderedSpec === spec && existingWs) return;
-
-    var ws = existingWs || document.createElement('div');
-    ws.id = 'special-role-workspace';
-    ws.style.cssText = 'background:#fff;border-radius:14px;padding:24px;margin-top:12px;border:1px solid #cbd5e1;';
-    if (!existingWs) root.appendChild(ws);
-    renderedSpec = spec;
+    var bodyHtml = '<div style="max-width:1100px;margin:24px auto;padding:0 16px;">';
 
     if (spec === 'finance') {
-      ws.innerHTML =
-        '<div style="background:#eff6ff;border-left:4px solid #2563eb;padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:13.5px;color:#1e3a8a;">' +
-          '<strong>💰 Кабинет Финансиста и Снабженца (Управленческий контур без 1С):</strong> Контроль живых денег (ДДС), проверка закупок по остаткам сметы и отправка заявок на согласование.' +
+      bodyHtml +=
+        '<div style="background:#eff6ff;border-left:4px solid #2563eb;padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:13.5px;color:#1e3a8a;">' +
+          '<strong>💰 Управленческий контур без 1С:</strong> Контроль живых денег объекта (ДДС), проверка заявок на материалы по остаткам сметы (защита от лишнего бетона) и фиксация штрафов.' +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">' +
-          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#166534;font-weight:700;">ЖИВЫЕ ДЕНЬГИ ОБЪЕКТА (ДДС)</div><div style="font-size:24px;font-weight:800;color:#14532d;margin-top:4px;">+48 200 тыс. ₽</div><div style="font-size:12px;color:#15803d;margin-top:4px;">🟢 Кассовых разрывов нет</div></div>' +
-          '<div style="background:#fefce8;border:1px solid #fde047;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#854d0e;font-weight:700;">ЛИМИТ ЗАКУПОК БЕТОНА</div><div style="font-size:24px;font-weight:800;color:#713f12;margin-top:4px;">39.0 м³</div><div style="font-size:12px;color:#a16207;margin-top:4px;">🟡 При заказе > 39 м³ сработает стоп-флаг</div></div>' +
-          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#991b1b;font-weight:700;">НЕПРОИЗВОДИТЕЛЬНЫЕ ТРАТЫ</div><div style="font-size:24px;font-weight:800;color:#7f1d1d;margin-top:4px;">100 000 ₽</div><div style="font-size:12px;color:#b91c1c;margin-top:4px;">🔴 Штрафы и сверхсметный брак</div></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:22px;">' +
+          '<div style="background:#fff;border:1px solid #bbf7d0;padding:18px;border-radius:12px;"><div style="font-size:12px;color:#166534;font-weight:700;">ЖИВЫЕ ДЕНЬГИ ОБЪЕКТА (ДДС)</div><div style="font-size:26px;font-weight:800;color:#14532d;margin-top:6px;">+48 200 тыс. ₽</div><div style="font-size:12.5px;color:#15803d;margin-top:4px;">🟢 Кассовых разрывов не прогнозируется</div></div>' +
+          '<div style="background:#fff;border:1px solid #fde047;padding:18px;border-radius:12px;"><div style="font-size:12px;color:#854d0e;font-weight:700;">ОСТАТОК ЛИМИТА БЕТОНА ПО СМЕТЕ</div><div style="font-size:26px;font-weight:800;color:#713f12;margin-top:6px;">39.0 м³</div><div style="font-size:12.5px;color:#a16207;margin-top:4px;">🟡 При заказе > 39 м³ сработает блокировка</div></div>' +
+          '<div style="background:#fff;border:1px solid #fecaca;padding:18px;border-radius:12px;"><div style="font-size:12px;color:#991b1b;font-weight:700;">НЕПРОИЗВОДИТЕЛЬНЫЕ ТРАТЫ</div><div style="font-size:26px;font-weight:800;color:#7f1d1d;margin-top:6px;">100 000 ₽</div><div style="font-size:12.5px;color:#b91c1c;margin-top:4px;">🔴 Штрафы и сверхсметные переделки</div></div>' +
         '</div>' +
-        '<div id="fin-penalties-mount"></div>';
-
-      if (window._renderPenaltiesTab) {
-        window._renderPenaltiesTab(document.getElementById('fin-penalties-mount'));
-      }
-    } else if (spec === 'investor') {
-      ws.innerHTML =
-        '<div style="background:#f8fafc;border-left:4px solid #0f172a;padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:13.5px;color:#334155;">' +
-          '<strong>💼 Кабинет Инвестора и Заказчика (Режим прозрачности • Только чтение):</strong> Независимый контроль освоения инвестиций и индекса надежности объекта.' +
+        '<div id="fin-overlay-penalties" style="background:#fff;padding:22px;border-radius:12px;border:1px solid #e2e8f0;"></div>';
+    } else {
+      bodyHtml +=
+        '<div style="background:#fff;border-left:4px solid #0f172a;padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:13.5px;color:#334155;">' +
+          '<strong>💼 Кабинет Инвестора и Заказчика (Режим прозрачности • Только чтение):</strong> Независимый контроль освоения инвестиций, соблюдения сроков и индекса надежности стройки.' +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">' +
-          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#1e40af;font-weight:700;">ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</div><div style="font-size:26px;font-weight:800;color:#1e3a8a;margin-top:4px;">84 / 100</div><div style="font-size:12px;color:#2563eb;margin-top:4px;">🟢 Высокая надежность вложений</div></div>' +
-          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#166534;font-weight:700;">ОСВОЕНИЕ СМЕТЫ (SPI)</div><div style="font-size:26px;font-weight:800;color:#14532d;margin-top:4px;">64.8%</div><div style="font-size:12px;color:#15803d;margin-top:4px;">🟢 Стройка идет по графику (440.6 млн ₽)</div></div>' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#475569;font-weight:700;">КАЧЕСТВО ПРИЕМКИ (FTRI)</div><div style="font-size:26px;font-weight:800;color:#0f172a;margin-top:4px;">88.5%</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Технадзор принимает этапы с 1-го раза</div></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:22px;">' +
+          '<div style="background:#fff;border:1px solid #bfdbfe;padding:18px;border-radius:12px;"><div style="font-size:12px;color:#1e40af;font-weight:700;">ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</div><div style="font-size:28px;font-weight:800;color:#1e3a8a;margin-top:6px;">84 / 100</div><div style="font-size:12.5px;color:#2563eb;margin-top:4px;">🟢 Высокая надежность вложений</div></div>' +
+          '<div style="background:#fff;border:1px solid #bbf7d0;padding:18px;border-radius:12px;"><div style="font-size:12px;color:#166534;font-weight:700;">ОСВОЕНИЕ СМЕТЫ (SPI)</div><div style="font-size:28px;font-weight:800;color:#14532d;margin-top:6px;">64.8%</div><div style="font-size:12.5px;color:#15803d;margin-top:4px;">🟢 Стройка идет по графику (440.6 млн ₽)</div></div>' +
+          '<div style="background:#fff;border:1px solid #e2e8f0;padding:18px;border-radius:12px;"><div style="font-size:12px;color:#475569;font-weight:700;">КАЧЕСТВО ПРИЕМКИ (FTRI)</div><div style="font-size:28px;font-weight:800;color:#0f172a;margin-top:6px;">88.5%</div><div style="font-size:12.5px;color:#64748b;margin-top:4px;">Технадзор принимает этапы с 1-го раза</div></div>' +
         '</div>' +
-        '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:18px;background:#f8fafc;">' +
-          '<h3 style="margin:0 0 10px;font-size:16px;">📅 Контрольные вехи строительства (Подтверждено технадзором)</h3>' +
-          '<div style="font-size:13.5px;line-height:1.8;color:#334155;">' +
+        '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:22px;">' +
+          '<h3 style="margin:0 0 12px;font-size:16px;color:#0f172a;">📅 Контрольные вехи строительства (Подтверждено технадзором)</h3>' +
+          '<div style="font-size:14px;line-height:1.9;color:#334155;">' +
             '✅ <strong>Этап 1: Котлован и фундаментная плита</strong> — Сдано в срок (100% закрыто по КС-2)<br>' +
             '✅ <strong>Этап 2: Монолитный каркас 1–8 этажей</strong> — Сдано в срок (Индекс качества 91.4%)<br>' +
             '🔄 <strong>Этап 3: Монолитный каркас 9–16 этажей и кладка</strong> — В работе (Выполнено 52%)' +
           '</div>' +
         '</div>';
     }
-  }, 250);
+
+    bodyHtml += '</div>';
+    ov.innerHTML = headerHtml + bodyHtml;
+    document.body.appendChild(ov);
+
+    document.getElementById('btn-exit-special-role').onclick = function() {
+      ov.remove();
+    };
+
+    if (spec === 'finance' && window._renderPenaltiesTab) {
+      window._renderPenaltiesTab(document.getElementById('fin-overlay-penalties'));
+    }
+  };
 })();
 </script>
+
 
 
 
