@@ -1642,41 +1642,42 @@ function renderPortfolioTable() {
   }, 500);
 })();
 </script>
-<!-- ЧАСТЬ 1 ИЗ 4: ОБЛАКО И ПРЕЗЕНТАЦИЯ (СЛАЙДЫ 1-3) -->
+<!-- ЧИСТЫЙ БЛОК 1 ИЗ 4: SUPABASE И ПРЕЗЕНТАЦИЯ (ЧАСТЬ 1) -->
 <script>
 (function() {
+  var SB_BASE = 'https://supabase.co';
+  var SB_ANON = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
+
   window._cloudApp = {
     sb: function(path, opts) {
       opts = opts || {};
-      var url = 'https://supabase.co' + path;
-      var key = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
-      var headers = Object.assign({ 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, opts.headers || {});
-      return fetch(url, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
+      var headers = Object.assign({ 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, opts.headers || {});
+      return fetch(SB_BASE + path, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
     },
-    encode: function(text) {
-      var k = 'KPISecret2026', res = '';
-      for (var i = 0; i < text.length; i++) res += String.fromCharCode(text.charCodeAt(i) ^ k.charCodeAt(i % k.length));
-      return 'E2E:' + btoa(unescape(encodeURIComponent(res)));
+    encode: function(t) {
+      var k = 'KPISecret2026', r = '';
+      for (var i = 0; i < t.length; i++) r += String.fromCharCode(t.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+      return 'E2E:' + btoa(unescape(encodeURIComponent(r)));
     },
-    decode: function(cipher) {
-      if (!cipher || cipher.indexOf('E2E:') !== 0) return cipher;
+    decode: function(c) {
+      if (!c || c.indexOf('E2E:') !== 0) return c;
       try {
-        var k = 'KPISecret2026', raw = decodeURIComponent(escape(atob(cipher.slice(4)))), res = '';
-        for (var i = 0; i < raw.length; i++) res += String.fromCharCode(raw.charCodeAt(i) ^ k.charCodeAt(i % k.length));
-        return res;
+        var k = 'KPISecret2026', raw = decodeURIComponent(escape(atob(c.slice(4)))), r = '';
+        for (var i = 0; i < raw.length; i++) r += String.fromCharCode(raw.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+        return r;
       } catch (e) { return '[Зашифровано]'; }
     },
     getSession: function() { try { return JSON.parse(localStorage.getItem('kpistroy_cloud_session')); } catch (e) { return null; } },
     setSession: function(s) { try { localStorage.setItem('kpistroy_cloud_session', JSON.stringify(s)); } catch (e) {} },
-    confirm: function(title, desc, onConfirm) {
+    confirm: function(title, desc, onOk) {
       var old = document.getElementById('kpi-confirm-modal'); if (old) old.remove();
       var m = document.createElement('div');
       m.id = 'kpi-confirm-modal';
       m.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
-      m.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:24px;"><h3 style="margin:0 0 10px;font-size:18px;">⚠️ ' + title + '</h3><p style="margin:0 0 20px;color:#475569;font-size:14px;">' + desc + '</p><div style="display:flex;justify-content:flex-end;gap:10px;"><button id="k-no" style="padding:9px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;">Отмена</button><button id="k-yes" style="padding:9px 18px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-weight:700;cursor:pointer;">Подтвердить</button></div></div>';
+      m.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:24px;"><h3 style="margin:0 0 10px;">⚠️ ' + title + '</h3><p style="margin:0 0 20px;color:#475569;font-size:14px;">' + desc + '</p><div style="display:flex;justify-content:flex-end;gap:10px;"><button id="k-no" style="padding:9px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;">Отмена</button><button id="k-yes" style="padding:9px 18px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-weight:700;cursor:pointer;">Подтвердить</button></div></div>';
       document.body.appendChild(m);
       document.getElementById('k-no').onclick = function() { m.remove(); };
-      document.getElementById('k-yes').onclick = function() { m.remove(); onConfirm(); };
+      document.getElementById('k-yes').onclick = function() { m.remove(); onOk(); };
     }
   };
 
@@ -1688,8 +1689,8 @@ function renderPortfolioTable() {
       '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">' +
         '<div><span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;">B2B SaaS Платформа • Сделано в России</span>' +
         '<h1 style="margin:8px 0 4px;font-size:24px;color:#0f172a;">СтройЭффект KPI — цифровой контроль стройки без перегрузки</h1>' +
-        '<p style="margin:0;color:#475569;font-size:14px;">Управленческий контур поверх 1С, E2E-мессенджер (AES-256), проверка подрядчиков по ИНН и защита от потерь</p></div>' +
-        '<button id="btn-open-app-top" style="background:#2563eb;color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">🚀 Открыть рабочую систему →</button>' +
+        '<p style="margin:0;color:#475569;font-size:14px;">Управленческий контур поверх 1С, E2E-мессенджер (AES-256) и проверка подрядчиков по ИНН</p></div>' +
+        '<button id="btn-open-app-top" style="background:#2563eb;color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;cursor:pointer;">🚀 Открыть рабочую систему →</button>' +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">' +
         '<button class="p-tab" data-s="1" style="background:#0f172a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">1. Экономия 2–5%</button>' +
@@ -1697,67 +1698,38 @@ function renderPortfolioTable() {
         '<button class="p-tab" data-s="3" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">3. Безопасность и Биржа</button>' +
         '<button class="p-tab" data-s="4" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">4. Тарифы и контакты</button>' +
       '</div>' +
-      '<div class="p-slide" id="ps-1" style="background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
-        '<h2 style="margin:0 0 12px;font-size:19px;">Экономия 2%–5% сметного бюджета без перегрузки сотрудников</h2>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">' +
-          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:15px;border-radius:12px;"><strong style="color:#991b1b;">🔴 Скрытые потери</strong><p style="font-size:13px;color:#7f1d1d;margin-top:6px;">Простои техники, перерасход бетона сверх сметы, штрафы и переделки съедают до 5–8% маржи.</p></div>' +
-          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:15px;border-radius:12px;"><strong style="color:#166534;">🟢 Возврат 10–30 млн ₽</strong><p style="font-size:13px;color:#14532d;margin-top:6px;">Светофор платежей, разбор ошибок (CAPA) и контроль закрытия КС-2 возвращают прибыль на каждом объекте.</p></div>' +
-          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:15px;border-radius:12px;"><strong style="color:#1e40af;">⚡ 5 минут для прораба</strong><p style="font-size:13px;color:#1e3a8a;margin-top:6px;">Удобный мобильный экран (PWA): прораб отправляет фото и 4 цифры раз в неделю.</p></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="p-slide" id="ps-2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
-        '<h2 style="margin:0 0 12px;font-size:19px;">6 специализированных кабинетов — каждый видит только свои задачи</h2>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:13px;">' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>👔 1. Владелец / Гендиректор</strong><div style="color:#475569;margin-top:4px;">Пульт здоровья бизнеса, согласование красных заявок и штрафов, управление командой.</div></div>' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>📐 2. Инженер ПТО</strong><div style="color:#475569;margin-top:4px;">Техническая приемка этапов с фото, контроль сметы (MVR), закрытие КС-2 и Биржа.</div></div>' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>👷 3. Прораб / Начальник участка</strong><div style="color:#475569;margin-top:4px;">Облегченный экран без чужих финансов: простои, выработка бригад, фотоотчеты и чат.</div></div>' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>💰 4. Финансист / Снабженец</strong><div style="color:#475569;margin-top:4px;">Учет живых денег (ДДС) без 1С, контроль остатков материалов и маркировка штрафов.</div></div>' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>💼 5. Инвестор / Заказчик</strong><div style="color:#475569;margin-top:4px;">Режим «Только чтение»: индекс здоровья объекта (0–100), освоение бюджета и вехи.</div></div>' +
-          '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:13px;border-radius:10px;"><strong>🤝 6. Подрядная организация</strong><div style="color:#475569;margin-top:4px;">4 модуля: трекер договоров КС-2, подача отчетов, прямой чат и паспорт ФНС (ИНН).</div></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="p-slide" id="ps-3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
-        '<h2 style="margin:0 0 12px;font-size:19px;">Криптозащита чатов, честная Биржа и неизменяемые срезы</h2>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13px;">' +
-          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:12px;"><strong>🔒 Защищенный мессенджер (AES-GCM 256-бит)</strong><p style="color:#475569;margin-top:6px;">Корпоративный чат по отделам и подрядчикам со сквозным шифрованием ключом компании.</p></div>' +
-          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:12px;"><strong>🔍 Биржа подрядчиков и проверка ИНН</strong><p style="color:#475569;margin-top:6px;">Рейтинг на основе подтвержденных сдач + проверка по ЕГРЮЛ ФНС и Федресурсу (ЕФРСБ).</p></div>' +
-          '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:12px;"><strong>📌 Срезы периодов + Двухфакторный вход (2FA)</strong><p style="color:#475569;margin-top:6px;">2FA-подтверждение при входе и заморозка отчетных срезов в конце каждого месяца.</p></div>' +
-        '</div>' +
-      '</div>' +
+      '<div class="p-slide" id="ps-1" style="background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 12px;font-size:19px;">Экономия 2%–5% сметного бюджета без перегрузки сотрудников</h2><p style="font-size:14px;color:#475569;">Светофор платежей, разбор ошибок (CAPA) и контроль закрытия КС-2 возвращают от 10 до 30 млн ₽ на каждом объекте.</p></div>' +
+      '<div class="p-slide" id="ps-2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 12px;font-size:19px;">6 специализированных кабинетов</h2><p style="font-size:14px;color:#475569;">1. Гендиректор • 2. Инженер ПТО • 3. Прораб • 4. Финансист (без 1С) • 5. Инвестор (Только чтение) • 6. Подрядчик (4 модуля).</p></div>' +
+      '<div class="p-slide" id="ps-3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 12px;font-size:19px;">Криптозащита чатов (AES-256), Биржа ФНС и 2FA</h2><p style="font-size:14px;color:#475569;">Сквозное шифрование переписки, проверка контрагентов по ИНН (ФНС/ЕФРСБ) и двухфакторный вход.</p></div>' +
       '<div class="p-slide" id="ps-4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"></div>' +
     '</div>';
   document.body.insertBefore(landing, document.body.firstChild);
 })();
 </script>
-<!-- ЧАСТЬ 2 ИЗ 4: СЛАЙД 4 ПРЕЗЕНТАЦИИ, БИРЖА И КОНТРОЛЬ ШТРАФОВ -->
+<!-- ЧИСТЫЙ БЛОК 2 ИЗ 4: СЛАЙД 4, БИРЖА И ШТРАФЫ -->
 <script>
 (function() {
-  var app = window._cloudApp;
-  var landing = document.getElementById('saas-landing-page');
-  var s4 = document.getElementById('ps-4');
-
+  var app = window._cloudApp, landing = document.getElementById('saas-landing-page'), s4 = document.getElementById('ps-4');
   if (s4 && landing) {
     s4.innerHTML =
-      '<h2 style="margin:0 0 6px;font-size:19px;">Тарифы, распределение ролей и прямое подключение</h2>' +
-      '<p style="font-size:13px;color:#475569;margin-bottom:14px;">Прямое B2B-подключение и пилотный запуск с сопровождением автора (без приема оплат с карт):</p>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
-        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">• <strong>Кто подключает:</strong> Руководитель подрядчика / ИП.<br>• <strong>Входит:</strong> 1–2 объекта, кабинеты Прораба, ПТО и Подрядчика, трекер КС-2 и Биржа.</div></div>' +
-        '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">• <strong>Кто подключает:</strong> Собственник / Гендиректор.<br>• <strong>Входит:</strong> До 10 объектов, все 6 ролей (Финансист без 1С, Инвестор), E2E-чат и срезы.</div></div>' +
-        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">• <strong>Кто подключает:</strong> Директор по строительству холдинга.<br>• <strong>Входит:</strong> Безлимит объектов, выделенная база и настройка под регламенты компании.</div></div>' +
+      '<h2 style="margin:0 0 8px;font-size:19px;">Тарифы, распределение ролей и прямое подключение</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">Для подрядчиков и ИП: 1–2 объекта, трекер КС-2 и Биржа.</div></div>' +
+        '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">Для генподрядчиков: до 10 объектов, все 6 ролей (Финансист без 1С, Инвестор), E2E-чат.</div></div>' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">Для девелоперов и холдингов: безлимит объектов и выделенный контур.</div></div>' +
       '</div>' +
       '<div style="background:#0f172a;color:#fff;border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">' +
-        '<div><div style="font-size:11.5px;color:#38bdf8;font-weight:700;text-transform:uppercase;">Прямое подключение и бесплатный пилот на 14 дней</div>' +
-        '<h3 style="margin:4px 0 6px;font-size:16px;">Автор и руководитель проекта: Мухачев Иван</h3>' +
-        '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.65;">🎓 г. Новосибирск • СГУПС (факультет ПГС)<br>📱 Мессенджер MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 Сайт: <strong style="color:#fff;">https://kpistroy.ru</strong></div></div>' +
-        '<div style="display:flex;flex-direction:column;gap:8px;min-width:210px;">' +
+        '<div><div style="font-size:11.5px;color:#38bdf8;font-weight:700;">ПРЯМОЕ ПОДКЛЮЧЕНИЕ И БЕСПЛАТНЫЙ ПИЛОТ 14 ДНЕЙ</div>' +
+        '<h3 style="margin:4px 0 6px;font-size:16px;">Автор проекта: Мухачев Иван</h3>' +
+        '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.6;">🎓 г. Новосибирск • СГУПС (факультет ПГС)<br>📱 MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 <strong style="color:#fff;">https://kpistroy.ru</strong></div></div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;min-width:200px;">' +
           '<a href="https://t.me" target="_blank" style="text-align:center;background:#0284c7;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✈️ Написать в Telegram</a>' +
           '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилот%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✉️ Заявка на Email</a>' +
-          '<button id="btn-open-app-s4" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:9px 14px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Открыть систему →</button>' +
+          '<button id="btn-open-app-s4" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;">Открыть систему →</button>' +
         '</div>' +
       '</div>';
 
-    var pTabs = landing.querySelectorAll('.p-tab');
-    var pSlides = landing.querySelectorAll('.p-slide');
+    var pTabs = landing.querySelectorAll('.p-tab'), pSlides = landing.querySelectorAll('.p-slide');
     for (var i = 0; i < pTabs.length; i++) {
       pTabs[i].onclick = function() {
         var n = this.dataset.s;
@@ -1772,7 +1744,7 @@ function renderPortfolioTable() {
   }
 
   window._renderExchangeTab = function(panel) {
-    panel.innerHTML = '<h2 style="margin-top:0;">🔍 Биржа проверенных субподрядчиков</h2><div id="cloud-ex-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px;">Загрузка...</div>';
+    panel.innerHTML = '<h2 style="margin-top:0;">🔍 Биржа проверенных субподрядчиков</h2><div id="cloud-ex-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px;">Загрузка из базы Supabase...</div>';
     app.sb('companies?company_type=eq.subcontractor&order=rating_ftri.desc').then(function(subs) {
       var box = document.getElementById('cloud-ex-list');
       if (!box || !Array.isArray(subs)) return;
@@ -1783,11 +1755,10 @@ function renderPortfolioTable() {
   };
 
   window._renderPenaltiesTab = function(panel) {
-    panel.innerHTML = '<h2 style="margin-top:0;">💰 Контроль штрафов и непроизводительных трат (CAPA)</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-top:14px;"><div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><input id="p-ttl" placeholder="Назначение (напр. Штраф за слив бетона)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="p-amt" type="number" placeholder="Сумма (₽)" style="width:45%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><select id="p-cat" style="width:55%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><option value="penalty">🔴 Штраф / Брак</option><option value="overrun">🟡 Перерасход</option><option value="plan">🟢 План</option></select></div><input id="p-cul" placeholder="Виновник / участок" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="p-msr" placeholder="Мера предотвращения (CAPA)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><button id="btn-p-save" style="width:100%;background:#dc2626;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Зафиксировать</button></div><div id="p-list">Загрузка реестра...</div></div>';
+    panel.innerHTML = '<h2 style="margin-top:0;">💰 Контроль штрафов и трат (CAPA)</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px;"><div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><input id="p-ttl" placeholder="Назначение (напр. Штраф за слив бетона)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="p-amt" type="number" placeholder="Сумма (₽)" style="width:45%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><select id="p-cat" style="width:55%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><option value="penalty">🔴 Штраф / Брак</option><option value="overrun">🟡 Перерасход</option><option value="plan">🟢 План</option></select></div><input id="p-cul" placeholder="Виновник / участок" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="p-msr" placeholder="Мера предотвращения" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><button id="btn-p-save" style="width:100%;background:#dc2626;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Зафиксировать</button></div><div id="p-list">Загрузка...</div></div>';
     function loadP() {
       app.sb('payment_requests?order=created_at.desc&limit=10').then(function(rows) {
-        var box = document.getElementById('p-list');
-        if (!box || !Array.isArray(rows)) return;
+        var box = document.getElementById('p-list'); if (!box || !Array.isArray(rows)) return;
         box.innerHTML = rows.length ? rows.map(function(r) {
           var b = r.category === 'penalty' ? '🔴 Штраф' : (r.category === 'overrun' ? '🟡 Перерасход' : '🟢 План');
           return '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:8px;margin-bottom:8px;font-size:13px;"><strong>' + b + ': ' + r.title + ' — ' + Number(r.amount).toLocaleString('ru-RU') + ' ₽</strong><br><span style="color:#64748b;font-size:12px;">Виновник: ' + (r.culprit_name || '—') + ' • Мера: ' + (r.prevention_measure || '—') + '</span></div>';
@@ -1805,14 +1776,14 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- ЧАСТЬ 3 ИЗ 4: КОМАНДА, E2E-ЧАТ И КАБИНЕТЫ ФИНАНСИСТА / ИНВЕСТОРА -->
+<!-- ЧИСТЫЙ БЛОК 3 ИЗ 4: КОМАНДА, E2E-ЧАТ И СПЕЦРОЛИ -->
 <script>
 (function() {
   var app = window._cloudApp;
 
   window._renderTeamTab = function(panel) {
     var cur = app.getSession(), comp = cur && cur.company ? cur.company : null;
-    if (!comp) { panel.innerHTML = '<h2>👥 Команда</h2><p style="color:#64748b;">Войдите по коду вашей компании на главном экране, чтобы добавлять сотрудников.</p>'; return; }
+    if (!comp || !comp.id) { panel.innerHTML = '<h2>👥 Команда</h2><p style="color:#64748b;">Войдите по коду вашей компании на главном экране (например, KPI-9044), чтобы добавлять сотрудников.</p>'; return; }
     panel.innerHTML = '<h2 style="margin-top:0;">👥 Команда «' + comp.name + '» (Код входа: ' + comp.invite_code + ')</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px;"><div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><input id="tm-name" placeholder="ФИО сотрудника" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="tm-mail" placeholder="Email или телефон" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><select id="tm-role" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="pto">Инженер ПТО</option><option value="prorab">Прораб</option><option value="finance">Финансист</option><option value="investor">Инвестор</option></select><button id="btn-tm-add" style="width:100%;background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Добавить сотрудника</button></div><div id="tm-list">Загрузка...</div></div>';
     function loadTm() {
       app.sb('app_users?company_id=eq.' + encodeURIComponent(comp.id)).then(function(u) {
@@ -1855,8 +1826,7 @@ function renderPortfolioTable() {
       : [{ k: 'obj_general', t: '🏗️ Общий чат объекта' }, { k: 'dept_pto', t: '📐 Отдел ПТО' }, { k: 'dept_finance', t: '💰 Финансы' }, { k: 'sub_direct_demo', t: '🤝 Подрядчики' }];
 
     channels.forEach(function(ch) {
-      var row = document.createElement('div');
-      row.textContent = ch.t;
+      var row = document.createElement('div'); row.textContent = ch.t;
       row.style.cssText = 'padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin-bottom:4px;';
       row.onclick = function() { activeCh = ch.k; document.getElementById('chat-hdr').textContent = ch.t; loadMsgs(); };
       side.appendChild(row);
@@ -1895,167 +1865,12 @@ function renderPortfolioTable() {
       body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;"><div style="background:#fff;padding:16px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ЖИВЫЕ ДЕНЬГИ (ДДС)</strong><div style="font-size:24px;font-weight:800;color:#15803d;margin-top:4px;">+48 200 тыс. ₽</div></div><div style="background:#fff;padding:16px;border-radius:12px;border:1px solid #fde047;"><strong>ЛИМИТ БЕТОНА ПО СМЕТЕ</strong><div style="font-size:24px;font-weight:800;color:#854d0e;margin-top:4px;">39.0 м³</div></div></div><div id="fin-p-box" style="background:#fff;padding:20px;border-radius:12px;"></div>';
       window._renderPenaltiesTab(document.getElementById('fin-p-box'));
     } else {
-      body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;"><div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bfdbfe;"><strong>ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</strong><div style="font-size:28px;font-weight:800;color:#1e3a8a;margin-top:4px;">84 / 100 🟢</div></div><div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ОСВОЕНИЕ СМЕТЫ (SPI)</strong><div style="font-size:28px;font-weight:800;color:#15803d;margin-top:4px;">64.8%</div></div></div><div style="background:#fff;padding:20px;border-radius:12px;"><h3>📅 Контрольные вехи (Подтверждено технадзором)</h3><p style="line-height:1.8;font-size:14px;">✅ Этап 1: Фундаментная плита — Сдано в срок<br>✅ Этап 2: Монолитный каркас 1–8 эт. — Сдано в срок<br>🔄 Этап 3: Монолитный каркас 9–16 эт. — В работе (52%)</p></div>';
+      body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;"><div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bfdbfe;"><strong>ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</strong><div style="font-size:28px;font-weight:800;color:#1e3a8a;margin-top:4px;">84 / 100 🟢</div></div><div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ОСВОЕНИЕ СМЕТЫ (SPI)</strong><div style="font-size:28px;font-weight:800;color:#15803d;margin-top:4px;">64.8%</div></div></div><div style="background:#fff;padding:20px;border-radius:12px;"><h3>📅 Контрольные вехи</h3><p style="line-height:1.8;font-size:14px;">✅ Этап 1: Фундаментная плита — Сдано в срок<br>✅ Этап 2: Монолитный каркас 1–8 эт. — Сдано в срок<br>🔄 Этап 3: Монолитный каркас 9–16 эт. — В работе (52%)</p></div>';
     }
   };
 })();
 </script>
-<!-- ЧАСТЬ 4А: 2FA-ВХОД И РЕГИСТРАЦИЯ -->
-<script>
-(function() {
-  var app = window._cloudApp;
-
-  window._setupAuthScreen = function() {
-    var oldInp = document.querySelector('input[placeholder="director@stroy.ru"]');
-    if (!oldInp || oldInp.offsetParent === null) return;
-    var card = oldInp.parentElement;
-    while (card && card.parentElement && card.parentElement.children.length < 2) card = card.parentElement;
-    if (!card || card.dataset.ready2fa === '1') return;
-    card.dataset.ready2fa = '1';
-
-    if (card.parentElement) {
-      for (var s = 0; s < card.parentElement.children.length; s++) {
-        if (card.parentElement.children[s] !== card && card.parentElement.children[s].textContent.indexOf('Вход в кабинет') !== -1) card.parentElement.children[s].style.display = 'none';
-      }
-    }
-
-    var mode = 'login';
-    function draw() {
-      var h = '<div style="display:flex;gap:16px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:14px;"><button id="tb-in" style="background:none;border:none;font-weight:700;cursor:pointer;color:' + (mode === 'login' ? '#2563eb' : '#64748b') + ';">Вход в кабинет (2FA)</button><button id="tb-rg" style="background:none;border:none;font-weight:700;cursor:pointer;color:' + (mode === 'reg' ? '#2563eb' : '#64748b') + ';">Регистрация</button></div>';
-      if (mode === 'login') {
-        card.innerHTML = h + '<div id="s1-2fa"><select id="who-2fa" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;"><option value="staff">Сотрудник генподрядчика (по коду)</option><option value="contractor">Подрядчик (по ИНН)</option></select><div id="st-box"><input id="cd-2fa" placeholder="Код компании (напр. KPI-9044)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;"><select id="rl-2fa" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="director">👔 Директор</option><option value="pto">📐 Инженер ПТО</option><option value="prorab">👷 Прораб</option><option value="finance">💰 Финансист</option><option value="investor">💼 Инвестор</option></select></div><div id="sb-box" style="display:none;"><input id="in-2fa" placeholder="ИНН подрядчика (напр. 5406781234)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"></div><button id="go-2fa" style="width:100%;background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Продолжить (2FA) →</button></div><div id="s2-2fa" style="display:none;"></div>';
-        document.getElementById('who-2fa').onchange = function() {
-          var isS = this.value === 'contractor';
-          document.getElementById('st-box').style.display = isS ? 'none' : 'block';
-          document.getElementById('sb-box').style.display = isS ? 'block' : 'none';
-        };
-        document.getElementById('go-2fa').onclick = function() {
-          var isS = document.getElementById('who-2fa').value === 'contractor';
-          var q = isS ? document.getElementById('in-2fa').value.trim() : document.getElementById('cd-2fa').value.trim().toUpperCase();
-          var r = isS ? 'contractor' : document.getElementById('rl-2fa').value;
-          if (!q) return alert('Введите код или ИНН.');
-          app.sb(isS ? ('companies?inn=eq.' + encodeURIComponent(q)) : ('companies?invite_code=eq.' + encodeURIComponent(q))).then(function(rows) {
-            if (!Array.isArray(rows) || !rows.length) return alert('Компания не найдена.');
-            var comp = rows.at(0);
-            var otp = String(Math.floor(100000 + Math.random() * 900000));
-            document.getElementById('s1-2fa').style.display = 'none';
-            var s2 = document.getElementById('s2-2fa'); s2.style.display = 'block';
-            s2.innerHTML = '<div style="background:#eff6ff;padding:10px;border-radius:8px;margin-bottom:10px;font-size:13px;">🔐 Код 2FA для <strong>' + comp.name + '</strong>: <strong style="color:#2563eb;font-size:16px;">' + otp + '</strong></div><input id="otp-i" placeholder="Введите 6 цифр" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;text-align:center;margin-bottom:10px;"><button id="otp-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Войти</button>';
-            document.getElementById('otp-b').onclick = function() {
-              if (document.getElementById('otp-i').value.trim() !== otp) return alert('Неверный код.');
-              app.setSession({ company: comp });
-              if (r === 'finance' || r === 'investor') window._openSpecialOverlay(r);
-              else if (typeof loginDemo === 'function') loginDemo(r);
-            };
-          });
-        };
-      } else {
-        card.innerHTML = h + '<input id="rg-n" placeholder="Название ООО / ИП" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="rg-i" placeholder="ИНН" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><select id="rg-t" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="general">Генподрядчик</option><option value="subcontractor">Подрядчик</option></select><button id="rg-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Зарегистрировать</button>';
-        document.getElementById('rg-b').onclick = function() {
-          var n = document.getElementById('rg-n').value.trim(), i = document.getElementById('rg-i').value.trim(), t = document.getElementById('rg-t').value;
-          if (!n || !i) return alert('Заполните поля.');
-          var cd = (t === 'subcontractor' ? 'SUB-' : 'KPI-') + Math.floor(1000 + Math.random() * 9000);
-          app.sb('companies', { method: 'POST', body: JSON.stringify({ name: n, inn: i, company_type: t, invite_code: cd, specialization: 'Строительные работы', fns_verified: true }) }).then(function(res) {
-            if (Array.isArray(res) && res.length) { alert('✅ Готово! Ваш код: ' + cd); mode = 'login'; draw(); }
-            else { alert('ИНН уже зарегистрирован.'); mode = 'login'; draw(); }
-          });
-        };
-      }
-      document.getElementById('tb-in').onclick = function() { mode = 'login'; draw(); };
-      document.getElementById('tb-rg').onclick = function() { mode = 'reg'; draw(); };
-    }
-    draw();
-
-    var subBtn = document.querySelector('button[onclick*="contractor"]');
-    if (subBtn && subBtn.parentElement && !document.getElementById('btn-spec-fin')) {
-      var b1 = subBtn.cloneNode(true); b1.id = 'btn-spec-fin'; b1.removeAttribute('onclick');
-      b1.innerHTML = '<div><div class="demo-role-title">💰 Финансист / Снабженец</div><div class="demo-role-desc">Контур без 1С: живые деньги (ДДС), лимиты сметы и контроль штрафов</div></div><span class="demo-arrow">→</span>';
-      b1.onclick = function() { window._openSpecialOverlay('finance'); };
-      var b2 = subBtn.cloneNode(true); b2.id = 'btn-spec-inv'; b2.removeAttribute('onclick');
-      b2.innerHTML = '<div><div class="demo-role-title">💼 Инвестор / Заказчик</div><div class="demo-role-desc">Режим прозрачности (только чтение): индекс здоровья объекта и вехи</div></div><span class="demo-arrow">→</span>';
-      b2.onclick = function() { window._openSpecialOverlay('investor'); };
-      subBtn.parentElement.appendChild(b1);
-      subBtn.parentElement.appendChild(b2);
-    }
-  };
-})();
-</script>
-<!-- ЧАСТЬ 4Б: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК И ПОДВАЛ 152-ФЗ -->
-<script>
-(function() {
-  var currentRoleCache = '';
-
-  function setupRoleWorkspace(role) {
-    var nav = document.getElementById('navTabs');
-    if (!nav) return;
-    var oldBar = document.getElementById('unified-cloud-bar'); if (oldBar) oldBar.remove();
-    var oldPnl = document.getElementById('unified-cloud-pnl'); if (oldPnl) oldPnl.remove();
-
-    var bar = document.createElement('div');
-    bar.id = 'unified-cloud-bar';
-    bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:10px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;';
-
-    var pnl = document.createElement('div');
-    pnl.id = 'unified-cloud-pnl';
-    pnl.style.cssText = 'display:none;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:22px;margin-bottom:20px;';
-
-    nav.insertAdjacentElement('afterend', bar);
-    bar.insertAdjacentElement('afterend', pnl);
-
-    function showNative() {
-      pnl.style.display = 'none';
-      document.querySelectorAll('.tab-content').forEach(function(el) { el.style.removeProperty('display'); });
-      if (typeof switchTab === 'function') switchTab(role === 'contractor' ? 'contractorPortal' : 'dashboard');
-    }
-
-    function showCloud(fn) {
-      document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.add('hidden'); });
-      pnl.style.display = 'block';
-      if (fn) fn(pnl);
-    }
-
-    function addTab(label, active, fn) {
-      var b = document.createElement('button');
-      b.textContent = label;
-      b.style.cssText = 'padding:8px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid ' + (active ? '#2563eb' : '#cbd5e1') + ';background:' + (active ? '#2563eb' : '#fff') + ';color:' + (active ? '#fff' : '#0f172a') + ';';
-      b.onclick = function() {
-        bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#fff'; x.style.color = '#0f172a'; x.style.borderColor = '#cbd5e1'; });
-        b.style.background = '#2563eb'; b.style.color = '#fff'; b.style.borderColor = '#2563eb';
-        fn();
-      };
-      bar.appendChild(b);
-    }
-
-    addTab('📋 Рабочий экран роли', true, showNative);
-    if (role === 'director' || role === 'pto') addTab('🔍 Биржа подрядчиков', false, function() { showCloud(window._renderExchangeTab); });
-    if (role === 'director') {
-      addTab('💰 Контроль штрафов', false, function() { showCloud(window._renderPenaltiesTab); });
-      addTab('👥 Команда', false, function() { showCloud(window._renderTeamTab); });
-    }
-    if (role === 'contractor') {
-      addTab('📑 Мои договоры и КС-2', false, function() { showCloud(window._renderSubContracts); });
-      addTab('⭐ Мой рейтинг и ФНС', false, function() { showCloud(window._renderSubProfile); });
-    }
-    addTab('💬 Защищенный чат (E2E)', false, function() { showCloud(window._renderChatTab); });
-  }
-
-  setInterval(function() {
-    var authVisible = !document.getElementById('authScreen').classList.contains('hidden');
-    if (authVisible) {
-      currentRoleCache = 'guest';
-      if (window._setupAuthScreen) window._setupAuthScreen();
-      return;
-    }
-    var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : '';
-    if (r && r !== currentRoleCache) {
-      currentRoleCache = r;
-      setupRoleWorkspace(r);
-    }
-  }, 400);
-})();
-</script>
-<div style="text-align:center;font-size:12px;color:#64748b;padding:18px;border-top:1px solid #e2e8f0;">© 2026 Программный комплекс «СтройЭффект KPI» (kpistroy.ru) • Мухачев Иван (СГУПС, ПГС) • Политика ПДн (152-ФЗ)</div>
-<!-- ФИНАЛ 4.1: ЧИСТЫЙ 2FA-ВХОД И РЕГИСТРАЦИЯ -->
+<!-- ЧИСТЫЙ БЛОК 4А: 2FA-ВХОД И РЕГИСТРАЦИЯ -->
 <script>
 (function() {
   var app = window._cloudApp;
@@ -2069,34 +1884,14 @@ function renderPortfolioTable() {
     function draw() {
       var cur = app ? app.getSession() : null;
       if (cur && cur.company && cur.company.name) {
-        box.innerHTML =
-          '<div style="padding:10px;">' +
-            '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 2FA Пройдена • Облако активно</span>' +
-            '<h3 style="margin:12px 0 6px;font-size:18px;color:#0f172a;">' + cur.company.name + '</h3>' +
-            '<div style="font-size:13px;color:#475569;margin-bottom:14px;">ИНН: ' + cur.company.inn + ' • Код доступа: <strong>' + cur.company.invite_code + '</strong></div>' +
-            '<button id="btn-out-2fa" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-weight:600;cursor:pointer;">Выйти из компании</button>' +
-          '</div>';
+        box.innerHTML = '<div style="padding:10px;"><span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 2FA Пройдена • Облако активно</span><h3 style="margin:12px 0 6px;font-size:18px;">' + cur.company.name + '</h3><div style="font-size:13px;color:#475569;margin-bottom:14px;">ИНН: ' + cur.company.inn + ' • Код: <strong>' + cur.company.invite_code + '</strong></div><button id="btn-out-2fa" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-weight:600;cursor:pointer;">Выйти из компании</button></div>';
         document.getElementById('btn-out-2fa').onclick = function() { app.setSession(null); draw(); };
         return;
       }
 
-      var h = '<div style="display:flex;gap:16px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:16px;">' +
-        '<button id="tb-in" style="background:none;border:none;font-size:14.5px;font-weight:700;cursor:pointer;color:' + (mode === 'login' ? '#2563eb' : '#64748b') + ';border-bottom:2px solid ' + (mode === 'login' ? '#2563eb' : 'transparent') + ';">Вход в кабинет (2FA)</button>' +
-        '<button id="tb-rg" style="background:none;border:none;font-size:14.5px;font-weight:700;cursor:pointer;color:' + (mode === 'reg' ? '#2563eb' : '#64748b') + ';border-bottom:2px solid ' + (mode === 'reg' ? '#2563eb' : 'transparent') + ';">Регистрация</button></div>';
-
+      var h = '<div style="display:flex;gap:16px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:16px;"><button id="tb-in" style="background:none;border:none;font-size:14.5px;font-weight:700;cursor:pointer;color:' + (mode === 'login' ? '#2563eb' : '#64748b') + ';">Вход в кабинет (2FA)</button><button id="tb-rg" style="background:none;border:none;font-size:14.5px;font-weight:700;cursor:pointer;color:' + (mode === 'reg' ? '#2563eb' : '#64748b') + ';">Регистрация</button></div>';
       if (mode === 'login') {
-        box.innerHTML = h +
-          '<div id="s1-2fa">' +
-            '<select id="who-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;background:#fff;"><option value="staff">Сотрудник генподрядчика (по коду)</option><option value="contractor">Подрядчик (по ИНН или коду)</option></select>' +
-            '<div id="st-box">' +
-              '<input id="cd-2fa" placeholder="Код компании (напр. KPI-9044)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;">' +
-              '<select id="rl-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;background:#fff;"><option value="director">👔 Директор</option><option value="pto">📐 Инженер ПТО</option><option value="prorab">👷 Прораб</option><option value="finance">💰 Финансист</option><option value="investor">💼 Инвестор</option></select>' +
-            '</div>' +
-            '<div id="sb-box" style="display:none;"><input id="in-2fa" placeholder="ИНН подрядчика (напр. 5406781234)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;"></div>' +
-            '<button id="go-2fa" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Продолжить (2FA) →</button>' +
-          '</div>' +
-          '<div id="s2-2fa" style="display:none;"></div>';
-
+        box.innerHTML = h + '<div id="s1-2fa"><select id="who-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="staff">Сотрудник генподрядчика (по коду)</option><option value="contractor">Подрядчик (по ИНН или коду)</option></select><div id="st-box"><input id="cd-2fa" placeholder="Код компании (напр. KPI-9044)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><select id="rl-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;"><option value="director">👔 Директор</option><option value="pto">📐 Инженер ПТО</option><option value="prorab">👷 Прораб</option><option value="finance">💰 Финансист</option><option value="investor">💼 Инвестор</option></select></div><div id="sb-box" style="display:none;"><input id="in-2fa" placeholder="ИНН подрядчика (напр. 5406781234)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;"></div><button id="go-2fa" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Продолжить (2FA) →</button></div><div id="s2-2fa" style="display:none;"></div>';
         document.getElementById('who-2fa').onchange = function() {
           var isS = this.value === 'contractor';
           document.getElementById('st-box').style.display = isS ? 'none' : 'block';
@@ -2106,35 +1901,29 @@ function renderPortfolioTable() {
           var isS = document.getElementById('who-2fa').value === 'contractor';
           var q = isS ? document.getElementById('in-2fa').value.trim() : document.getElementById('cd-2fa').value.trim().toUpperCase();
           var r = isS ? 'contractor' : document.getElementById('rl-2fa').value;
-          if (!q) return alert('Введите код компании или ИНН.');
+          if (!q) return alert('Введите код или ИНН.');
           app.sb(isS ? ('companies?or=(inn.eq.' + encodeURIComponent(q) + ',invite_code.eq.' + encodeURIComponent(q.toUpperCase()) + ')') : ('companies?invite_code=eq.' + encodeURIComponent(q))).then(function(rows) {
             if (!Array.isArray(rows) || !rows.length) return alert('Компания не найдена.');
-            var comp = rows.at(0);
-            var otp = String(Math.floor(100000 + Math.random() * 900000));
+            var comp = rows.at(0), otp = String(Math.floor(100000 + Math.random() * 900000));
             document.getElementById('s1-2fa').style.display = 'none';
             var s2 = document.getElementById('s2-2fa'); s2.style.display = 'block';
             s2.innerHTML = '<div style="background:#eff6ff;padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px;">🔐 Код 2FA для <strong>' + comp.name + '</strong>:<br><strong style="color:#2563eb;font-size:18px;letter-spacing:2px;">' + otp + '</strong></div><input id="otp-i" maxlength="6" placeholder="Введите 6 цифр" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-weight:700;margin-bottom:10px;"><button id="otp-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Подтвердить и войти</button>';
             document.getElementById('otp-b').onclick = function() {
               if (document.getElementById('otp-i').value.trim() !== otp) return alert('Неверный код 2FA.');
-              app.setSession({ company: comp });
-              draw();
+              app.setSession({ company: comp }); draw();
               if (r === 'finance' || r === 'investor') window._openSpecialOverlay(r);
               else if (typeof loginDemo === 'function') loginDemo(r);
             };
           });
         };
       } else {
-        box.innerHTML = h +
-          '<input id="rg-n" placeholder="Название ООО / ИП" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;">' +
-          '<input id="rg-i" placeholder="ИНН организации" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;">' +
-          '<select id="rg-t" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;background:#fff;"><option value="general">Генподрядчик / Застройщик</option><option value="subcontractor">Подрядная организация</option></select>' +
-          '<button id="rg-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Зарегистрировать компанию</button>';
+        box.innerHTML = h + '<input id="rg-n" placeholder="Название ООО / ИП" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;"><input id="rg-i" placeholder="ИНН организации" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;"><select id="rg-t" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;"><option value="general">Генподрядчик</option><option value="subcontractor">Подрядчик</option></select><button id="rg-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Зарегистрировать компанию</button>';
         document.getElementById('rg-b').onclick = function() {
           var n = document.getElementById('rg-n').value.trim(), i = document.getElementById('rg-i').value.trim(), t = document.getElementById('rg-t').value;
           if (!n || !i) return alert('Заполните название и ИНН.');
           var cd = (t === 'subcontractor' ? 'SUB-' : 'KPI-') + Math.floor(1000 + Math.random() * 9000);
           app.sb('companies', { method: 'POST', body: JSON.stringify({ name: n, inn: i, company_type: t, invite_code: cd, specialization: 'Строительные работы', fns_verified: true }) }).then(function(res) {
-            if (Array.isArray(res) && res.length) { alert('✅ Компания зарегистрирована! Ваш код: ' + cd); mode = 'login'; draw(); }
+            if (Array.isArray(res) && res.length) { alert('✅ Готово! Ваш код: ' + cd); mode = 'login'; draw(); }
             else { alert('Этот ИНН уже есть в базе.'); mode = 'login'; draw(); }
           });
         };
@@ -2146,28 +1935,26 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- ФИНАЛ 4.2: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК БЕЗ НАЛОЖЕНИЙ И ПОДВАЛ 152-ФЗ -->
+<!-- ЧИСТЫЙ БЛОК 4Б: КНОПКИ РОЛЕЙ, ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК И ПОДВАЛ -->
 <script>
 (function() {
   var currentRoleCache = '';
 
-  function addSpecialRoleButtons() {
+  function addSpecBtns() {
     var subBtn = document.querySelector('button[onclick*="contractor"]');
     if (subBtn && subBtn.parentElement && !document.getElementById('btn-spec-fin')) {
       var b1 = subBtn.cloneNode(true); b1.id = 'btn-spec-fin'; b1.removeAttribute('onclick');
-      b1.innerHTML = '<div><div class="demo-role-title">💰 Финансист / Снабженец</div><div class="demo-role-desc">Контур без 1С: живые деньги (ДДС), лимиты сметы и контроль штрафов</div></div><span class="demo-arrow">→</span>';
+      b1.innerHTML = '<div><div class="demo-role-title">💰 Финансист / Снабженец</div><div class="demo-role-desc">Контур без 1С: живые деньги (ДДС), лимиты сметы и штрафы</div></div><span class="demo-arrow">→</span>';
       b1.onclick = function() { window._openSpecialOverlay('finance'); };
       var b2 = subBtn.cloneNode(true); b2.id = 'btn-spec-inv'; b2.removeAttribute('onclick');
-      b2.innerHTML = '<div><div class="demo-role-title">💼 Инвестор / Заказчик</div><div class="demo-role-desc">Режим прозрачности (только чтение): индекс здоровья объекта и вехи</div></div><span class="demo-arrow">→</span>';
+      b2.innerHTML = '<div><div class="demo-role-title">💼 Инвестор / Заказчик</div><div class="demo-role-desc">Режим прозрачности (только чтение): индекс здоровья и вехи</div></div><span class="demo-arrow">→</span>';
       b2.onclick = function() { window._openSpecialOverlay('investor'); };
-      subBtn.parentElement.appendChild(b1);
-      subBtn.parentElement.appendChild(b2);
+      subBtn.parentElement.appendChild(b1); subBtn.parentElement.appendChild(b2);
     }
   }
 
   function setupRoleWorkspace(role) {
-    var nav = document.getElementById('navTabs');
-    if (!nav) return;
+    var nav = document.getElementById('navTabs'); if (!nav) return;
     var oldBar = document.getElementById('unified-cloud-bar'); if (oldBar) oldBar.remove();
     var oldPnl = document.getElementById('unified-cloud-pnl'); if (oldPnl) oldPnl.remove();
 
@@ -2179,8 +1966,7 @@ function renderPortfolioTable() {
     pnl.id = 'unified-cloud-pnl';
     pnl.style.cssText = 'display:none;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:22px;margin-bottom:20px;';
 
-    nav.insertAdjacentElement('afterend', bar);
-    bar.insertAdjacentElement('afterend', pnl);
+    nav.insertAdjacentElement('afterend', bar); bar.insertAdjacentElement('afterend', pnl);
 
     function showNative() {
       pnl.style.display = 'none';
@@ -2195,8 +1981,7 @@ function renderPortfolioTable() {
     }
 
     function addTab(label, active, fn) {
-      var b = document.createElement('button');
-      b.textContent = label;
+      var b = document.createElement('button'); b.textContent = label;
       b.style.cssText = 'padding:8px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid ' + (active ? '#2563eb' : '#cbd5e1') + ';background:' + (active ? '#2563eb' : '#fff') + ';color:' + (active ? '#fff' : '#0f172a') + ';';
       b.onclick = function() {
         bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#fff'; x.style.color = '#0f172a'; x.style.borderColor = '#cbd5e1'; });
@@ -2217,34 +2002,26 @@ function renderPortfolioTable() {
       addTab('⭐ Мой рейтинг и ФНС', false, function() { showCloud(window._renderSubProfile); });
     }
     addTab('💬 Защищенный чат (E2E)', false, function() { showCloud(window._renderChatTab); });
+
+    nav.querySelectorAll('button').forEach(function(nb) {
+      if (!nb.dataset.hookedNative) {
+        nb.dataset.hookedNative = '1';
+        nb.addEventListener('click', function() {
+          pnl.style.display = 'none';
+          document.querySelectorAll('.tab-content').forEach(function(el) { el.style.removeProperty('display'); });
+        });
+      }
+    });
   }
 
   setInterval(function() {
     var authVisible = !document.getElementById('authScreen').classList.contains('hidden');
-    if (authVisible) {
-      currentRoleCache = 'guest';
-      if (window._setupAuthScreen) window._setupAuthScreen();
-      addSpecialRoleButtons();
-      return;
-    }
+    if (authVisible) { currentRoleCache = 'guest'; if (window._setupAuthScreen) window._setupAuthScreen(); addSpecBtns(); return; }
     var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : '';
-    if (r && r !== currentRoleCache) {
-      currentRoleCache = r;
-      setupRoleWorkspace(r);
-    }
+    if (r && r !== currentRoleCache) { currentRoleCache = r; setupRoleWorkspace(r); }
   }, 400);
 })();
 </script>
 <div style="text-align:center;font-size:12px;color:#64748b;padding:18px;border-top:1px solid #e2e8f0;">© 2026 Программный комплекс «СтройЭффект KPI» (kpistroy.ru) • Мухачев Иван (СГУПС, ПГС) • Политика ПДн (152-ФЗ)</div>
 </body>
 </html>
-
-
-</body>
-</html>
-
-
-
-
-
-
