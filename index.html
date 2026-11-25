@@ -4311,6 +4311,31 @@ function renderPortfolioTable() {
   setInterval(syncContractorBar, 600);
 })();
 </script>
+<!-- АВАРИЙНЫЙ ВОССТАНОВИТЕЛЬ ПЕРЕХОДА С ПРЕЗЕНТАЦИИ В СИСТЕМУ -->
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    var txt = btn.textContent || '';
+
+    if (btn.id === 'btn-launch-demo-v3' || btn.id === 'btn-s4-open-v3' || txt.indexOf('Открыть рабочую систему') !== -1 || txt.indexOf('Открыть систему') !== -1) {
+      var landing = document.getElementById('saas-landing-page');
+      if (landing) landing.style.setProperty('display', 'none', 'important');
+
+      var kids = document.body.children;
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (el.id === 'saas-landing-page' || el.id === 'special-role-overlay' || el.id === 'kpi-confirm-modal' || el.id === 'legal-doc-modal') continue;
+        if (el.tagName === 'DIV' || el.tagName === 'MAIN' || el.tagName === 'SECTION') {
+          el.style.display = 'block';
+        }
+      }
+      window.scrollTo(0, 0);
+    }
+  }, true);
+})();
+</script>
 
 
 
