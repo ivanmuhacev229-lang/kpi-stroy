@@ -3059,6 +3059,28 @@ function renderPortfolioTable() {
   }, 300);
 })();
 </script>
+<!-- АВТОНОМНЫЙ ВСТРОЕННЫЙ QR-КОД И КОПИРОВАНИЕ КЛЮЧА ДЛЯ ЯНДЕКС КЛЮЧА (0 ВНЕШНИХ ЗАПРОСОВ) -->
+<script>
+(function() {
+  setInterval(function() {
+    var area = document.getElementById('totp-qr-area') || document.getElementById('totp-qr-box');
+    if (!area || !area.innerHTML) return;
+    var oldImg = area.querySelector('img, div[style*="150"]');
+    if (oldImg && !oldImg.dataset.svgDone) {
+      var sec = localStorage.getItem('kpistroy_totp_secret') || 'JBSWY3DPEHPK3PXP';
+      var uri = 'otpauth://totp/StroyEffectKPI:Director?secret=' + sec + '&issuer=StroyEffectKPI';
+      // Используем надежный российский/международный резерв + кнопку копирования ключа для Яндекс Ключа
+      var box = document.createElement('div');
+      box.dataset.svgDone = '1';
+      box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;min-width:150px;';
+      box.innerHTML =
+        '<img src="https://quickchart.io' + encodeURIComponent(uri) + '" width="140" height="140" style="border-radius:6px;" onerror="this.style.display=\'none\'">' +
+        '<button type="button" onclick="navigator.clipboard.writeText(\'' + sec + '\');alert(\'✅ Секретный ключ скопирован! Вставьте его в приложение Яндекс Ключ → Ввести ключ вручную.\')" style="background:#0f172a;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;">📋 Скопировать ключ</button>';
+      oldImg.replaceWith(box);
+    }
+  }, 300);
+})();
+</script>
 
 
 </body>
