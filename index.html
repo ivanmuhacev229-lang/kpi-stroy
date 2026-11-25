@@ -2188,6 +2188,95 @@ function renderPortfolioTable() {
   }, 450);
 })();
 </script>
+<!-- ЭТАП АПГРЕЙДА 3 (ЧАСТЬ 1 ИЗ 2): КАРТОЧКИ И ПРОГРЕСС-БАРЫ ПОДРЯДЧИКА -->
+<script>
+(function() {
+  window._renderRichSubContracts = function(p) {
+    p.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">' +
+        '<div><h3 style="margin:0;font-size:18px;color:#0f172a;">📑 Активные договоры субподряда и закрытие КС-2 / КС-3</h3><div style="font-size:13px;color:#64748b;">Контроль освоения лимитов, отработки авансов и подписания актов заказчиком</div></div>' +
+        '<span style="background:#dcfce7;color:#166534;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:700;">🟢 Договор № 14/26-СМР активен</span>' +
+      '</div>' +
+      '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:14px;padding:18px;margin-bottom:16px;">' +
+        '<div style="font-weight:800;font-size:15px;color:#0f172a;margin-bottom:12px;">Заказчик: ООО «СтройИнвест» • Объект: ЖК Онега (Монолитный каркас)</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px;">' +
+          '<div style="background:#fff;padding:14px;border-radius:10px;border:1px solid #e2e8f0;"><div style="font-size:11.5px;color:#64748b;font-weight:700;">ЦЕНА КОНТРАКТА</div><div style="font-size:20px;font-weight:800;color:#0f172a;margin-top:4px;">85 000 тыс. ₽</div></div>' +
+          '<div style="background:#fff;padding:14px;border-radius:10px;border:1px solid #bbf7d0;"><div style="font-size:11.5px;color:#166534;font-weight:700;">ЗАКРЫТО АКТАМИ КС-2</div><div style="font-size:20px;font-weight:800;color:#15803d;margin-top:4px;">52 000 тыс. ₽ (61%)</div></div>' +
+          '<div style="background:#fff;padding:14px;border-radius:10px;border:1px solid #bfdbfe;"><div style="font-size:11.5px;color:#1e40af;font-weight:700;">АВАНСОВЫЙ ПЛАТЕЖ</div><div style="font-size:20px;font-weight:800;color:#1d4ed8;margin-top:4px;">15 000 тыс. ₽</div><div style="font-size:11.5px;color:#16a34a;font-weight:600;">Отработан на 100%</div></div>' +
+        '</div>' +
+        '<div style="font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">Прогресс закрытия объемов по договору: 61.2%</div>' +
+        '<div style="background:#e2e8f0;height:10px;border-radius:6px;overflow:hidden;"><div style="width:61.2%;background:#16a34a;height:100%;"></div></div>' +
+      '</div>';
+  };
+
+  window._renderRichSubProfile = function(p) {
+    p.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">' +
+        '<div><h3 style="margin:0;font-size:18px;color:#0f172a;">⭐ Паспорт надежности на B2B-Бирже (ФНС / ЕФРСБ)</h3><div style="font-size:13px;color:#64748b;">Ваш публичный рейтинг, который видят генподрядчики при выборе исполнителей</div></div>' +
+        '<button onclick="alert(\'✅ Сведения по ИНН успешно обновлены из реестров ФНС и ЕФРСБ!\')" style="background:#0f172a;color:#fff;border:none;padding:9px 15px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">🔄 Обновить проверку ИНН</button>' +
+      '</div>' +
+      '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13.5px;color:#14532d;line-height:1.55;">' +
+        '🟢 <strong>Проверка благонадежности РФ пройдена:</strong> Действующее юридическое лицо (ЕГРЮЛ ФНС) • Сообщений о банкротстве в Федресурсе (ЕФРСБ) нет • В реестре недобросовестных поставщиков (РНП ФАС) не числится.' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#64748b;font-weight:700;">СДАЧА С 1-ГО РАЗА (FTRI)</div><div style="font-size:26px;font-weight:800;color:#16a34a;margin:6px 0;">91.4% 🟢</div><div style="background:#e2e8f0;height:7px;border-radius:5px;"><div style="width:91.4%;background:#16a34a;height:100%;border-radius:5px;"></div></div></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#64748b;font-weight:700;">ДОЛЯ ПЕРЕДЕЛОК (CLE)</div><div style="font-size:26px;font-weight:800;color:#2563eb;margin:6px 0;">2.1% 🟢</div><div style="background:#e2e8f0;height:7px;border-radius:5px;"><div style="width:15%;background:#2563eb;height:100%;border-radius:5px;"></div></div></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><div style="font-size:12px;color:#64748b;font-weight:700;">СОБЛЮДЕНИЕ СРОКОВ (OTD)</div><div style="font-size:26px;font-weight:800;color:#0f172a;margin:6px 0;">96.0% 🟢</div><div style="background:#e2e8f0;height:7px;border-radius:5px;"><div style="width:96%;background:#0f172a;height:100%;border-radius:5px;"></div></div></div>' +
+      '</div>';
+  };
+})();
+</script>
+<!-- ЭТАП АПГРЕЙДА 3 (ЧАСТЬ 2 ИЗ 2): ЛИМИТЫ МАТЕРИАЛОВ ФИНАНСИСТА И СИНХРОНИЗАЦИЯ -->
+<script>
+(function() {
+  // 1. Подменяем кнопки Подрядчика в едином меню на богатые карточки
+  setInterval(function() {
+    var bar = document.getElementById('single-master-bar');
+    var pnl = document.getElementById('single-master-pnl');
+    if (!bar || !pnl) return;
+
+    bar.querySelectorAll('button').forEach(function(btn) {
+      if (btn.textContent.indexOf('Мои договоры и КС-2') !== -1 && !btn.dataset.richBound) {
+        btn.dataset.richBound = '1';
+        btn.addEventListener('click', function() {
+          if (window._renderRichSubContracts) window._renderRichSubContracts(pnl);
+        });
+      }
+      if (btn.textContent.indexOf('Мой рейтинг и ФНС') !== -1 && !btn.dataset.richBound) {
+        btn.dataset.richBound = '1';
+        btn.addEventListener('click', function() {
+          if (window._renderRichSubProfile) window._renderRichSubProfile(pnl);
+        });
+      }
+    });
+
+    // 2. Визуальные шкалы сметных лимитов в кабинете Финансиста ("Остатки лимитов материалов")
+    var specBody = document.getElementById('spec-body');
+    if (specBody && specBody.innerText.indexOf('Контроль закупок по сметным лимитам') !== -1 && !document.getElementById('rich-fin-limits')) {
+      var box = specBody.children.item(1);
+      if (box) {
+        box.innerHTML =
+          '<div id="rich-fin-limits" style="background:#fff;padding:22px;border-radius:14px;border:1px solid #cbd5e1;">' +
+            '<h3 style="margin:0 0 6px;font-size:17px;color:#0f172a;">📦 Контроль закупок по сметным лимитам (Контур без 1С)</h3>' +
+            '<p style="font-size:13px;color:#64748b;margin:0 0 16px;">Автоматическая блокировка сверхнормативных заявок на снабжение по объекту ЖК Онега:</p>' +
+            '<div style="margin-bottom:16px;padding:14px;background:#fefce8;border:1px solid #fde047;border-radius:10px;">' +
+              '<div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;color:#713f12;"><span>🟡 Бетон товарный В25 (F150 W6)</span><span>Выбрано: 1 161 / 1 200 м³ (Остаток: 39.0 м³)</span></div>' +
+              '<div style="background:#fde68a;height:9px;border-radius:6px;margin-top:6px;overflow:hidden;"><div style="width:96.7%;background:#d97706;height:100%;"></div></div>' +
+            '</div>' +
+            '<div style="margin-bottom:16px;padding:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;">' +
+              '<div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;color:#14532d;"><span>🟢 Арматура рифленая А500С (Ø12–20)</span><span>Выбрано: 142 / 180 т (Остаток: 38.0 т)</span></div>' +
+              '<div style="background:#bbf7d0;height:9px;border-radius:6px;margin-top:6px;overflow:hidden;"><div style="width:78.8%;background:#16a34a;height:100%;"></div></div>' +
+            '</div>' +
+            '<div style="padding:14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;">' +
+              '<div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;color:#7f1d1d;"><span>🔴 Кирпич рядовой полнотелый М150</span><span>Лимит исчерпан: 84 000 / 84 000 шт. (Блокировка закупки)</span></div>' +
+              '<div style="background:#fecaca;height:9px;border-radius:6px;margin-top:6px;overflow:hidden;"><div style="width:100%;background:#dc2626;height:100%;"></div></div>' +
+            '</div>' +
+          '</div>';
+      }
+    }
+  }, 400);
+})();
+</script>
 
 </body>
 </html>
