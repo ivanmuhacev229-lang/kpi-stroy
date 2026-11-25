@@ -4498,15 +4498,74 @@ function renderPortfolioTable() {
     lastRenderedState = role + '_' + (document.getElementById('tab-cloud-chat-btn') ? '1' : '0') + '_' + (document.getElementById('field-role-chat-bar') ? '1' : '0');
   }
  
-  // Останавливаем старые мигающие таймеры и запускаем чистую отрисовку по клику
+   // Чистая синхронизация экрана входа, 6 ролей и формы отчета подрядчика без фоновых циклов
+  function syncAllViews() {
+    buildRoleUI();
+
+    // 1. Восстанавливаем правую 2FA-карточку и 2 спецроли на экране входа
+    if (window._renderRightAuthCard) {
+      var oldInp = document.querySelector('input[placeholder="director@stroy.ru"]');
+      if (oldInp) {
+        var card = oldInp.parentElement;
+        while (card && card.parentElement && card.parentElement.children.length < 2) card = card.parentElement;
+        if (card && !card.dataset.rightReplacedV6) {
+          card.dataset.rightReplacedV6 = '1';
+          if (card.parentElement) {
+            var sibs = card.parentElement.children;
+            for (var s = 0; s < sibs.length; s++) {
+              if (sibs[s] !== card && sibs[s].textContent.indexOf('Вход в кабинет') !== -1) sibs[s].style.display = 'none';
+            }
+          }
+          window._renderRightAuthCard('login');
+        }
+      }
+    }
+
+    var subCardBtn = null;
+    var allBtns = document.querySelectorAll('button');
+    for (var b = 0; b < allBtns.length; b++) {
+      if (allBtns[b].textContent.indexOf('Подрядная организация') !== -1 && allBtns[b].offsetParent !== null) {
+        subCardBtn = allBtns[b];
+        break;
+      }
+    }
+    if (subCardBtn && subCardBtn.parentElement && !document.getElementById('demo-btn-finance')) {
+      var finBtn = subCardBtn.cloneNode(true);
+      finBtn.id = 'demo-btn-finance';
+      finBtn.innerHTML = '<div><div style="font-weight:700;font-size:15px;color:#0f172a;">💰 Финансист / Снабженец</div><div style="font-size:12.5px;color:#64748b;margin-top:3px;">Учет без 1С: живой кошелек (ДДС), контроль сметы закупок и светофор платежей</div></div><span>→</span>';
+      finBtn.onclick = function() { if (window._openSpecialRole) window._openSpecialRole('finance'); };
+
+      var invBtn = subCardBtn.cloneNode(true);
+      invBtn.id = 'demo-btn-investor';
+      invBtn.innerHTML = '<div><div style="font-weight:700;font-size:15px;color:#0f172a;">💼 Инвестор / Заказчик</div><div style="font-size:12.5px;color:#64748b;margin-top:3px;">Режим прозрачности: освоение бюджета, фото вех и индекс здоровья объекта</div></div><span>→</span>';
+      invBtn.onclick = function() { if (window._openSpecialRole) window._openSpecialRole('investor'); };
+
+      subCardBtn.parentElement.appendChild(finBtn);
+      subCardBtn.parentElement.appendChild(invBtn);
+    }
+
+    // 2. У Подрядчика при открытии «Рабочий экран и отчеты» переключаем на форму подачи отчета
+    var c = window._kpiCore;
+    var workBtn = document.getElementById('btn-field-work');
+    if (c && c.getRole() === 'contractor' && workBtn && workBtn.style.background === 'rgb(37, 99, 235)') {
+      var btns2 = document.querySelectorAll('button');
+      for (var k = 0; k < btns2.length; k++) {
+        if (btns2[k].textContent.indexOf('Кабинет подрядчика') !== -1 && !btns2[k].classList.contains('active')) {
+          btns2[k].click();
+          break;
+        }
+      }
+    }
+  }
+
   setTimeout(function() {
     var maxId = window.setInterval(function() {}, 99999);
     for (var i = 1; i <= maxId; i++) window.clearInterval(i);
-    buildRoleUI();
-  }, 600);
+    syncAllViews();
+  }, 500);
 
   document.addEventListener('click', function() {
-    setTimeout(buildRoleUI, 80);
+    setTimeout(syncAllViews, 80);
   }, true);
 })();
 </script>
