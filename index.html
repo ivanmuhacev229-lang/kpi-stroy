@@ -2449,6 +2449,170 @@ function renderPortfolioTable() {
   }, 1000);
 })();
 </script>
+<!-- ПРЕЗЕНТАЦИЯ v5 (ЧАСТЬ 1 ИЗ 3): КАРКАС, СЛАЙД 1 И СЛАЙД 2 (9 KPI) -->
+<script>
+(function() {
+  var landing = document.getElementById('saas-landing-page');
+  if (!landing) return;
+
+  landing.style.cssText = 'background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);min-height:100vh;padding:28px 16px;position:relative;z-index:200;';
+  landing.innerHTML =
+    '<div style="max-width:1060px;margin:0 auto;">' +
+      '<div style="background:#0f172a;color:#fff;border-radius:18px;padding:26px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;box-shadow:0 12px 30px rgba(15,23,42,0.18);">' +
+        '<div style="max-width:680px;">' +
+          '<span style="background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">🇷🇺 Отечественный B2B SaaS • Методика СГУПС (ПГС)</span>' +
+          '<h1 style="margin:10px 0 6px;font-size:25px;line-height:1.25;color:#ffffff !important;">СтройЭффект KPI — антикризисный цифровой пульт стройки</h1>' +
+          '<p style="margin:0;color:#cbd5e1;font-size:14px;">9 авторских показателей эффективности, управленческий контур поверх 1С, сквозной чат AES-256 и контроль подрядчиков</p>' +
+        '</div>' +
+        '<button id="btn-launch-v5" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:14px 24px;border-radius:12px;font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 6px 20px rgba(37,99,235,0.4);">🚀 Открыть рабочую систему →</button>' +
+      '</div>' +
+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">' +
+        '<button class="v5-tab" data-s="1" style="background:#0f172a;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;">1. Проблема и Экономия 2–5%</button>' +
+        '<button class="v5-tab" data-s="2" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;">2. Научное ядро: 9 KPI</button>' +
+        '<button class="v5-tab" data-s="3" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;">3. Эксклюзив: лучше 1С</button>' +
+        '<button class="v5-tab" data-s="4" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;">4. 6 ролей и Изоляция</button>' +
+        '<button class="v5-tab" data-s="5" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;">5. Защита AES-256 и Биржа</button>' +
+        '<button class="v5-tab" data-s="6" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;">6. Тарифы и Контакты</button>' +
+      '</div>' +
+
+      '<div class="v5-slide" id="v5-s1" style="background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;">' +
+        '<h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Где строительная компания теряет от 10 до 30 млн ₽ на каждом ЖК</h2>' +
+        '<p style="color:#475569;font-size:14px;margin-bottom:18px;">Бухгалтерия видит убыток постфактум. «СтройЭффект KPI» отлавливает утечки денег в реальном времени:</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">' +
+          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:18px;border-radius:14px;"><div style="font-size:22px;font-weight:800;color:#dc2626;">-5% ... -8%</div><strong style="color:#991b1b;font-size:15px;">Скрытые потери площадки</strong><p style="font-size:13px;color:#7f1d1d;margin:6px 0 0;">Простои башенных кранов, перерасход бетона сверх сметы, штрафы за слив остатков и переделки брака.</p></div>' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:14px;"><div style="font-size:22px;font-weight:800;color:#16a34a;">+2% ... +5%</div><strong style="color:#166534;font-size:15px;">Прямой возврат в прибыль</strong><p style="font-size:13px;color:#14532d;margin:6px 0 0;">Светофор платежей, разбор инцидентов (CAPA) и ускорение приемки КС-2 возвращают десятки миллионов рублей.</p></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:18px;border-radius:14px;"><div style="font-size:22px;font-weight:800;color:#2563eb;">5 мин/нед</div><strong style="color:#1e40af;font-size:15px;">Без бюрократии для ИТР</strong><p style="font-size:13px;color:#1e3a8a;margin:6px 0 0;">Прораб работает со смартфона (PWA): отправляет фото и 4 цифры раз в неделю, остальное система считает сама.</p></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="v5-slide" id="v5-s2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;">' +
+        '<h2 style="margin:0 0 6px;font-size:20px;color:#0f172a;">Научное ядро системы: 9 авторских показателей эффективности (KPI)</h2>' +
+        '<p style="color:#475569;font-size:13.5px;margin-bottom:16px;">Система объединяет 5 базовых показателей диагностики потерь и 4 расширенных индекса контроля сроков, материалов и кэш-флоу:</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:12px;font-size:12.5px;">' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #ef4444;padding:12px;border-radius:8px;"><strong>1. MEI — Индекс «съеденной» маржи (Норма ≤ 5%)</strong><div style="color:#475569;margin-top:4px;">Очищает падение прибыли от рыночной инфляции и показывает чистые внутренние потери из-за плохой организации работ.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #f59e0b;padding:12px;border-radius:8px;"><strong>2. DCC — Цена «бумажного» цикла (Норма ≤ 500 тыс. ₽)</strong><div style="color:#475569;margin-top:4px;">Считает, сколько денег компания теряет на процентах из-за задержки подписания актов КС-2/КС-3 и зависшей незавершенки (НЗП).</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #8b5cf6;padding:12px;border-radius:8px;"><strong>3. CoD — Цена дня простоя (Норма ≤ 100 тыс. ₽/дн)</strong><div style="color:#475569;margin-top:4px;">Показывает точную стоимость 1 дня остановки стройки: накладные расходы + аренда простаивающих кранов + штрафы заказчика.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #dc2626;padding:12px;border-radius:8px;"><strong>4. CLE — Доля «мусорного» ФОТ (Норма ≤ 5%)</strong><div style="color:#475569;margin-top:4px;">Процент фонда оплаты труда, который ушел не на создание объекта, а на переделку брака и устранение предписаний технадзора.</div></div>' +
+          '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #16a34a;padding:12px;border-radius:8px;"><strong>5. FTRI — Приемка с 1-го раза (Норма ≥ 85%)</strong><div style="color:#475569;margin-top:4px;">Доля объемов СМР, принятых стройконтролем с первого предъявления без замечаний. Главный критерий рейтинга подрядчиков.</div></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;padding:12px;border-radius:8px;"><strong>6. MVR — Отклонение расхода материалов (Норма ≤ 2%)</strong><div style="color:#1e3a8a;margin-top:4px;">Сравнивает фактический завоз бетона, арматуры и кирпича со сметным лимитом. Блокирует сверхнормативные закупки.</div></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #0284c7;padding:12px;border-radius:8px;"><strong>7. SPI — Индекс выполнения графика (Норма ≥ 0.95)</strong><div style="color:#1e3a8a;margin-top:4px;">Отношение освоенного объема работ к плановому по календарному графику. Сигнализирует об отставании задолго до срыва сдачи.</div></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #0d9488;padding:12px;border-radius:8px;"><strong>8. OTD — Дисциплина закрытия вех (Норма ≥ 90%)</strong><div style="color:#1e3a8a;margin-top:4px;">Процент контрольных этапов и поставок, закрытых точно в срок без сдвига критического пути объекта.</div></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #4f46e5;padding:12px;border-radius:8px;"><strong>9. CFI — Индекс здоровья кэш-флоу (Норма ≥ 1.05)</strong><div style="color:#1e3a8a;margin-top:4px;">Баланс поступления живых денег от заказчика и выплат подрядчикам/поставщикам. Защищает объект от кассовых разрывов.</div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="v5-slide" id="v5-s3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;"></div>' +
+      '<div class="v5-slide" id="v5-s4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;"></div>' +
+      '<div class="v5-slide" id="v5-s5" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;"></div>' +
+      '<div class="v5-slide" id="v5-s6" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;"></div>' +
+    '</div>';
+})();
+</script>
+<!-- ПРЕЗЕНТАЦИЯ v5 (ЧАСТЬ 2 ИЗ 3): СЛАЙД 3 И СЛАЙД 4 -->
+<script>
+(function() {
+  if (!document.getElementById('v5-s3')) return;
+
+  document.getElementById('v5-s3').innerHTML =
+    '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">В чем эксклюзив «СтройЭффект KPI» по сравнению с «1С» и Excel</h2>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13.5px;">' +
+      '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>💎 1. Управленческий контур «без 1С»</strong><p style="color:#475569;margin:6px 0 0;">Не требует сложной интеграции с 1С на старте. Финансист и директор сразу видят живой кошелек объекта (ДДС) и лимиты сметы (защита от лишнего бетона).</p></div>' +
+      '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>💎 2. Протокол CAPA (работа над ошибками)</strong><p style="color:#475569;margin:6px 0 0;">Каждый штраф или брак фиксируется в реестре с указанием виновника и конкретной меры предотвращения, чтобы убыток не повторялся на следующих этажах.</p></div>' +
+      '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>💎 3. Автоматический план действий</strong><p style="color:#475569;margin:6px 0 0;">В отличие от таблиц Excel, система сама подсвечивает красную зону и выдает готовые управленческие решения для возврата прибыли.</p></div>' +
+    '</div>';
+
+  document.getElementById('v5-s4').innerHTML =
+    '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">6 изолированных рабочих кабинетов с защитой коммерческой тайны</h2>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:13px;">' +
+      '<div style="background:#f8fafc;border-left:4px solid #0f172a;padding:13px;border-radius:8px;"><strong>👔 1. Владелец / Гендиректор</strong><div style="color:#475569;margin-top:4px;">Полный контроль портфеля, графики снижения потерь, согласование штрафов, управление командой и порогами светофора.</div></div>' +
+      '<div style="background:#f8fafc;border-left:4px solid #2563eb;padding:13px;border-radius:8px;"><strong>📐 2. Инженер ПТО</strong><div style="color:#475569;margin-top:4px;">Сметные объемы, закрытие актов КС-2, контроль перерасхода материалов (MVR), Excel-импорт и отбор подрядчиков на Бирже.</div></div>' +
+      '<div style="background:#f8fafc;border-left:4px solid #eab308;padding:13px;border-radius:8px;"><strong>👷 3. Прораб / Начальник участка</strong><div style="color:#475569;margin-top:4px;">Маржа и прибыль скрыты! Только учет простоев, выработки бригад, отправка фотоотчетов на проверку и защищенный чат.</div></div>' +
+      '<div style="background:#f8fafc;border-left:4px solid #16a34a;padding:13px;border-radius:8px;"><strong>💰 4. Финансист / Снабженец</strong><div style="color:#475569;margin-top:4px;">Живые деньги (ДДС), шкалы остатков лимитов материалов по смете (бетон, арматура) и реестр непроизводительных трат.</div></div>' +
+      '<div style="background:#f8fafc;border-left:4px solid #6366f1;padding:13px;border-radius:8px;"><strong>💼 5. Инвестор / Заказчик</strong><div style="color:#475569;margin-top:4px;">Режим прозрачности (только чтение): индекс здоровья объекта (0–100), S-кривая освоения инвестиций и прогресс вех.</div></div>' +
+      '<div style="background:#f8fafc;border-left:4px solid #0284c7;padding:13px;border-radius:8px;"><strong>🤝 6. Подрядная организация</strong><div style="color:#475569;margin-top:4px;">Трекер договоров КС-2, сдача отчетов, прямой чат с генподрядчиком и паспорт благонадежности ФНС/ЕФРСБ по ИНН.</div></div>' +
+    '</div>';
+})();
+</script>
+<!-- ПРЕЗЕНТАЦИЯ v5 (ЧАСТЬ 3 ИЗ 3): СЛАЙДЫ 5-6 И ПЕРЕКЛЮЧАТЕЛЬ -->
+<script>
+(function() {
+  var landing = document.getElementById('saas-landing-page');
+  if (!landing || !document.getElementById('v5-s5')) return;
+
+  document.getElementById('v5-s5').innerHTML =
+    '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">Многоуровневая кибербезопасность и B2B-Биржа подрядчиков</h2>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13.5px;">' +
+      '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:16px;border-radius:12px;"><strong>🔒 Сквозной чат AES-GCM 256-бит</strong><p style="color:#1e3a8a;margin:6px 0 0;">Замена мессенджеров на стройке: переписка по отделам и подрядчикам шифруется на устройстве ключом компании.</p></div>' +
+      '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><strong>🔍 B2B-Биржа и проверка ФНС / ЕФРСБ</strong><p style="color:#14532d;margin:6px 0 0;">Рейтинг подрядчиков строится на подтвержденных приемках (FTRI), а статус по ИНН проверяется на отсутствие банкротств.</p></div>' +
+      '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>🛡️ 2FA-вход, RLS-база и автоблокировка</strong><p style="color:#334155;margin:6px 0 0;">Двухфакторный вход, защита базы PostgreSQL от удаления и автоблокировка экрана через 15 минут неактивности.</p></div>' +
+    '</div>';
+
+  document.getElementById('v5-s6').innerHTML =
+    '<h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Тарифы и прямое подключение пилотного запуска</h2>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
+      '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">Для подрядчиков и ИП: 1–2 объекта, трекер КС-2 и Биржа.</div></div>' +
+      '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">Для генподрядчиков: до 10 объектов, все 6 ролей, E2E-чат и графики.</div></div>' +
+      '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">Для девелоперов и холдингов: безлимит объектов и выделенный контур.</div></div>' +
+    '</div>' +
+    '<div style="background:#0f172a;color:#fff;border-radius:14px;padding:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">' +
+      '<div><div style="font-size:11.5px;color:#38bdf8;font-weight:700;">ПРЯМОЕ ПОДКЛЮЧЕНИЕ И БЕСПЛАТНЫЙ ПИЛОТ 14 ДНЕЙ</div>' +
+      '<h3 style="margin:4px 0 6px;font-size:17px;">Автор и руководитель проекта: Мухачев Иван</h3>' +
+      '<div style="font-size:13px;color:#cbd5e1;line-height:1.65;">🎓 г. Новосибирск • СГУПС (факультет ПГС)<br>📱 MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 <strong style="color:#fff;">https://kpistroy.ru</strong></div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;min-width:210px;">' +
+        '<a href="https://t.me" target="_blank" style="text-align:center;background:#0284c7;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;">✈️ Написать в Telegram</a>' +
+        '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилот%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;">✉️ Заявка на Email</a>' +
+        '<button id="btn-launch-v5-s6" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;">Открыть систему →</button>' +
+      '</div>' +
+    '</div>';
+
+  var vTabs = landing.querySelectorAll('.v5-tab'), vSlides = landing.querySelectorAll('.v5-slide');
+  for (var i = 0; i < vTabs.length; i++) {
+    vTabs[i].onclick = function() {
+      var n = this.dataset.s;
+      for (var j = 0; j < vTabs.length; j++) { vTabs[j].style.background = '#fff'; vTabs[j].style.color = '#0f172a'; vTabs[j].style.border = '1px solid #cbd5e1'; }
+      this.style.background = '#0f172a'; this.style.color = '#fff'; this.style.border = 'none';
+      for (var k = 0; k < vSlides.length; k++) vSlides[k].style.display = (vSlides[k].id === 'v5-s' + n) ? 'block' : 'none';
+    };
+  }
+  function hideL() { landing.style.display = 'none'; window.scrollTo(0, 0); }
+  document.getElementById('btn-launch-v5').onclick = hideL;
+  document.getElementById('btn-launch-v5-s6').onclick = hideL;
+})();
+</script>
+<!-- ВИЗУАЛЬНАЯ ИНФОГРАФИКА ДЛЯ 1-ГО СЛАЙДА ПРЕЗЕНТАЦИИ -->
+<script>
+(function() {
+  var s1 = document.getElementById('v5-s1');
+  if (!s1 || document.getElementById('s1-visual-chart')) return;
+
+  var chart = document.createElement('div');
+  chart.id = 's1-visual-chart';
+  chart.style.cssText = 'margin-top:20px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:14px;padding:18px 20px;';
+  chart.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">' +
+      '<strong style="font-size:14.5px;color:#0f172a;">📊 Визуальный эффект внедрения на примере типового ЖК (бюджет 680 млн ₽)</strong>' +
+      '<span style="font-size:12px;color:#64748b;">Отраслевой бенчмарк СГУПС</span>' +
+    '</div>' +
+
+    '<div style="margin-bottom:12px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:4px;"><span>1. Плановая рентабельность проекта (без потерь)</span><span style="color:#0f172a;">102.0 млн ₽ (15.0%)</span></div>' +
+      '<div style="background:#e2e8f0;height:12px;border-radius:6px;overflow:hidden;"><div style="width:100%;background:#334155;height:100%;"></div></div>' +
+    '</div>' +
+
+    '<div style="margin-bottom:12px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:4px;"><span style="color:#991b1b;">2. Фактическая прибыль при ручном учете (съедено простоем, браком и КС-2)</span><span style="color:#dc2626;">68.5 млн ₽ (-33.5 млн ₽ потерь)</span></div>' +
+      '<div style="background:#fee2e2;height:12px;border-radius:6px;overflow:hidden;"><div style="width:67%;background:#ef4444;height:100%;"></div></div>' +
+    '</div>' +
+
+    '<div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:4px;"><span style="color:#166534;">3. Прибыль после внедрения «СтройЭффект KPI» (возврат 65% скрытых утечек)</span><span style="color:#16a34a;">90.3 млн ₽ (+21.8 млн ₽ экономии 🟢)</span></div>' +
+      '<div style="background:#dcfce7;height:12px;border-radius:6px;overflow:hidden;"><div style="width:88.5%;background:#16a34a;height:100%;"></div></div>' +
+    '</div>';
+
+  s1.appendChild(chart);
+})();
+</script>
 
 </body>
 </html>
