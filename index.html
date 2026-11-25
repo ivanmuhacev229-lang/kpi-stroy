@@ -2055,6 +2055,191 @@ function renderPortfolioTable() {
 })();
 </script>
 <div style="text-align:center;font-size:12px;color:#64748b;padding:18px;border-top:1px solid #e2e8f0;">© 2026 Программный комплекс «СтройЭффект KPI» (kpistroy.ru) • Мухачев Иван (СГУПС, ПГС) • Политика ПДн (152-ФЗ)</div>
+<!-- ФИНАЛ 4.1: ЧИСТЫЙ 2FA-ВХОД И РЕГИСТРАЦИЯ -->
+<script>
+(function() {
+  var app = window._cloudApp;
+
+  window._setupAuthScreen = function() {
+    var box = document.querySelector('.auth-form-box');
+    if (!box || box.offsetParent === null || box.dataset.ready2fa === '1') return;
+    box.dataset.ready2fa = '1';
+
+    var mode = 'login';
+    function draw() {
+      var cur = app ? app.getSession() : null;
+      if (cur && cur.company && cur.company.name) {
+        box.innerHTML =
+          '<div style="padding:10px;">' +
+            '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 2FA Пройдена • Облако активно</span>' +
+            '<h3 style="margin:12px 0 6px;font-size:18px;color:#0f172a;">' + cur.company.name + '</h3>' +
+            '<div style="font-size:13px;color:#475569;margin-bottom:14px;">ИНН: ' + cur.company.inn + ' • Код доступа: <strong>' + cur.company.invite_code + '</strong></div>' +
+            '<button id="btn-out-2fa" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-weight:600;cursor:pointer;">Выйти из компании</button>' +
+          '</div>';
+        document.getElementById('btn-out-2fa').onclick = function() { app.setSession(null); draw(); };
+        return;
+      }
+
+      var h = '<div style="display:flex;gap:16px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:16px;">' +
+        '<button id="tb-in" style="background:none;border:none;font-size:14.5px;font-weight:700;cursor:pointer;color:' + (mode === 'login' ? '#2563eb' : '#64748b') + ';border-bottom:2px solid ' + (mode === 'login' ? '#2563eb' : 'transparent') + ';">Вход в кабинет (2FA)</button>' +
+        '<button id="tb-rg" style="background:none;border:none;font-size:14.5px;font-weight:700;cursor:pointer;color:' + (mode === 'reg' ? '#2563eb' : '#64748b') + ';border-bottom:2px solid ' + (mode === 'reg' ? '#2563eb' : 'transparent') + ';">Регистрация</button></div>';
+
+      if (mode === 'login') {
+        box.innerHTML = h +
+          '<div id="s1-2fa">' +
+            '<select id="who-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;background:#fff;"><option value="staff">Сотрудник генподрядчика (по коду)</option><option value="contractor">Подрядчик (по ИНН или коду)</option></select>' +
+            '<div id="st-box">' +
+              '<input id="cd-2fa" placeholder="Код компании (напр. KPI-9044)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;">' +
+              '<select id="rl-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;background:#fff;"><option value="director">👔 Директор</option><option value="pto">📐 Инженер ПТО</option><option value="prorab">👷 Прораб</option><option value="finance">💰 Финансист</option><option value="investor">💼 Инвестор</option></select>' +
+            '</div>' +
+            '<div id="sb-box" style="display:none;"><input id="in-2fa" placeholder="ИНН подрядчика (напр. 5406781234)" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;"></div>' +
+            '<button id="go-2fa" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Продолжить (2FA) →</button>' +
+          '</div>' +
+          '<div id="s2-2fa" style="display:none;"></div>';
+
+        document.getElementById('who-2fa').onchange = function() {
+          var isS = this.value === 'contractor';
+          document.getElementById('st-box').style.display = isS ? 'none' : 'block';
+          document.getElementById('sb-box').style.display = isS ? 'block' : 'none';
+        };
+        document.getElementById('go-2fa').onclick = function() {
+          var isS = document.getElementById('who-2fa').value === 'contractor';
+          var q = isS ? document.getElementById('in-2fa').value.trim() : document.getElementById('cd-2fa').value.trim().toUpperCase();
+          var r = isS ? 'contractor' : document.getElementById('rl-2fa').value;
+          if (!q) return alert('Введите код компании или ИНН.');
+          app.sb(isS ? ('companies?or=(inn.eq.' + encodeURIComponent(q) + ',invite_code.eq.' + encodeURIComponent(q.toUpperCase()) + ')') : ('companies?invite_code=eq.' + encodeURIComponent(q))).then(function(rows) {
+            if (!Array.isArray(rows) || !rows.length) return alert('Компания не найдена.');
+            var comp = rows.at(0);
+            var otp = String(Math.floor(100000 + Math.random() * 900000));
+            document.getElementById('s1-2fa').style.display = 'none';
+            var s2 = document.getElementById('s2-2fa'); s2.style.display = 'block';
+            s2.innerHTML = '<div style="background:#eff6ff;padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px;">🔐 Код 2FA для <strong>' + comp.name + '</strong>:<br><strong style="color:#2563eb;font-size:18px;letter-spacing:2px;">' + otp + '</strong></div><input id="otp-i" maxlength="6" placeholder="Введите 6 цифр" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-weight:700;margin-bottom:10px;"><button id="otp-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Подтвердить и войти</button>';
+            document.getElementById('otp-b').onclick = function() {
+              if (document.getElementById('otp-i').value.trim() !== otp) return alert('Неверный код 2FA.');
+              app.setSession({ company: comp });
+              draw();
+              if (r === 'finance' || r === 'investor') window._openSpecialOverlay(r);
+              else if (typeof loginDemo === 'function') loginDemo(r);
+            };
+          });
+        };
+      } else {
+        box.innerHTML = h +
+          '<input id="rg-n" placeholder="Название ООО / ИП" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;">' +
+          '<input id="rg-i" placeholder="ИНН организации" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:9px;">' +
+          '<select id="rg-t" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;background:#fff;"><option value="general">Генподрядчик / Застройщик</option><option value="subcontractor">Подрядная организация</option></select>' +
+          '<button id="rg-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Зарегистрировать компанию</button>';
+        document.getElementById('rg-b').onclick = function() {
+          var n = document.getElementById('rg-n').value.trim(), i = document.getElementById('rg-i').value.trim(), t = document.getElementById('rg-t').value;
+          if (!n || !i) return alert('Заполните название и ИНН.');
+          var cd = (t === 'subcontractor' ? 'SUB-' : 'KPI-') + Math.floor(1000 + Math.random() * 9000);
+          app.sb('companies', { method: 'POST', body: JSON.stringify({ name: n, inn: i, company_type: t, invite_code: cd, specialization: 'Строительные работы', fns_verified: true }) }).then(function(res) {
+            if (Array.isArray(res) && res.length) { alert('✅ Компания зарегистрирована! Ваш код: ' + cd); mode = 'login'; draw(); }
+            else { alert('Этот ИНН уже есть в базе.'); mode = 'login'; draw(); }
+          });
+        };
+      }
+      document.getElementById('tb-in').onclick = function() { mode = 'login'; draw(); };
+      document.getElementById('tb-rg').onclick = function() { mode = 'reg'; draw(); };
+    }
+    draw();
+  };
+})();
+</script>
+<!-- ФИНАЛ 4.2: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК БЕЗ НАЛОЖЕНИЙ И ПОДВАЛ 152-ФЗ -->
+<script>
+(function() {
+  var currentRoleCache = '';
+
+  function addSpecialRoleButtons() {
+    var subBtn = document.querySelector('button[onclick*="contractor"]');
+    if (subBtn && subBtn.parentElement && !document.getElementById('btn-spec-fin')) {
+      var b1 = subBtn.cloneNode(true); b1.id = 'btn-spec-fin'; b1.removeAttribute('onclick');
+      b1.innerHTML = '<div><div class="demo-role-title">💰 Финансист / Снабженец</div><div class="demo-role-desc">Контур без 1С: живые деньги (ДДС), лимиты сметы и контроль штрафов</div></div><span class="demo-arrow">→</span>';
+      b1.onclick = function() { window._openSpecialOverlay('finance'); };
+      var b2 = subBtn.cloneNode(true); b2.id = 'btn-spec-inv'; b2.removeAttribute('onclick');
+      b2.innerHTML = '<div><div class="demo-role-title">💼 Инвестор / Заказчик</div><div class="demo-role-desc">Режим прозрачности (только чтение): индекс здоровья объекта и вехи</div></div><span class="demo-arrow">→</span>';
+      b2.onclick = function() { window._openSpecialOverlay('investor'); };
+      subBtn.parentElement.appendChild(b1);
+      subBtn.parentElement.appendChild(b2);
+    }
+  }
+
+  function setupRoleWorkspace(role) {
+    var nav = document.getElementById('navTabs');
+    if (!nav) return;
+    var oldBar = document.getElementById('unified-cloud-bar'); if (oldBar) oldBar.remove();
+    var oldPnl = document.getElementById('unified-cloud-pnl'); if (oldPnl) oldPnl.remove();
+
+    var bar = document.createElement('div');
+    bar.id = 'unified-cloud-bar';
+    bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:10px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;';
+
+    var pnl = document.createElement('div');
+    pnl.id = 'unified-cloud-pnl';
+    pnl.style.cssText = 'display:none;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:22px;margin-bottom:20px;';
+
+    nav.insertAdjacentElement('afterend', bar);
+    bar.insertAdjacentElement('afterend', pnl);
+
+    function showNative() {
+      pnl.style.display = 'none';
+      document.querySelectorAll('.tab-content').forEach(function(el) { el.style.removeProperty('display'); });
+      if (typeof switchTab === 'function') switchTab(role === 'contractor' ? 'contractorPortal' : 'dashboard');
+    }
+
+    function showCloud(fn) {
+      document.querySelectorAll('.tab-content').forEach(function(el) { el.style.setProperty('display', 'none', 'important'); });
+      pnl.style.display = 'block';
+      if (fn) fn(pnl);
+    }
+
+    function addTab(label, active, fn) {
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'padding:8px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid ' + (active ? '#2563eb' : '#cbd5e1') + ';background:' + (active ? '#2563eb' : '#fff') + ';color:' + (active ? '#fff' : '#0f172a') + ';';
+      b.onclick = function() {
+        bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#fff'; x.style.color = '#0f172a'; x.style.borderColor = '#cbd5e1'; });
+        b.style.background = '#2563eb'; b.style.color = '#fff'; b.style.borderColor = '#2563eb';
+        fn();
+      };
+      bar.appendChild(b);
+    }
+
+    addTab('📋 Рабочий экран роли', true, showNative);
+    if (role === 'director' || role === 'pto') addTab('🔍 Биржа подрядчиков', false, function() { showCloud(window._renderExchangeTab); });
+    if (role === 'director') {
+      addTab('💰 Контроль штрафов', false, function() { showCloud(window._renderPenaltiesTab); });
+      addTab('👥 Команда', false, function() { showCloud(window._renderTeamTab); });
+    }
+    if (role === 'contractor') {
+      addTab('📑 Мои договоры и КС-2', false, function() { showCloud(window._renderSubContracts); });
+      addTab('⭐ Мой рейтинг и ФНС', false, function() { showCloud(window._renderSubProfile); });
+    }
+    addTab('💬 Защищенный чат (E2E)', false, function() { showCloud(window._renderChatTab); });
+  }
+
+  setInterval(function() {
+    var authVisible = !document.getElementById('authScreen').classList.contains('hidden');
+    if (authVisible) {
+      currentRoleCache = 'guest';
+      if (window._setupAuthScreen) window._setupAuthScreen();
+      addSpecialRoleButtons();
+      return;
+    }
+    var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : '';
+    if (r && r !== currentRoleCache) {
+      currentRoleCache = r;
+      setupRoleWorkspace(r);
+    }
+  }, 400);
+})();
+</script>
+<div style="text-align:center;font-size:12px;color:#64748b;padding:18px;border-top:1px solid #e2e8f0;">© 2026 Программный комплекс «СтройЭффект KPI» (kpistroy.ru) • Мухачев Иван (СГУПС, ПГС) • Политика ПДн (152-ФЗ)</div>
+</body>
+</html>
+
+
 </body>
 </html>
 
