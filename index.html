@@ -2957,6 +2957,88 @@ function renderPortfolioTable() {
   }
 })();
 </script>
+<!-- АВТОНОМНАЯ 2FA (ЯНДЕКС КЛЮЧ / GOOGLE AUTHENTICATOR - RFC 6238 TOTP) -->
+<script>
+(function() {
+  // 1. Криптографическая проверка 6-значного кода TOTP (Яндекс Ключ / Google Authenticator)
+  function base32ToBytes(base32) {
+    var alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    var bits = '';
+    var clean = base32.replace(/=+$/, '').toUpperCase().replace(/\s+/g, '');
+    for (var i = 0; i < clean.length; i++) {
+      var val = alphabet.indexOf(clean.charAt(i));
+      if (val >= 0) bits += val.toString(2).padStart(5, '0');
+    }
+    var bytes = new Uint8Array(Math.floor(bits.length / 8));
+    for (var j = 0; j < bytes.length; j++) {
+      bytes[j] = parseInt(bits.slice(j * 8, j * 8 + 8), 2);
+    }
+    return bytes;
+  }
+
+  window._verifyTOTP = async function(secretBase32, userCode) {
+    if (!secretBase32 || !/^\d{6}$/.test(userCode)) return false;
+    var keyBytes = base32ToBytes(secretBase32);
+    var cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+    var epoch = Math.floor(Date.now() / 1000 / 30);
+
+    // Проверяем текущее 30-секундное окно и ±1 окно (на случай расхождения часов телефона на 30 сек)
+    for (var offset = -1; offset <= 1; offset++) {
+      var counter = epoch + offset;
+      var buf = new ArrayBuffer(8);
+      var view = new DataView(buf);
+      view.setUint32(4, counter, false);
+      var sig = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, buf));
+      var pos = sig.at(sig.length - 1) & 0x0f;
+      var bin = ((sig.at(pos) & 0x7f) << 24) | ((sig.at(pos + 1) & 0xff) << 16) | ((sig.at(pos + 2) & 0xff) << 8) | (sig.at(pos + 3) & 0xff);
+      var otp = String(bin % 1000000).padStart(6, '0');
+      if (otp === userCode) return true;
+    }
+    return false;
+  };
+
+  // 2. Генератор случайного ключа для привязки Яндекс Ключа в настройках Директора
+  window._generateTotpSecret = function() {
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    var rnd = crypto.getRandomValues(new Uint8Array(16));
+    var sec = '';
+    for (var i = 0; i < 16; i++) sec += chars.charAt(rnd[i] % 32);
+    return sec;
+  };
+
+  // 3. Добавляем карточку привязки Яндекс Ключа в раздел «⚙️ Настройки и Пороги»
+  var origSettings = window._renderDirectorSettingsTab;
+  if (origSettings) {
+    window._renderDirectorSettingsTab = function(panel) {
+      origSettings(panel);
+      var curSecret = localStorage.getItem('kpistroy_totp_secret') || '';
+      var box = document.createElement('div');
+      box.style.cssText = 'margin-top:20px;background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:18px;';
+      box.innerHTML =
+        '<h3 style="margin:0 0 8px;font-size:16px;color:#1e3a8a;">📱 Двухфакторная защита через Яндекс Ключ / Google Authenticator</h3>' +
+        '<p style="font-size:13px;color:#334155;margin:0 0 12px;">Привяжите приложение-аутентификатор на смартфоне. Коды генерируются офлайн каждые 30 секунд без Telegram и SMS:</p>' +
+        (curSecret
+          ? '<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #bfdbfe;font-size:13px;margin-bottom:10px;">🟢 <strong>Аутентификатор привязан!</strong> Секретный ключ: <code style="background:#f1f5f9;padding:3px 8px;border-radius:6px;font-weight:700;">' + curSecret + '</code></div>'
+          : '<div style="font-size:13px;color:#64748b;margin-bottom:10px;">Статус: <strong>Не привязан</strong> (используется демонстрационный код).</div>') +
+        '<button id="btn-gen-totp" style="background:#2563eb;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">🔑 Сгенерировать новый ключ для Яндекс Ключа</button>' +
+        '<div id="totp-qr-area" style="margin-top:12px;"></div>';
+
+      panel.appendChild(box);
+      document.getElementById('btn-gen-totp').onclick = function() {
+        var newSec = window._generateTotpSecret();
+        localStorage.setItem('kpistroy_totp_secret', newSec);
+        var otpAuthUrl = 'otpauth://totp/StroyEffectKPI:Director?secret=' + newSec + '&issuer=StroyEffectKPI';
+        var qrImg = 'https://qrserver.com' + encodeURIComponent(otpAuthUrl);
+        document.getElementById('totp-qr-area').innerHTML =
+          '<div style="background:#fff;padding:14px;border-radius:10px;border:1px solid #cbd5e1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+            '<img src="' + qrImg + '" alt="QR для Яндекс Ключ" style="border-radius:8px;border:1px solid #e2e8f0;">' +
+            '<div style="font-size:13px;color:#0f172a;"><strong>1.</strong> Откройте приложение <strong>Яндекс Ключ</strong> или <strong>Google Authenticator</strong>.<br><strong>2.</strong> Нажмите «+» → «Сканировать QR-код» (или введите ключ вручную: <code>' + newSec + '</code>).<br><strong>3.</strong> Готово! При следующем входе система потребует 6 цифр с экрана вашего телефона.</div>' +
+          '</div>';
+      };
+    };
+  }
+})();
+</script>
 
 
 </body>
