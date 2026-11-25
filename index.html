@@ -2033,6 +2033,161 @@ function renderPortfolioTable() {
   }
 })();
 </script>
+<!-- ЭТАП АПГРЕЙДА 2 (ЧАСТЬ 1 ИЗ 2): БЕЛЫЙ ЗАГОЛОВОК И ГРАФИКИ ДЛЯ ИНВЕСТОРА -->
+<script>
+(function() {
+  // 1. Делаем заголовок h1 в темной шапке презентации ярко-белым
+  var presH1 = document.querySelector('#saas-landing-page h1');
+  if (presH1) presH1.style.setProperty('color', '#ffffff', 'important');
+
+  // 2. Расширяем кабинет Инвестора наглядным графиком S-кривой освоения бюджета и прогресс-барами вех
+  var prevSpec = window._openSpecialOverlay;
+  if (prevSpec) {
+    window._openSpecialOverlay = function(spec) {
+      prevSpec(spec);
+      if (spec !== 'investor') return;
+
+      var body = document.getElementById('spec-body');
+      if (!body || body.children.length < 2) return;
+      var contentArea = body.children.item(1);
+
+      function renderRichInvestorDashboard() {
+        contentArea.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:20px;">' +
+            '<div style="background:#fff;padding:18px;border-radius:14px;border:1px solid #bfdbfe;"><div style="font-size:12px;color:#1e40af;font-weight:700;">ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</div><div style="font-size:30px;font-weight:800;color:#1e3a8a;margin:6px 0;">84 / 100 🟢</div><div style="background:#e2e8f0;height:8px;border-radius:6px;overflow:hidden;"><div style="width:84%;background:#2563eb;height:100%;"></div></div></div>' +
+            '<div style="background:#fff;padding:18px;border-radius:14px;border:1px solid #bbf7d0;"><div style="font-size:12px;color:#166534;font-weight:700;">ОСВОЕНИЕ СМЕТЫ (План 67% / Факт 64.8%)</div><div style="font-size:30px;font-weight:800;color:#15803d;margin:6px 0;">440.6 млн ₽</div><div style="background:#e2e8f0;height:8px;border-radius:6px;overflow:hidden;"><div style="width:65%;background:#16a34a;height:100%;"></div></div></div>' +
+            '<div style="background:#fff;padding:18px;border-radius:14px;border:1px solid #e2e8f0;"><div style="font-size:12px;color:#475569;font-weight:700;">ПРИЕМКА ТЕХНАДЗОРОМ С 1-ГО РАЗА</div><div style="font-size:30px;font-weight:800;color:#0f172a;margin:6px 0;">88.5% 🟢</div><div style="font-size:12px;color:#64748b;">Отклонение от графика (SPI): 0.96</div></div>' +
+          '</div>' +
+
+          '<div style="background:#fff;padding:22px;border-radius:14px;border:1px solid #cbd5e1;margin-bottom:20px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">' +
+              '<div><h3 style="margin:0;font-size:16px;color:#0f172a;">📈 Наглядная S-кривая освоения инвестиций (План vs Факт, млн ₽)</h3><div style="font-size:12.5px;color:#64748b;">Синяя пунктирная линия — плановый график финансирования, Зеленая сплошная — подтвержденные акты КС-2</div></div>' +
+            '</div>' +
+            '<svg viewBox="0 0 700 200" style="width:100%;max-width:780px;height:auto;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">' +
+              '<line x1="50" y1="160" x2="660" y2="160" stroke="#cbd5e1" stroke-width="1.5"/>' +
+              '<line x1="50" y1="30" x2="50" y2="160" stroke="#cbd5e1" stroke-width="1.5"/>' +
+              '<polyline fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="6,4" points="60,150 180,128 300,98 420,68 540,42 640,25"/>' +
+              '<polyline fill="none" stroke="#16a34a" stroke-width="3.5" points="60,152 180,132 300,104 420,74 540,48"/>' +
+              '<circle cx="60" cy="152" r="4.5" fill="#16a34a"/><text x="60" y="175" font-size="11" fill="#475569" text-anchor="middle">Июл</text>' +
+              '<circle cx="180" cy="132" r="4.5" fill="#16a34a"/><text x="180" y="175" font-size="11" fill="#475569" text-anchor="middle">Авг (115м)</text>' +
+              '<circle cx="300" cy="104" r="4.5" fill="#16a34a"/><text x="300" y="175" font-size="11" fill="#475569" text-anchor="middle">Сен (230м)</text>' +
+              '<circle cx="420" cy="74" r="4.5" fill="#16a34a"/><text x="420" y="175" font-size="11" fill="#475569" text-anchor="middle">Окт (345м)</text>' +
+              '<circle cx="540" cy="48" r="6" fill="#16a34a"/><text x="540" y="36" font-size="11.5" font-weight="700" fill="#15803d" text-anchor="middle">Факт: 440.6 млн ₽</text><text x="540" y="175" font-size="11" fill="#475569" text-anchor="middle">Ноя</text>' +
+              '<text x="640" y="18" font-size="11" font-weight="700" fill="#2563eb" text-anchor="end">План: 680 млн ₽</text>' +
+            '</svg>' +
+          '</div>' +
+
+          '<div style="background:#fff;padding:22px;border-radius:14px;border:1px solid #cbd5e1;">' +
+            '<h3 style="margin:0 0 14px;font-size:16px;color:#0f172a;">📅 Прогресс контрольных вех строительства (Подтверждено технадзором)</h3>' +
+            '<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;"><span>✅ Этап 1: Котлован и фундаментная плита</span><span style="color:#16a34a;">100%</span></div><div style="background:#e2e8f0;height:8px;border-radius:6px;margin-top:5px;"><div style="width:100%;background:#16a34a;height:100%;border-radius:6px;"></div></div></div>' +
+            '<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;"><span>✅ Этап 2: Монолитный каркас 1–8 этажей</span><span style="color:#16a34a;">100%</span></div><div style="background:#e2e8f0;height:8px;border-radius:6px;margin-top:5px;"><div style="width:100%;background:#16a34a;height:100%;border-radius:6px;"></div></div></div>' +
+            '<div><div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;"><span>🔄 Этап 3: Монолитный каркас 9–16 этажей и кладка</span><span style="color:#2563eb;">52%</span></div><div style="background:#e2e8f0;height:8px;border-radius:6px;margin-top:5px;"><div style="width:52%;background:#2563eb;height:100%;border-radius:6px;"></div></div></div>' +
+          '</div>';
+      }
+
+      renderRichInvestorDashboard();
+      var firstTab = body.querySelector('button');
+      if (firstTab) firstTab.onclick = function() {
+        body.querySelectorAll('button').forEach(function(x) { x.style.background = '#f8fafc'; x.style.color = '#0f172a'; x.style.borderColor = '#e2e8f0'; });
+        firstTab.style.background = '#0f172a'; firstTab.style.color = '#fff'; firstTab.style.borderColor = '#0f172a';
+        renderRichInvestorDashboard();
+      };
+    };
+  }
+})();
+</script>
+<!-- ЭТАП АПГРЕЙДА 2 (ЧАСТЬ 2 ИЗ 2): ГРАФИК ДИРЕКТОРА И НАСТРОЙКИ ВКЛАДОК -->
+<script>
+(function() {
+  window._renderDirectorSettingsTab = function(panel) {
+    var cfg = { maxMvr: 2.0, maxKsDays: 30, maxCle: 5.0, ptoExchange: true, ptoPenalties: false };
+    try {
+      var saved = JSON.parse(localStorage.getItem('kpistroy_dir_cfg'));
+      if (saved) cfg = Object.assign(cfg, saved);
+    } catch (e) {}
+
+    panel.innerHTML =
+      '<h2 style="margin-top:0;color:#0f172a;">⚙️ Настройки порогов «Светофора» и прав вкладок (Только Гендиректор)</h2>' +
+      '<p style="font-size:13.5px;color:#475569;margin-bottom:18px;">Управляйте нормативами сигнализации потерь и настраивайте, какие вкладки доступны инженерам ПТО:</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-bottom:18px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:18px;">' +
+          '<h3 style="margin:0 0 12px;font-size:15px;">🚦 Критические пороги сигнализации (Светофор)</h3>' +
+          '<label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:4px;">Допустимый перерасход материалов MVR (%):</label>' +
+          '<input id="cfg-mvr" type="number" step="0.1" value="' + cfg.maxMvr + '" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;">' +
+          '<label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:4px;">Максимальный срок закрытия КС-2 (дней):</label>' +
+          '<input id="cfg-ks" type="number" value="' + cfg.maxKsDays + '" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;">' +
+          '<label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:4px;">Лимит брака и переделок в ФОТ CLE (%):</label>' +
+          '<input id="cfg-cle" type="number" step="0.5" value="' + cfg.maxCle + '" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;">' +
+        '</div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:18px;">' +
+          '<h3 style="margin:0 0 12px;font-size:15px;">🔐 Управление доступом к вкладкам для ПТО</h3>' +
+          '<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;margin-bottom:12px;cursor:pointer;">' +
+            '<input id="cfg-pto-ex" type="checkbox" ' + (cfg.ptoExchange ? 'checked' : '') + ' style="width:18px;height:18px;"> Разрешить инженеру ПТО вкладку «🔍 Биржа подрядчиков»' +
+          '</label>' +
+          '<label style="display:flex;align-items:center;gap:10px;font-size:13.5px;margin-bottom:12px;cursor:pointer;">' +
+            '<input id="cfg-pto-pen" type="checkbox" ' + (cfg.ptoPenalties ? 'checked' : '') + ' style="width:18px;height:18px;"> Открыть для ПТО вкладку «💰 Контроль штрафов (CAPA)»' +
+          '</label>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:10px;border-radius:8px;font-size:12px;color:#1e3a8a;">Коммерческая тайна (маржа MEI и портфель объектов) всегда защищена и доступна только Гендиректору.</div>' +
+        '</div>' +
+      '</div>' +
+      '<button id="btn-save-dir-cfg" style="background:#16a34a;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💾 Сохранить настройки и применить</button>';
+
+    document.getElementById('btn-save-dir-cfg').onclick = function() {
+      var newCfg = {
+        maxMvr: +document.getElementById('cfg-mvr').value || 2.0,
+        maxKsDays: +document.getElementById('cfg-ks').value || 30,
+        maxCle: +document.getElementById('cfg-cle').value || 5.0,
+        ptoExchange: document.getElementById('cfg-pto-ex').checked,
+        ptoPenalties: document.getElementById('cfg-pto-pen').checked
+      };
+      try { localStorage.setItem('kpistroy_dir_cfg', JSON.stringify(newCfg)); } catch (e) {}
+      alert('✅ Настройки порогов и вкладок сохранены!');
+    };
+  };
+
+  setInterval(function() {
+    var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : 'guest';
+    var bar = document.getElementById('single-master-bar');
+    var pnl = document.getElementById('single-master-pnl');
+    if (!bar || !pnl || r === 'guest') return;
+
+    // 1. Добавляем кнопку «⚙️ Настройки и Пороги» в меню Директора
+    if (r === 'director' && !document.getElementById('btn-dir-settings-tab')) {
+      var sBtn = document.createElement('button');
+      sBtn.id = 'btn-dir-settings-tab';
+      sBtn.textContent = '⚙️ Настройки и Пороги';
+      sBtn.style.cssText = 'padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid #e2e8f0;background:#f8fafc;color:#0f172a;';
+      sBtn.onclick = function() {
+        bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#f8fafc'; x.style.color = '#0f172a'; x.style.borderColor = '#e2e8f0'; });
+        sBtn.style.background = '#0f172a'; sBtn.style.color = '#fff'; sBtn.style.borderColor = '#0f172a';
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.add('hidden'); });
+        pnl.style.display = 'block';
+        window._renderDirectorSettingsTab(pnl);
+      };
+      bar.appendChild(sBtn);
+    }
+
+    // 2. Наглядный график снижения потерь на вкладке «1. Диагностика объекта» у Директора
+    var dash = document.getElementById('tab-dashboard');
+    if (r === 'director' && dash && !dash.classList.contains('hidden') && !document.getElementById('dir-rich-chart-card')) {
+      var dCard = document.createElement('div');
+      dCard.id = 'dir-rich-chart-card';
+      dCard.className = 'card';
+      dCard.innerHTML =
+        '<div class="card-header"><span class="card-title">📈 Динамика сокращения скрытых потерь и возврата маржи (тыс. ₽)</span><span class="badge badge-green">Тренд: -24% потерь за 4 мес.</span></div>' +
+        '<svg viewBox="0 0 700 175" style="width:100%;max-width:780px;height:auto;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">' +
+          '<polyline fill="none" stroke="#ef4444" stroke-width="3" points="70,35 220,58 370,88 520,115 640,132"/>' +
+          '<circle cx="70" cy="35" r="5" fill="#ef4444"/><text x="70" y="24" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">19 200</text><text x="70" y="160" font-size="11" fill="#64748b" text-anchor="middle">Июл</text>' +
+          '<circle cx="220" cy="58" r="5" fill="#ef4444"/><text x="220" y="47" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">17 800</text><text x="220" y="160" font-size="11" fill="#64748b" text-anchor="middle">Авг</text>' +
+          '<circle cx="370" cy="88" r="5" fill="#ef4444"/><text x="370" y="77" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">16 100</text><text x="370" y="160" font-size="11" fill="#64748b" text-anchor="middle">Сен</text>' +
+          '<circle cx="520" cy="115" r="5" fill="#ef4444"/><text x="520" y="104" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">15 100</text><text x="520" y="160" font-size="11" fill="#64748b" text-anchor="middle">Окт</text>' +
+          '<circle cx="640" cy="132" r="6" fill="#16a34a"/><text x="640" y="120" font-size="11.5" font-weight="800" fill="#15803d" text-anchor="middle">14 557 🟢</text><text x="640" y="160" font-size="11" fill="#64748b" text-anchor="middle">Ноя</text>' +
+        '</svg>';
+      dash.appendChild(dCard);
+    }
+  }, 450);
+})();
+</script>
 
 </body>
 </html>
