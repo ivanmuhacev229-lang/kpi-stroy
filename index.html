@@ -4229,27 +4229,32 @@ function renderPortfolioTable() {
   if (b2) b2.onclick = closeLanding;
 })();
 </script>
-<!-- ФИКС ОТКРЫТИЯ СИСТЕМЫ И 4 РОЛЕЙ v3 -->
+<!-- ФИКС ОТКРЫТИЯ КАБИНЕТОВ И ВСЕХ ВКЛАДОК v5 -->
 <script>
 (function() {
-  var revealedNodes = [];
-
-  function revealApp() {
+  function openMainApp() {
     var landing = document.getElementById('saas-landing-page');
     if (landing) landing.style.setProperty('display', 'none', 'important');
 
-    var candidates = document.querySelectorAll('div, section, main');
-    for (var i = 0; i < candidates.length; i++) {
-      var el = candidates[i];
+    // Открываем все корневые контейнеры верхнего уровня в body (кроме модалок и презентации)
+    var topKids = document.body.children;
+    for (var i = 0; i < topKids.length; i++) {
+      var el = topKids[i];
       if (el.id === 'saas-landing-page' || el.id === 'special-role-overlay' || el.id === 'kpi-confirm-modal' || el.id === 'legal-doc-modal') continue;
-      if (el.textContent && el.textContent.indexOf('Директор / Генподрядчик') !== -1 && el.textContent.indexOf('Инженер ПТО') !== -1) {
-        var cur = el;
-        while (cur && cur !== document.body) {
-          if (getComputedStyle(cur).display === 'none') {
-            cur.style.display = 'block';
-            revealedNodes.push(cur);
-          }
-          cur = cur.parentElement;
+      if (el.tagName === 'DIV' || el.tagName === 'MAIN' || el.tagName === 'SECTION') {
+        if (getComputedStyle(el).display === 'none') {
+          el.style.display = 'block';
+        }
+      }
+    }
+
+    // Если экран выбора ролей внутри остался скрытым — открываем его
+    var allDivs = document.querySelectorAll('div');
+    for (var j = 0; j < allDivs.length; j++) {
+      if (allDivs[j].textContent && allDivs[j].textContent.indexOf('Директор / Генподрядчик') !== -1 && allDivs[j].textContent.indexOf('БЫСТРЫЙ ВХОД В ДЕМО-РЕЖИМ') !== -1) {
+        allDivs[j].style.display = 'block';
+        if (allDivs[j].parentElement && getComputedStyle(allDivs[j].parentElement).display === 'none') {
+          allDivs[j].parentElement.style.display = 'block';
         }
         break;
       }
@@ -4262,7 +4267,7 @@ function renderPortfolioTable() {
     if (!btn) return;
 
     if (btn.id === 'btn-launch-demo-v3' || btn.id === 'btn-s4-open-v3') {
-      revealApp();
+      openMainApp();
       return;
     }
 
@@ -4272,17 +4277,24 @@ function renderPortfolioTable() {
       return;
     }
 
-    // При нажатии на любую из первых 4 ролей снимаем ручной показ экрана входа, чтобы открылся кабинет
+    // При клике на любую из 4 ролей проверяем через 50 мс, что рабочий кабинет открылся и не перекрыт
     var txt = btn.textContent || '';
     if (txt.indexOf('Директор / Генподрядчик') !== -1 || txt.indexOf('Инженер ПТО') !== -1 || txt.indexOf('Прораб / Начальник') !== -1 || txt.indexOf('Подрядная организация') !== -1) {
-      for (var k = 0; k < revealedNodes.length; k++) {
-        revealedNodes[k].style.removeProperty('display');
-      }
-      revealedNodes = [];
+      setTimeout(function() {
+        var topKids = document.body.children;
+        for (var i = 0; i < topKids.length; i++) {
+          var el = topKids[i];
+          if (el.id === 'saas-landing-page' || el.id === 'special-role-overlay' || el.id === 'kpi-confirm-modal' || el.id === 'legal-doc-modal') continue;
+          if ((el.tagName === 'DIV' || el.tagName === 'MAIN') && getComputedStyle(el).display === 'none') {
+            el.style.display = 'block';
+          }
+        }
+      }, 60);
     }
   }, true);
 })();
 </script>
+
 
 
 
