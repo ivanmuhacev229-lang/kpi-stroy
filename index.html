@@ -1898,6 +1898,141 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ЭТАП АПГРЕЙДА 1А: ФИКС БАЗЫ, ЧАТА И НОВАЯ 5-СЛАЙДОВАЯ ПРЕЗЕНТАЦИЯ -->
+<script>
+(function() {
+  // 1. Жестко фиксируем правильный URL Supabase для Биржи, Штрафов и Команды
+  var SB_URL = 'https://supabase.co';
+  var SB_KEY = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
+  if (window._cloudApp) {
+    window._cloudApp.sb = function(path, opts) {
+      opts = opts || {};
+      var headers = Object.assign({ 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, opts.headers || {});
+      return fetch(SB_URL + path, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
+    };
+  }
+
+  // 2. Обновляем стартовую презентацию до 5 насыщенных SaaS-слайдов
+  var landing = document.getElementById('saas-landing-page');
+  if (!landing) return;
+  landing.style.cssText = 'background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);min-height:100vh;padding:28px 16px;position:relative;z-index:200;';
+  landing.innerHTML =
+    '<div style="max-width:1040px;margin:0 auto;">' +
+      '<div style="background:#0f172a;color:#fff;border-radius:18px;padding:26px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;box-shadow:0 12px 30px rgba(15,23,42,0.18);">' +
+        '<div style="max-width:660px;">' +
+          '<span style="background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">🇷🇺 Отечественный B2B SaaS • Внедрение за 1 день</span>' +
+          '<h1 style="margin:10px 0 6px;font-size:26px;line-height:1.25;">СтройЭффект KPI — антикризисный цифровой пульт стройки</h1>' +
+          '<p style="margin:0;color:#cbd5e1;font-size:14px;">Управленческий контур поверх 1С, сквозной E2E-мессенджер (AES-256), проверка подрядчиков по ИНН и защита маржи объекта</p>' +
+        '</div>' +
+        '<button id="btn-launch-v4" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:14px 24px;border-radius:12px;font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 6px 20px rgba(37,99,235,0.4);">🚀 Открыть рабочую систему →</button>' +
+      '</div>' +
+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">' +
+        '<button class="v4-tab" data-s="1" style="background:#0f172a;color:#fff;border:none;padding:10px 15px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">1. Проблема и Экономия 2–5%</button>' +
+        '<button class="v4-tab" data-s="2" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 15px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">2. Эксклюзив: чем лучше 1С</button>' +
+        '<button class="v4-tab" data-s="3" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 15px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">3. 6 ролей и изоляция прав</button>' +
+        '<button class="v4-tab" data-s="4" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 15px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">4. Безопасность AES-256 и Биржа</button>' +
+        '<button class="v4-tab" data-s="5" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 15px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">5. Тарифы и Связь с автором</button>' +
+      '</div>' +
+
+      '<div class="v4-slide" id="v4-s1" style="background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:26px;box-shadow:0 4px 16px rgba(15,23,42,0.04);">' +
+        '<h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Где строительная компания теряет от 10 до 30 млн ₽ на каждом ЖК</h2>' +
+        '<p style="color:#475569;font-size:14px;margin-bottom:18px;">Бухгалтерия видит убыток через 2 месяца после закрытия актов. «СтройЭффект KPI» ловит потери в момент их возникновения:</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">' +
+          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:18px;border-radius:14px;"><div style="font-size:22px;font-weight:800;color:#dc2626;">-5% ... -8%</div><strong style="color:#991b1b;font-size:15px;">Скрытые потери площадки</strong><p style="font-size:13px;color:#7f1d1d;margin:6px 0 0;">Простои башенных кранов, перерасход бетона сверх сметы, штрафы за слив остатков и переделки брака.</p></div>' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:14px;"><div style="font-size:22px;font-weight:800;color:#16a34a;">+2% ... +5%</div><strong style="color:#166534;font-size:15px;">Прямой возврат в прибыль</strong><p style="font-size:13px;color:#14532d;margin:6px 0 0;">Светофор платежей, разбор инцидентов (CAPA) и ускорение приемки КС-2 сохраняют десятки миллионов рублей.</p></div>' +
+          '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:18px;border-radius:14px;"><div style="font-size:22px;font-weight:800;color:#2563eb;">5 мин/нед</div><strong style="color:#1e40af;font-size:15px;">Без бюрократии для ИТР</strong><p style="font-size:13px;color:#1e3a8a;margin:6px 0 0;">Прораб работает со смартфона (PWA): отправляет фото и 4 цифры раз в неделю, остальное система считает сама.</p></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="v4-slide" id="v4-s2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:26px;"></div>' +
+      '<div class="v4-slide" id="v4-s3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:26px;"></div>' +
+      '<div class="v4-slide" id="v4-s4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:26px;"></div>' +
+      '<div class="v4-slide" id="v4-s5" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:26px;"></div>' +
+    '</div>';
+})();
+</script>
+<!-- ЭТАП АПГРЕЙДА 1Б: СЛАЙДЫ 2-5 И КАНАЛЫ ЧАТА ДЛЯ ВСЕХ РОЛЕЙ -->
+<script>
+(function() {
+  var landing = document.getElementById('saas-landing-page');
+  if (landing) {
+    document.getElementById('v4-s2').innerHTML =
+      '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">В чем эксклюзив «СтройЭффект KPI» по сравнению с «1С» и Excel</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13.5px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>💎 1. Авторская математическая модель (9 KPI)</strong><p style="color:#475569;margin:6px 0 0;">Показатели MEI, DCC, CoD, CLE, FTRI, MVR, SPI, OTD и CFI отделяют рыночную инфляцию от реальных управленческих ошибок на стройке.</p></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>💎 2. Управленческий контур «без 1С»</strong><p style="color:#475569;margin:6px 0 0;">Финансист и директор видят живой кошелек объекта (ДДС) и лимиты сметы (защита от лишнего бетона) без дорогой доработки 1С.</p></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>💎 3. Система CAPA (работа над ошибками)</strong><p style="color:#475569;margin:6px 0 0;">Каждый штраф или брак фиксируется с указанием виновника и конкретной меры предотвращения, чтобы убыток не повторялся.</p></div>' +
+      '</div>';
+
+    document.getElementById('v4-s3').innerHTML =
+      '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">6 изолированных рабочих кабинетов с защитой коммерческой тайны</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:13px;">' +
+        '<div style="background:#f8fafc;border-left:4px solid #0f172a;padding:13px;border-radius:8px;"><strong>👔 1. Владелец / Гендиректор</strong><div style="color:#475569;margin-top:4px;">Полный контроль портфеля, согласование штрафов, управление командой и срезы периодов.</div></div>' +
+        '<div style="background:#f8fafc;border-left:4px solid #2563eb;padding:13px;border-radius:8px;"><strong>📐 2. Инженер ПТО</strong><div style="color:#475569;margin-top:4px;">Сметные объемы, закрытие актов КС-2, контроль перерасхода материалов (MVR) и Биржа.</div></div>' +
+        '<div style="background:#f8fafc;border-left:4px solid #eab308;padding:13px;border-radius:8px;"><strong>👷 3. Прораб / Начальник участка</strong><div style="color:#475569;margin-top:4px;">Маржа и прибыль скрыты! Только учет простоев, выработки бригад, фотоотчеты и чат.</div></div>' +
+        '<div style="background:#f8fafc;border-left:4px solid #16a34a;padding:13px;border-radius:8px;"><strong>💰 4. Финансист / Снабженец</strong><div style="color:#475569;margin-top:4px;">Живые деньги (ДДС), остатки лимитов материалов по смете и реестр непроизводительных трат.</div></div>' +
+        '<div style="background:#f8fafc;border-left:4px solid #6366f1;padding:13px;border-radius:8px;"><strong>💼 5. Инвестор / Заказчик</strong><div style="color:#475569;margin-top:4px;">Режим прозрачности (только чтение): индекс здоровья объекта (0–100) и вехи стройки.</div></div>' +
+        '<div style="background:#f8fafc;border-left:4px solid #0284c7;padding:13px;border-radius:8px;"><strong>🤝 6. Подрядная организация</strong><div style="color:#475569;margin-top:4px;">Трекер договоров КС-2, сдача отчетов, прямой чат и паспорт благонадежности ФНС (ИНН).</div></div>' +
+      '</div>';
+
+    document.getElementById('v4-s4').innerHTML =
+      '<h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;">Корпоративная безопасность и проверка контрагентов</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13.5px;">' +
+        '<div style="background:#eff6ff;border:1px solid #bfdbfe;padding:16px;border-radius:12px;"><strong>🔒 Сквозной E2E-мессенджер (AES-256)</strong><p style="color:#1e3a8a;margin:6px 0 0;">Замена разрозненных чатов в WhatsApp/Telegram. Переписка по отделам и подрядчикам шифруется и остается внутри компании.</p></div>' +
+        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;"><strong>🔍 B2B-Биржа и проверка ФНС / ЕФРСБ</strong><p style="color:#14532d;margin:6px 0 0;">Рейтинг подрядчиков строится на фактах приемки работ, а статус по ИНН проверяется на отсутствие банкротств и долгов.</p></div>' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><strong>🔐 2FA-защита и заморозка срезов</strong><p style="color:#334155;margin:6px 0 0;">Вход по уникальному коду организации с двухфакторным подтверждением и фиксацией неизменяемых итогов месяца.</p></div>' +
+      '</div>';
+
+    document.getElementById('v4-s5').innerHTML =
+      '<h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Тарифы и прямое подключение пилотного запуска</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">Для подрядчиков и ИП: 1–2 объекта, трекер КС-2 и Биржа.</div></div>' +
+        '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">Для генподрядчиков: до 10 объектов, все 6 ролей, E2E-чат и графики.</div></div>' +
+        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">Для девелоперов и холдингов: безлимит объектов и выделенный контур.</div></div>' +
+      '</div>' +
+      '<div style="background:#0f172a;color:#fff;border-radius:14px;padding:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">' +
+        '<div><div style="font-size:11.5px;color:#38bdf8;font-weight:700;">ПРЯМОЕ ПОДКЛЮЧЕНИЕ И БЕСПЛАТНЫЙ ПИЛОТ 14 ДНЕЙ</div>' +
+        '<h3 style="margin:4px 0 6px;font-size:17px;">Автор и руководитель проекта: Мухачев Иван</h3>' +
+        '<div style="font-size:13px;color:#cbd5e1;line-height:1.65;">🎓 г. Новосибирск • СГУПС (факультет ПГС)<br>📱 MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 <strong style="color:#fff;">https://kpistroy.ru</strong></div></div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;min-width:210px;">' +
+          '<a href="https://t.me" target="_blank" style="text-align:center;background:#0284c7;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;">✈️ Написать в Telegram</a>' +
+          '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилот%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;">✉️ Заявка на Email</a>' +
+          '<button id="btn-launch-v4-s5" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;">Открыть систему →</button>' +
+        '</div>' +
+      '</div>';
+
+    var vTabs = landing.querySelectorAll('.v4-tab'), vSlides = landing.querySelectorAll('.v4-slide');
+    for (var i = 0; i < vTabs.length; i++) {
+      vTabs[i].onclick = function() {
+        var n = this.dataset.s;
+        for (var j = 0; j < vTabs.length; j++) { vTabs[j].style.background = '#fff'; vTabs[j].style.color = '#0f172a'; vTabs[j].style.border = '1px solid #cbd5e1'; }
+        this.style.background = '#0f172a'; this.style.color = '#fff'; this.style.border = 'none';
+        for (var k = 0; k < vSlides.length; k++) vSlides[k].style.display = (vSlides[k].id === 'v4-s' + n) ? 'block' : 'none';
+      };
+    }
+    function hideL() { landing.style.display = 'none'; window.scrollTo(0, 0); }
+    document.getElementById('btn-launch-v4').onclick = hideL;
+    document.getElementById('btn-launch-v4-s5').onclick = hideL;
+  }
+
+  // 3. Добавляем каналы в чат для Финансиста и Инвестора
+  var origChat = window._renderChatTab;
+  if (origChat) {
+    window._renderChatTab = function(panel) {
+      origChat(panel);
+      var side = document.getElementById('chat-side');
+      if (side && side.children.length === 0) {
+        [{ k: 'obj_general', t: '🏗️ Общий чат объекта' }, { k: 'dept_finance', t: '💰 Финансы и ДДС' }, { k: 'dept_pto', t: '📐 Отдел ПТО' }].forEach(function(ch) {
+          var row = document.createElement('div'); row.textContent = ch.t;
+          row.style.cssText = 'padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin-bottom:4px;background:#eff6ff;color:#1e3a8a;';
+          side.appendChild(row);
+        });
+      }
+    };
+  }
+})();
+</script>
 
 </body>
 </html>
