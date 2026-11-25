@@ -2663,6 +2663,191 @@ function renderPortfolioTable() {
   if (hdrBtn) hdrBtn.onclick = openPresentation;
 })();
 </script>
+<!-- ЗАЩИЩЕННАЯ РЕГИСТРАЦИЯ И ВХОД (БЛОК А ИЗ 4) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._setupAuthScreen = function() {
+    var box = document.querySelector('.auth-form-box');
+    if (!box || box.offsetParent === null || box.dataset.secAuthV2 === '1') return;
+    box.dataset.secAuthV2 = '1';
+
+    var mode = 'login';
+    window._drawSecAuth = function() {
+      var cur = app.getSession();
+      if (cur && cur.company && cur.company.name) {
+        var verBadge = cur.company.is_verified
+          ? '<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">🟢 ИНН Подтвержден • 2FA Активна</span>'
+          : '<span style="background:#fef9c3;color:#854d0e;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;">⏳ Режим песочницы • Проверка ИНН</span>';
+        box.innerHTML = '<div style="padding:10px;">' + verBadge + '<h3 style="margin:12px 0 6px;font-size:18px;">' + window._safeText(cur.company.name) + '</h3><div style="font-size:13px;color:#475569;margin-bottom:14px;">ИНН: ' + window._safeText(cur.company.inn) + ' • Код: <strong>' + window._safeText(cur.company.invite_code) + '</strong></div><button id="btn-out-2fa" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-weight:600;cursor:pointer;">Выйти из аккаунта</button></div>';
+        document.getElementById('btn-out-2fa').onclick = function() { app.setSession(null); window._drawSecAuth(); };
+        return;
+      }
+
+      var h = '<div style="display:flex;gap:16px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:16px;"><button id="tb-in" style="background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:' + (mode === 'login' ? '#2563eb' : '#64748b') + ';">Вход (2FA)</button><button id="tb-rg" style="background:none;border:none;font-size:14px;font-weight:700;cursor:pointer;color:' + (mode === 'reg' ? '#2563eb' : '#64748b') + ';">Заявка на подключение</button></div>';
+      if (mode === 'login') {
+        box.innerHTML = h + '<div id="s1-2fa"><select id="who-2fa" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="owner">👔 Владелец (Мастер-код KPI-XXXX)</option><option value="staff">👷 Сотрудник (Личный код роли)</option><option value="contractor">🤝 Подрядчик (Код SUB-XXXX / ИНН)</option></select><input id="cd-2fa" placeholder="Введите ваш код доступа" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;"><button id="go-2fa" style="width:100%;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Продолжить (2FA) →</button></div><div id="s2-2fa" style="display:none;"></div>';
+        if (window._bindSecLogin) window._bindSecLogin();
+      } else {
+        box.innerHTML = h + '<div style="background:#fefce8;border:1px solid #fde047;padding:8px 10px;border-radius:8px;font-size:11.5px;color:#713f12;margin-bottom:10px;">🛡️ Защита ИНН: до проверки модератором открывается режим Песочницы.</div><input id="rg-n" placeholder="Название ООО / ИП" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="rg-i" maxlength="12" placeholder="ИНН (10 или 12 цифр)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="rg-person" placeholder="Ваше ФИО и должность" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="rg-phone" placeholder="Телефон / Telegram / MAX" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><select id="rg-t" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="general">Генподрядчик / Застройщик</option><option value="subcontractor">Подрядная организация</option></select><button id="rg-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Отправить заявку</button>';
+        if (window._bindSecReg) window._bindSecReg(function() { mode = 'login'; window._drawSecAuth(); });
+      }
+      document.getElementById('tb-in').onclick = function() { mode = 'login'; window._drawSecAuth(); };
+      document.getElementById('tb-rg').onclick = function() { mode = 'reg'; window._drawSecAuth(); };
+    };
+    window._drawSecAuth();
+  };
+})();
+</script>
+<!-- ЗАЩИЩЕННАЯ РЕГИСТРАЦИЯ И ВХОД (БЛОК Б ИЗ 4) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._bindSecLogin = function() {
+    var btn = document.getElementById('go-2fa');
+    if (!btn) return;
+
+    function showOtpStep(label, targetRole, compObj, otp) {
+      document.getElementById('s1-2fa').style.display = 'none';
+      var s2 = document.getElementById('s2-2fa'); s2.style.display = 'block';
+      s2.innerHTML = '<div style="background:#eff6ff;padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px;">🔐 Код 2FA для <strong>' + window._safeText(label) + '</strong>:<br><strong style="color:#2563eb;font-size:18px;letter-spacing:2px;">' + otp + '</strong></div><input id="otp-i" maxlength="6" placeholder="Введите 6 цифр" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-weight:700;margin-bottom:10px;"><button id="otp-b" style="width:100%;background:#16a34a;color:#fff;border:none;padding:11px;border-radius:8px;font-weight:700;cursor:pointer;">Подтвердить и войти</button>';
+      document.getElementById('otp-b').onclick = function() {
+        if (document.getElementById('otp-i').value.trim() !== otp) return alert('Неверный код 2FA.');
+        if (compObj) { app.setSession({ company: compObj }); if (window._drawSecAuth) window._drawSecAuth(); }
+        if (targetRole === 'finance' || targetRole === 'investor') window._openSpecialOverlay(targetRole);
+        else if (typeof loginDemo === 'function') loginDemo(targetRole);
+      };
+    }
+
+    btn.onclick = function() {
+      var who = document.getElementById('who-2fa').value;
+      var q = document.getElementById('cd-2fa').value.trim().toUpperCase();
+      if (!q) return alert('Введите код доступа.');
+
+      if (who === 'staff') {
+        var prefixMap = { 'PTO-': 'pto', 'PRB-': 'prorab', 'FIN-': 'finance', 'INV-': 'investor' };
+        var matchedRole = null;
+        for (var pref in prefixMap) { if (q.indexOf(pref) === 0) { matchedRole = prefixMap[pref]; break; } }
+        if (!matchedRole) return alert('Ожидается личный код сотрудника: PTO-, PRB-, FIN- или INV-.');
+        app.sb('app_users?email=ilike.*' + encodeURIComponent(q) + '*').then(function(uRows) {
+          if (!Array.isArray(uRows) || !uRows.length) return alert('Код сотрудника не найден.');
+          showOtpStep(uRows.at(0).full_name, matchedRole, null, String(Math.floor(100000 + Math.random() * 900000)));
+        });
+        return;
+      }
+
+      var query = (who === 'contractor')
+        ? ('companies?or=(inn.eq.' + encodeURIComponent(q) + ',invite_code.eq.' + encodeURIComponent(q) + ')')
+        : ('companies?invite_code=eq.' + encodeURIComponent(q));
+
+      app.sb(query).then(function(rows) {
+        if (!Array.isArray(rows) || !rows.length) return alert('Компания не найдена.');
+        var comp = rows.at(0);
+        var role = (who === 'contractor' || comp.company_type === 'subcontractor') ? 'contractor' : 'director';
+        showOtpStep(comp.name, role, comp, String(Math.floor(100000 + Math.random() * 900000)));
+      });
+    };
+  };
+})();
+</script>
+<!-- ЗАЩИЩЕННАЯ РЕГИСТРАЦИЯ И ВХОД (БЛОК В ИЗ 4) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._bindSecReg = function(onSuccess) {
+    var btn = document.getElementById('rg-b');
+    if (!btn) return;
+
+    btn.onclick = function() {
+      var n = document.getElementById('rg-n').value.trim();
+      var inn = document.getElementById('rg-i').value.trim();
+      var person = document.getElementById('rg-person').value.trim();
+      var phone = document.getElementById('rg-phone').value.trim();
+      var t = document.getElementById('rg-t').value;
+
+      if (!n || !inn || !person || !phone) return alert('Заполните все поля для верификации.');
+      if (!/^\d{10}$|^\d{12}$/.test(inn)) return alert('ИНН должен содержать 10 или 12 цифр.');
+
+      var testCode = (t === 'subcontractor' ? 'SUB-' : 'KPI-') + Math.floor(1000 + Math.random() * 9000);
+      app.sb('companies', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: n, inn: inn, company_type: t, invite_code: testCode,
+          specialization: 'На проверке', fns_verified: false, is_verified: false,
+          contact_person: person, contact_phone: phone
+        })
+      }).then(function(res) {
+        if (Array.isArray(res) && res.length) {
+          alert('✅ Заявка принята! Модератор проверит ИНН и свяжется с вами.\n\nВаш временный код песочницы: ' + testCode);
+          if (onSuccess) onSuccess();
+        } else {
+          alert('⚠️ Заявка с таким ИНН уже на рассмотрении. Для ускорения напишите автору в Telegram @ivan31006.');
+          if (onSuccess) onSuccess();
+        }
+      });
+    };
+  };
+})();
+</script>
+<!-- ЗАЩИЩЕННАЯ РЕГИСТРАЦИЯ И ВХОД (БЛОК Г ИЗ 4) -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._renderTeamTab = function(panel) {
+    var cur = app.getSession(), comp = cur && cur.company ? cur.company : null;
+    if (!comp || !comp.id) {
+      panel.innerHTML = '<h2 style="margin-top:0;">👥 Команда и выпуск персональных кодов</h2><p style="color:#64748b;">Войдите по Мастер-коду вашей компании (например, KPI-9044), чтобы выдавать сотрудникам личные коды роли.</p>';
+      return;
+    }
+    panel.innerHTML =
+      '<h2 style="margin-top:0;">👥 Команда «' + window._safeText(comp.name) + '»</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:12px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;">' +
+          '<input id="tm-name" placeholder="ФИО сотрудника" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;">' +
+          '<select id="tm-role" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="pto">📐 Инженер ПТО (PTO-XXXX)</option><option value="prorab">👷 Прораб (PRB-XXXX)</option><option value="finance">💰 Финансист (FIN-XXXX)</option><option value="investor">💼 Инвестор (INV-XXXX)</option></select>' +
+          '<button id="btn-tm-add" style="width:100%;background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">🔑 Выпустить код роли</button>' +
+        '</div><div id="tm-list">Загрузка...</div></div>';
+
+    function loadTm() {
+      app.sb('app_users?company_id=eq.' + encodeURIComponent(comp.id)).then(function(u) {
+        var b = document.getElementById('tm-list'); if (!b || !Array.isArray(u)) return;
+        b.innerHTML = u.length ? u.map(function(x) {
+          return '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:8px;margin-bottom:8px;font-size:13px;"><strong>' + window._safeText(x.full_name) + '</strong> (' + window._safeText(x.role) + ') • <strong style="color:#2563eb;">' + window._safeText(x.email) + '</strong></div>';
+        }).join('') : '<div style="color:#94a3b8;">Персональные коды еще не выпускались.</div>';
+      });
+    }
+    loadTm();
+
+    document.getElementById('btn-tm-add').onclick = function() {
+      var n = document.getElementById('tm-name').value.trim(), r = document.getElementById('tm-role').value;
+      if (!n) return alert('Укажите ФИО сотрудника.');
+      var pMap = { pto: 'PTO-', prorab: 'PRB-', finance: 'FIN-', investor: 'INV-' };
+      var code = (pMap[r] || 'STF-') + Math.floor(1000 + Math.random() * 9000);
+      app.sb('app_users', { method: 'POST', body: JSON.stringify({ company_id: comp.id, full_name: n, email: 'Код: ' + code, role: r }) }).then(function() {
+        alert('✅ Выпущен персональный код: ' + code); document.getElementById('tm-name').value = ''; loadTm();
+      });
+    };
+  };
+
+  window._renderExchangeTab = function(panel) {
+    panel.innerHTML = '<h2 style="margin-top:0;">🔍 Биржа проверенных субподрядчиков</h2><div id="cloud-ex-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px;">Загрузка проверенных компаний...</div>';
+    app.sb('companies?company_type=eq.subcontractor&is_verified=eq.true&order=rating_ftri.desc').then(function(subs) {
+      var box = document.getElementById('cloud-ex-list'); if (!box || !Array.isArray(subs) || !subs.length) return;
+      box.innerHTML = subs.map(function(s) {
+        return '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:16px;"><div style="display:flex;justify-content:space-between;"><strong>' + window._safeText(s.name) + '</strong><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">🟢 Верифицирован</span></div><div style="font-size:12.5px;color:#64748b;margin:6px 0;">ИНН: ' + window._safeText(s.inn) + ' • ' + window._safeText(s.city || 'РФ') + '<br>' + window._safeText(s.specialization) + '</div><div style="font-size:12.5px;font-weight:700;color:#1e3a8a;margin-bottom:10px;">Сдача с 1-го раза: ' + s.rating_ftri + '% • Брак: ' + s.rating_cle + '%</div><button onclick="window._cloudApp.confirm(\'Приглашение\',\'Пригласить ' + window._safeText(s.name) + ' на объект?\',function(){alert(\'✅ Приглашение отправлено!\')})" style="width:100%;background:#2563eb;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:700;cursor:pointer;">Пригласить на объект</button></div>';
+      }).join('');
+    });
+  };
+})();
+</script>
 
 </body>
 </html>
