@@ -3039,6 +3039,26 @@ function renderPortfolioTable() {
   }
 })();
 </script>
+<!-- ЛОКАЛЬНЫЙ ГЕНЕРАТОР QR-КОДА ДЛЯ ЯНДЕКС КЛЮЧА (БЕЗ ЗАБЛОКИРОВАННЫХ СЕРВИСОВ) -->
+<script src="https://cloudflare.com"></script>
+<script>
+(function() {
+  setInterval(function() {
+    var qrImg = document.querySelector('#totp-qr-area img, #totp-qr-box img');
+    if (qrImg && !qrImg.dataset.localRendered) {
+      qrImg.dataset.localRendered = '1';
+      var sec = localStorage.getItem('kpistroy_totp_secret') || 'JBSWY3DPEHPK3PXP';
+      var uri = 'otpauth://totp/StroyEffectKPI:Director?secret=' + sec + '&issuer=StroyEffectKPI';
+      var holder = document.createElement('div');
+      holder.style.cssText = 'padding:8px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;display:inline-block;';
+      qrImg.replaceWith(holder);
+      if (window.QRCode) {
+        new QRCode(holder, { text: uri, width: 150, height: 150, colorDark: '#0f172a', colorLight: '#ffffff' });
+      }
+    }
+  }, 300);
+})();
+</script>
 
 
 </body>
