@@ -4229,71 +4229,92 @@ function renderPortfolioTable() {
   if (b2) b2.onclick = closeLanding;
 })();
 </script>
-<!-- ФИКС ОТКРЫТИЯ КАБИНЕТОВ И ВСЕХ ВКЛАДОК v5 -->
+<!-- ФИНАЛЬНЫЙ СТАБИЛИЗАТОР КАБИНЕТОВ (БЕЗ ЛАГОВ И ПУСТЫХ ЭКРАНОВ) -->
 <script>
 (function() {
-  function openMainApp() {
-    var landing = document.getElementById('saas-landing-page');
-    if (landing) landing.style.setProperty('display', 'none', 'important');
-
-    // Открываем все корневые контейнеры верхнего уровня в body (кроме модалок и презентации)
-    var topKids = document.body.children;
-    for (var i = 0; i < topKids.length; i++) {
-      var el = topKids[i];
-      if (el.id === 'saas-landing-page' || el.id === 'special-role-overlay' || el.id === 'kpi-confirm-modal' || el.id === 'legal-doc-modal') continue;
-      if (el.tagName === 'DIV' || el.tagName === 'MAIN' || el.tagName === 'SECTION') {
-        if (getComputedStyle(el).display === 'none') {
-          el.style.display = 'block';
-        }
-      }
-    }
-
-    // Если экран выбора ролей внутри остался скрытым — открываем его
-    var allDivs = document.querySelectorAll('div');
-    for (var j = 0; j < allDivs.length; j++) {
-      if (allDivs[j].textContent && allDivs[j].textContent.indexOf('Директор / Генподрядчик') !== -1 && allDivs[j].textContent.indexOf('БЫСТРЫЙ ВХОД В ДЕМО-РЕЖИМ') !== -1) {
-        allDivs[j].style.display = 'block';
-        if (allDivs[j].parentElement && getComputedStyle(allDivs[j].parentElement).display === 'none') {
-          allDivs[j].parentElement.style.display = 'block';
-        }
-        break;
-      }
-    }
-    window.scrollTo(0, 0);
-  }
-
+  // 1. Чистое открытие кабинета Директора, ПТО, Прораба и Подрядчика при клике
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('button');
     if (!btn) return;
-
-    if (btn.id === 'btn-launch-demo-v3' || btn.id === 'btn-s4-open-v3') {
-      openMainApp();
-      return;
-    }
-
-    if (btn.textContent.indexOf('О продукте') !== -1 || btn.textContent.indexOf('Презентация') !== -1) {
-      var landing = document.getElementById('saas-landing-page');
-      if (landing) landing.style.setProperty('display', 'block', 'important');
-      return;
-    }
-
-    // При клике на любую из 4 ролей проверяем через 50 мс, что рабочий кабинет открылся и не перекрыт
     var txt = btn.textContent || '';
-    if (txt.indexOf('Директор / Генподрядчик') !== -1 || txt.indexOf('Инженер ПТО') !== -1 || txt.indexOf('Прораб / Начальник') !== -1 || txt.indexOf('Подрядная организация') !== -1) {
-      setTimeout(function() {
-        var topKids = document.body.children;
-        for (var i = 0; i < topKids.length; i++) {
-          var el = topKids[i];
-          if (el.id === 'saas-landing-page' || el.id === 'special-role-overlay' || el.id === 'kpi-confirm-modal' || el.id === 'legal-doc-modal') continue;
-          if ((el.tagName === 'DIV' || el.tagName === 'MAIN') && getComputedStyle(el).display === 'none') {
-            el.style.display = 'block';
-          }
+
+    // Закрытие стартовой презентации
+    if (btn.id === 'btn-launch-demo-v3' || btn.id === 'btn-s4-open-v3') {
+      var landing = document.getElementById('saas-landing-page');
+      if (landing) landing.style.setProperty('display', 'none', 'important');
+      if (landing && landing.nextElementSibling) {
+        landing.nextElementSibling.style.display = 'block';
+      }
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // Возврат к презентации
+    if (txt.indexOf('О продукте') !== -1 || txt.indexOf('Презентация') !== -1) {
+      var landing2 = document.getElementById('saas-landing-page');
+      if (landing2) landing2.style.setProperty('display', 'block', 'important');
+      return;
+    }
+
+    // При выборе любой из 4 базовых ролей принудительно открываем внутренний контейнер кабинета
+    var roleMap = {
+      'Директор / Генподрядчик': 'director',
+      'Инженер ПТО': 'pto',
+      'Прораб / Начальник': 'foreman',
+      'Подрядная организация': 'contractor'
+    };
+
+    for (var label in roleMap) {
+      if (txt.indexOf(label) !== -1) {
+        var rKey = roleMap[label];
+        if (window._kpiCore && typeof window._kpiCore.setRole === 'function') {
+          window._kpiCore.setRole(rKey);
         }
-      }, 60);
+        setTimeout(function() {
+          var diagBtn = null;
+          var allB = document.querySelectorAll('button');
+          for (var i = 0; i < allB.length; i++) {
+            if (allB[i].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = allB[i]; break; }
+          }
+          if (diagBtn) {
+            var cur = diagBtn.parentElement;
+            while (cur && cur !== document.body) {
+              if (getComputedStyle(cur).display === 'none') {
+                cur.style.display = 'block';
+              }
+              cur = cur.parentElement;
+            }
+            if (rKey === 'director' || rKey === 'pto') {
+              diagBtn.click();
+            }
+          }
+        }, 50);
+        break;
+      }
     }
   }, true);
+
+  // 2. Однократное (без лагов!) переключение вкладок внутри Подрядчика по клику
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn || !btn.parentElement || btn.parentElement.id !== 'field-role-chat-bar') return;
+
+    var isWork = (btn.id === 'btn-field-work');
+    var bar = btn.parentElement;
+    var guideBox = document.getElementById('personal-role-guide-box');
+    var modPnl = document.getElementById('sub-module-panel');
+    var chatPnl = document.getElementById('view-field-chat-panel');
+
+    var sibs = bar.parentElement.children;
+    for (var i = 0; i < sibs.length; i++) {
+      var el = sibs[i];
+      if (el === guideBox || el === bar || el === modPnl || el === chatPnl || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+      el.style.display = isWork ? 'block' : 'none';
+    }
+  });
 })();
 </script>
+
 
 
 
