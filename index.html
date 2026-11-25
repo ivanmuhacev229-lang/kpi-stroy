@@ -4229,89 +4229,86 @@ function renderPortfolioTable() {
   if (b2) b2.onclick = closeLanding;
 })();
 </script>
-<!-- ФИНАЛЬНЫЙ СТАБИЛИЗАТОР КАБИНЕТОВ (БЕЗ ЛАГОВ И ПУСТЫХ ЭКРАНОВ) -->
+<!-- ЧИСТЫЕ 4 МОДУЛЯ ПОДРЯДЧИКА БЕЗ ЛАГОВ И ДВОЙНЫХ ТАЙМЕРОВ -->
 <script>
 (function() {
-  // 1. Чистое открытие кабинета Директора, ПТО, Прораба и Подрядчика при клике
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('button');
-    if (!btn) return;
-    var txt = btn.textContent || '';
+  function syncContractorBar() {
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    var bar = document.getElementById('field-role-chat-bar');
+    if (!bar) return;
 
-    // Закрытие стартовой презентации
-    if (btn.id === 'btn-launch-demo-v3' || btn.id === 'btn-s4-open-v3') {
-      var landing = document.getElementById('saas-landing-page');
-      if (landing) landing.style.setProperty('display', 'none', 'important');
-      if (landing && landing.nextElementSibling) {
-        landing.nextElementSibling.style.display = 'block';
-      }
-      window.scrollTo(0, 0);
+    if (role !== 'contractor') {
+      var subBtns = bar.querySelectorAll('.sub-mod-btn');
+      for (var i = 0; i < subBtns.length; i++) subBtns[i].style.display = 'none';
+      var modPnl = document.getElementById('sub-module-panel');
+      if (modPnl) modPnl.style.display = 'none';
       return;
     }
 
-    // Возврат к презентации
-    if (txt.indexOf('О продукте') !== -1 || txt.indexOf('Презентация') !== -1) {
-      var landing2 = document.getElementById('saas-landing-page');
-      if (landing2) landing2.style.setProperty('display', 'block', 'important');
-      return;
-    }
+    // Показываем кнопки подрядчика, если они были скрыты
+    var hiddenBtns = bar.querySelectorAll('.sub-mod-btn');
+    for (var h = 0; h < hiddenBtns.length; h++) hiddenBtns[h].style.display = 'inline-block';
 
-    // При выборе любой из 4 базовых ролей принудительно открываем внутренний контейнер кабинета
-    var roleMap = {
-      'Директор / Генподрядчик': 'director',
-      'Инженер ПТО': 'pto',
-      'Прораб / Начальник': 'foreman',
-      'Подрядная организация': 'contractor'
-    };
+    if (bar.dataset.cleanSubInit === '1') return;
+    bar.dataset.cleanSubInit = '1';
 
-    for (var label in roleMap) {
-      if (txt.indexOf(label) !== -1) {
-        var rKey = roleMap[label];
-        if (window._kpiCore && typeof window._kpiCore.setRole === 'function') {
-          window._kpiCore.setRole(rKey);
-        }
-        setTimeout(function() {
-          var diagBtn = null;
-          var allB = document.querySelectorAll('button');
-          for (var i = 0; i < allB.length; i++) {
-            if (allB[i].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = allB[i]; break; }
-          }
-          if (diagBtn) {
-            var cur = diagBtn.parentElement;
-            while (cur && cur !== document.body) {
-              if (getComputedStyle(cur).display === 'none') {
-                cur.style.display = 'block';
-              }
-              cur = cur.parentElement;
-            }
-            if (rKey === 'director' || rKey === 'pto') {
-              diagBtn.click();
-            }
-          }
-        }, 50);
-        break;
-      }
-    }
-  }, true);
+    var modPanel = document.getElementById('sub-module-panel') || document.createElement('div');
+    modPanel.id = 'sub-module-panel';
+    modPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:22px;margin-bottom:20px;border:1px solid #cbd5e1;';
+    if (!modPanel.parentElement) bar.insertAdjacentElement('afterend', modPanel);
 
-  // 2. Однократное (без лагов!) переключение вкладок внутри Подрядчика по клику
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('button');
-    if (!btn || !btn.parentElement || btn.parentElement.id !== 'field-role-chat-bar') return;
+    var btnKs = document.createElement('button');
+    btnKs.className = 'sub-mod-btn';
+    btnKs.textContent = '📑 Мои договоры и КС-2';
 
-    var isWork = (btn.id === 'btn-field-work');
-    var bar = btn.parentElement;
-    var guideBox = document.getElementById('personal-role-guide-box');
-    var modPnl = document.getElementById('sub-module-panel');
+    var btnProf = document.createElement('button');
+    btnProf.className = 'sub-mod-btn';
+    btnProf.textContent = '⭐ Мой рейтинг и ФНС (ИНН)';
+
+    bar.insertBefore(btnKs, bar.firstChild);
+    bar.appendChild(btnProf);
+
+    var btnWork = document.getElementById('btn-field-work');
+    var btnChat = document.getElementById('btn-field-chat');
     var chatPnl = document.getElementById('view-field-chat-panel');
+    var guideBox = document.getElementById('personal-role-guide-box');
 
-    var sibs = bar.parentElement.children;
-    for (var i = 0; i < sibs.length; i++) {
-      var el = sibs[i];
-      if (el === guideBox || el === bar || el === modPnl || el === chatPnl || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
-      el.style.display = isWork ? 'block' : 'none';
+    function activateSubTab(mode) {
+      var allBtns = bar.querySelectorAll('button');
+      for (var b = 0; b < allBtns.length; b++) {
+        allBtns[b].style.cssText = 'background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 16px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;';
+      }
+      var activeBtn = (mode === 'ks') ? btnKs : (mode === 'work' ? btnWork : (mode === 'chat' ? btnChat : btnProf));
+      if (activeBtn) {
+        activeBtn.style.background = '#2563eb';
+        activeBtn.style.color = '#fff';
+        activeBtn.style.borderColor = '#2563eb';
+      }
+
+      modPanel.style.display = (mode === 'ks' || mode === 'prof') ? 'block' : 'none';
+      if (chatPnl) chatPnl.style.display = (mode === 'chat') ? 'block' : 'none';
+
+      var sibs = bar.parentElement.children;
+      for (var s = 0; s < sibs.length; s++) {
+        var el = sibs[s];
+        if (el === guideBox || el === bar || el === modPanel || el === chatPnl || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+        el.style.display = (mode === 'work') ? 'block' : 'none';
+      }
+
+      if (mode === 'ks' && window._renderSubContracts) window._renderSubContracts(modPanel);
+      if (mode === 'prof' && window._renderSubProfile) window._renderSubProfile(modPanel);
+      if (mode === 'chat' && chatPnl && window._renderChatTab) window._renderChatTab(chatPnl);
     }
-  });
+
+    btnKs.onclick = function() { activateSubTab('ks'); };
+    if (btnWork) btnWork.onclick = function() { activateSubTab('work'); };
+    if (btnChat) btnChat.onclick = function() { activateSubTab('chat'); };
+    btnProf.onclick = function() { activateSubTab('prof'); };
+  }
+
+  setInterval(syncContractorBar, 600);
 })();
 </script>
 
