@@ -4336,6 +4336,30 @@ function renderPortfolioTable() {
   }, true);
 })();
 </script>
+<!-- ОСТАНОВКА МИГАНИЯ И ЛАГОВ У ПОДРЯДЧИКА -->
+<script>
+(function() {
+  // Останавливаем старые фоновые интервалы после первой загрузки интерфейса
+  setTimeout(function() {
+    var maxId = window.setInterval(function() {}, 99999);
+    for (var i = 1; i <= maxId; i++) {
+      window.clearInterval(i);
+    }
+
+    // Чистим возможные дубли кнопок у подрядчика один раз
+    var bar = document.getElementById('field-role-chat-bar');
+    if (bar) {
+      var seen = {};
+      var btns = bar.querySelectorAll('button');
+      for (var b = 0; b < btns.length; b++) {
+        var txt = btns[b].textContent.trim();
+        if (seen[txt]) btns[b].remove();
+        else seen[txt] = true;
+      }
+    }
+  }, 1500);
+})();
+</script>
 
 
 
