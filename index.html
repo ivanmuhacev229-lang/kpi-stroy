@@ -4336,30 +4336,176 @@ function renderPortfolioTable() {
   }, true);
 })();
 </script>
-<!-- ОСТАНОВКА МИГАНИЯ И ЛАГОВ У ПОДРЯДЧИКА -->
+<!-- ЕДИНЫЙ УМНЫЙ ИНИЦИАЛИЗАТОР ВСЕХ ВКЛАДОК И МОДУЛЕЙ БЕЗ МИГАНИЯ -->
 <script>
 (function() {
-  // Останавливаем старые фоновые интервалы после первой загрузки интерфейса
-  setTimeout(function() {
-    var maxId = window.setInterval(function() {}, 99999);
-    for (var i = 1; i <= maxId; i++) {
-      window.clearInterval(i);
+  var lastRenderedState = '';
+
+  function buildRoleUI() {
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+    if (role === 'guest') {
+      lastRenderedState = 'guest';
+      return;
     }
 
-    // Чистим возможные дубли кнопок у подрядчика один раз
-    var bar = document.getElementById('field-role-chat-bar');
-    if (bar) {
-      var seen = {};
-      var btns = bar.querySelectorAll('button');
-      for (var b = 0; b < btns.length; b++) {
-        var txt = btns[b].textContent.trim();
-        if (seen[txt]) btns[b].remove();
-        else seen[txt] = true;
+    // Проверяем, не отрисовали ли мы уже интерфейс для этой роли
+    var stateKey = role + '_' + (document.getElementById('tab-cloud-chat-btn') ? '1' : '0') + '_' + (document.getElementById('field-role-chat-bar') ? '1' : '0');
+    if (lastRenderedState === stateKey) return;
+
+    var diagBtn = null;
+    var btns = document.querySelectorAll('button');
+    for (var b = 0; b < btns.length; b++) {
+      if (btns[b].textContent.indexOf('Диагностика объекта') !== -1) { diagBtn = btns[b]; break; }
+    }
+    if (!diagBtn || !diagBtn.parentElement) return;
+    var nav = diagBtn.parentElement;
+
+    // 1. Для Директора и ПТО: добавляем Биржу, Штрафы, E2E-Чат и Команду один раз
+    if (role === 'director' || role === 'pto') {
+      // Прячем лишнюю вкладку подрядчика из меню директора/ПТО
+      for (var x = 0; x < nav.children.length; x++) {
+        if (nav.children[x].textContent.indexOf('Кабинет подрядчика') !== -1) {
+          nav.children[x].style.display = 'none';
+        }
+      }
+
+      function addDirTab(id, pnlId, title, renderFn) {
+        if (document.getElementById(id)) return;
+        var tBtn = document.createElement('button');
+        tBtn.id = id;
+        tBtn.className = diagBtn.className.replace('active', '').trim();
+        tBtn.textContent = title;
+        tBtn.style.cursor = 'pointer';
+
+        var pnl = document.createElement('div');
+        pnl.id = pnlId;
+        pnl.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;';
+        nav.parentElement.insertBefore(pnl, nav.nextSibling);
+        nav.appendChild(tBtn);
+
+        tBtn.onclick = function() {
+          for (var k = 0; k < nav.children.length; k++) nav.children[k].classList.remove('active');
+          tBtn.classList.add('active');
+          var root = nav.parentElement;
+          for (var j = 0; j < root.children.length; j++) {
+            var el = root.children[j];
+            if (el === nav || el.id === 'personal-role-guide-box' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+            el.style.display = (el === pnl) ? 'block' : 'none';
+          }
+          if (renderFn) renderFn(pnl);
+        };
+      }
+
+      addDirTab('tab-cloud-ex-btn', 'view-cloud-exchange', '🔍 Биржа подрядчиков', window._renderExchangeTab);
+      if (role === 'director') {
+        addDirTab('tab-cloud-pay-btn', 'view-cloud-penalties', '💰 Контроль штрафов', window._renderPenaltiesTab);
+      }
+      addDirTab('tab-cloud-chat-btn', 'view-cloud-chat', '💬 Защищенный чат', window._renderChatTab);
+      if (role === 'director') {
+        addDirTab('tab-cloud-team-btn', 'view-cloud-team', '👥 Команда', window._renderTeamTab);
+      }
+
+      // При возврате на стандартные вкладки скрываем наши облачные панели
+      for (var n = 0; n < nav.children.length; n++) {
+        var nb = nav.children[n];
+        if (nb.id.indexOf('tab-cloud-') !== 0 && !nb.dataset.cleanBack) {
+          nb.dataset.cleanBack = '1';
+          nb.addEventListener('click', function() {
+            var cPanels = ['view-cloud-exchange', 'view-cloud-penalties', 'view-cloud-chat', 'view-cloud-team'];
+            for (var p = 0; p < cPanels.length; p++) {
+              var pe = document.getElementById(cPanels[p]);
+              if (pe) pe.style.display = 'none';
+            }
+          });
+        }
       }
     }
-  }, 1500);
+
+    // 2. Для Прораба и Подрядчика: рисуем панель чата и 4 модуля без мигания
+    if ((role === 'foreman' || role === 'contractor') && !document.getElementById('field-role-chat-bar')) {
+      var bar = document.createElement('div');
+      bar.id = 'field-role-chat-bar';
+      bar.style.cssText = 'display:flex;gap:10px;margin:12px 0 18px;flex-wrap:wrap;';
+
+      var modPanel = document.createElement('div');
+      modPanel.id = 'sub-module-panel';
+      modPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:22px;margin-bottom:20px;border:1px solid #cbd5e1;';
+
+      var chatPanel = document.createElement('div');
+      chatPanel.id = 'view-field-chat-panel';
+      chatPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:22px;margin-bottom:20px;border:1px solid #cbd5e1;';
+
+      var btnKs = document.createElement('button');
+      btnKs.textContent = '📑 Мои договоры и КС-2';
+      btnKs.style.display = (role === 'contractor') ? 'inline-block' : 'none';
+
+      var btnWork = document.createElement('button');
+      btnWork.id = 'btn-field-work';
+      btnWork.textContent = '📋 Рабочий экран и отчеты';
+
+      var btnChat = document.createElement('button');
+      btnChat.id = 'btn-field-chat';
+      btnChat.textContent = '💬 Защищенный чат (E2E)';
+
+      var btnProf = document.createElement('button');
+      btnProf.textContent = '⭐ Мой рейтинг и ФНС (ИНН)';
+      btnProf.style.display = (role === 'contractor') ? 'inline-block' : 'none';
+
+      bar.appendChild(btnKs);
+      bar.appendChild(btnWork);
+      bar.appendChild(btnChat);
+      bar.appendChild(btnProf);
+
+      nav.insertAdjacentElement('afterend', bar);
+      bar.insertAdjacentElement('afterend', modPanel);
+      modPanel.insertAdjacentElement('afterend', chatPanel);
+
+      function switchFieldTab(mode) {
+        var all = [btnKs, btnWork, btnChat, btnProf];
+        for (var i = 0; i < all.length; i++) {
+          if (all[i].style.display === 'none') continue;
+          all[i].style.cssText = 'background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:10px 16px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;';
+        }
+        var active = (mode === 'ks') ? btnKs : (mode === 'work' ? btnWork : (mode === 'chat' ? btnChat : btnProf));
+        active.style.background = '#2563eb';
+        active.style.color = '#fff';
+        active.style.borderColor = '#2563eb';
+
+        modPanel.style.display = (mode === 'ks' || mode === 'prof') ? 'block' : 'none';
+        chatPanel.style.display = (mode === 'chat') ? 'block' : 'none';
+
+        var root = bar.parentElement;
+        for (var j = 0; j < root.children.length; j++) {
+          var el = root.children[j];
+          if (el === nav || el === bar || el === modPanel || el === chatPanel || el.id === 'personal-role-guide-box' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+          el.style.display = (mode === 'work') ? 'block' : 'none';
+        }
+
+        if (mode === 'ks' && window._renderSubContracts) window._renderSubContracts(modPanel);
+        if (mode === 'prof' && window._renderSubProfile) window._renderSubProfile(modPanel);
+        if (mode === 'chat' && window._renderChatTab) window._renderChatTab(chatPanel);
+      }
+
+      btnKs.onclick = function() { switchFieldTab('ks'); };
+      btnWork.onclick = function() { switchFieldTab('work'); };
+      btnChat.onclick = function() { switchFieldTab('chat'); };
+      btnProf.onclick = function() { switchFieldTab('prof'); };
+      switchFieldTab('work');
+    }
+
+    lastRenderedState = role + '_' + (document.getElementById('tab-cloud-chat-btn') ? '1' : '0') + '_' + (document.getElementById('field-role-chat-bar') ? '1' : '0');
+  }
+
+  // Запускаем проверку при каждом клике по кнопкам выбора роли (без бесконечного мерцания)
+  document.addEventListener('click', function() {
+    setTimeout(buildRoleUI, 80);
+  }, true);
+  setTimeout(buildRoleUI, 300);
 })();
 </script>
+
 
 
 
