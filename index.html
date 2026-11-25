@@ -2848,56 +2848,52 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- СТАНДАРТИЗАЦИЯ ПО ОКВЭД 2 (РАЗДЕЛ F) И ПРОВЕРКА КОНТРОЛЬНОЙ СУММЫ ИНН ФНС -->
+<!-- СТАНДАРТИЗАЦИЯ ПО ОКВЭД 2 И ПРОВЕРКА ИНН ФНС (ИСПРАВЛЕННАЯ) -->
 <script>
 (function() {
   var app = window._cloudApp;
   if (!app) return;
 
-  // Официальный справочник строительных кодов ОКВЭД 2
-  var OKVED_LIST = [
-    { code: '41.20', name: '41.20 — Строительство жилых и нежилых зданий (Монолит / Коробка)' },
-    { code: '43.12', name: '43.12 — Подготовка строительной площадки и земляные работы' },
-    { code: '42.21', name: '42.21 — Строительство наружных инженерных сетей (Вода / Канализация)' },
-    { code: '43.21', name: '43.21 — Производство электромонтажных работ' },
-    { code: '43.22', name: '43.22 — Сантехнические работы, отопление и вентиляция (ОВиК)' },
-    { code: '43.91', name: '43.91 — Производство кровельных работ' },
-    { code: '43.99', name: '43.99 — Фасадные работы и монтаж металлоконструкций' },
-    { code: '43.31', name: '43.31–43.34 — Внутренние отделочные, штукатурные и малярные работы' },
-    { code: '42.11', name: '42.11 — Строительство автомобильных дорог и благоустройство' }
-  ];
+  var OKVED_LIST = new Array(
+    '41.20 — Строительство жилых и нежилых зданий (Монолит / Коробка)',
+    '43.12 — Подготовка строительной площадки и земляные работы',
+    '42.21 — Строительство наружных инженерных сетей (Вода / Канализация)',
+    '43.21 — Производство электромонтажных работ',
+    '43.22 — Сантехнические работы, отопление и вентиляция (ОВиК)',
+    '43.91 — Производство кровельных работ',
+    '43.99 — Фасадные работы и монтаж металлоконструкций',
+    '43.31 — Внутренние отделочные, штукатурные и малярные работы',
+    '42.11 — Строительство автомобильных дорог и благоустройство'
+  );
 
-  // Проверка контрольной суммы ИНН по алгоритму ФНС России (защита от случайных цифр)
   function isValidInnFNS(inn) {
     if (!/^\d{10}$|^\d{12}$/.test(inn)) return false;
     var d = inn.split('').map(Number);
     if (d.length === 10) {
-      var w10 =;
-      var s10 = w10.reduce(function(acc, w, idx) { return acc + w * d[idx]; }, 0);
-      return ((s10 % 11) % 10) === d[9];
+      var w10 = new Array(2, 4, 10, 3, 5, 9, 4, 6, 8);
+      var s10 = w10.reduce(function(acc, w, idx) { return acc + w * d.at(idx); }, 0);
+      return ((s10 % 11) % 10) === d.at(9);
     } else {
-      var w11 =;
-      var w12 =;
-      var s11 = w11.reduce(function(acc, w, idx) { return acc + w * d[idx]; }, 0);
-      var s12 = w12.reduce(function(acc, w, idx) { return acc + w * d[idx]; }, 0);
-      return (((s11 % 11) % 10) === d[10]) && (((s12 % 11) % 10) === d[11]);
+      var w11 = new Array(7, 2, 4, 10, 3, 5, 9, 4, 6, 8);
+      var w12 = new Array(3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8);
+      var s11 = w11.reduce(function(acc, w, idx) { return acc + w * d.at(idx); }, 0);
+      var s12 = w12.reduce(function(acc, w, idx) { return acc + w * d.at(idx); }, 0);
+      return (((s11 % 11) % 10) === d.at(10)) && (((s12 % 11) % 10) === d.at(11));
     }
   }
 
-  // Переопределяем форму регистрации с выбором ОКВЭД 2 и строгой валидацией
   window._bindSecReg = function(onSuccess) {
     var regBtn = document.getElementById('rg-b');
     var typeSel = document.getElementById('rg-t');
     if (!regBtn || !typeSel) return;
 
-    // Вставляем выбор кода ОКВЭД 2 прямо перед кнопкой отправки
     if (!document.getElementById('rg-okved')) {
       var okWrap = document.createElement('div');
       okWrap.id = 'rg-okved-wrap';
       okWrap.style.marginBottom = '10px';
-      var opts = OKVED_LIST.map(function(o) { return '<option value="' + o.name + '">' + o.name + '</option>'; }).join('');
+      var opts = OKVED_LIST.map(function(o) { return '<option value="' + o + '">' + o + '</option>'; }).join('');
       okWrap.innerHTML =
-        '<label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Профильный код ОКВЭД 2 (для каталога и БД):</label>' +
+        '<label style="display:block;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Профильный код ОКВЭД 2 (Раздел F «Строительство»):</label>' +
         '<select id="rg-okved" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:12.5px;background:#fff;">' + opts + '</select>';
       typeSel.insertAdjacentElement('afterend', okWrap);
     }
@@ -2910,8 +2906,8 @@ function renderPortfolioTable() {
       var t = typeSel.value;
       var okved = document.getElementById('rg-okved').value;
 
-      if (n.length < 3) return alert('⚠️ Укажите корректное официальное наименование организации.');
-      if (!isValidInnFNS(inn)) return alert('⚠️ Ошибка проверки ИНН! Введенный ИНН не проходит проверку контрольного числа ФНС России. Проверьте цифры.');
+      if (n.length < 3) return alert('⚠️ Укажите корректное название организации.');
+      if (!isValidInnFNS(inn)) return alert('⚠️ Ошибка ИНН! Номер не проходит проверку контрольного числа ФНС России.');
       if (person.length < 4) return alert('⚠️ Укажите ФИО и должность ответственного лица.');
       if (phone.length < 6) return alert('⚠️ Укажите рабочий телефон или ник в Telegram / MAX.');
 
@@ -2925,7 +2921,7 @@ function renderPortfolioTable() {
         })
       }).then(function(res) {
         if (Array.isArray(res) && res.length) {
-          alert('✅ Заявка принята! ИНН прошел проверку формата ФНС, профиль ОКВЭД зафиксирован.\n\nВаш временный код песочницы: ' + testCode);
+          alert('✅ Заявка принята! ИНН проверен по алгоритму ФНС, код ОКВЭД 2 записан в БД.\n\nВременный код песочницы: ' + testCode);
           if (onSuccess) onSuccess();
         } else {
           alert('⚠️ Организация с ИНН ' + inn + ' уже зарегистрирована или ожидает проверки.');
@@ -2934,8 +2930,13 @@ function renderPortfolioTable() {
       });
     };
   };
+
+  if (document.getElementById('rg-b') && window._drawSecAuth) {
+    window._bindSecReg(function() { window._drawSecAuth(); });
+  }
 })();
 </script>
+
 
 </body>
 </html>
