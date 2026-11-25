@@ -3081,6 +3081,32 @@ function renderPortfolioTable() {
   }, 300);
 })();
 </script>
+<!-- ЧИСТЫЙ ОБРАБОТЧИК КНОПКИ ГЕНЕРАЦИИ КЛЮЧА ЯНДЕКС КЛЮЧА -->
+<script>
+(function() {
+  setInterval(function() {
+    var btn = document.getElementById('btn-gen-totp') || document.getElementById('btn-run-totp-qr');
+    if (btn && !btn.dataset.cleanTotp) {
+      btn.dataset.cleanTotp = '1';
+      btn.onclick = function() {
+        var sec = window._generateTotpSecret ? window._generateTotpSecret() : 'JBSWY3DPEHPK3PXP';
+        localStorage.setItem('kpistroy_totp_secret', sec);
+        var area = document.getElementById('totp-qr-area') || document.getElementById('totp-qr-box');
+        if (!area) return;
+        var uri = 'otpauth://totp/StroyEffectKPI:Director?secret=' + sec + '&issuer=StroyEffectKPI';
+        area.innerHTML =
+          '<div style="background:#fff;padding:14px;border-radius:10px;border:1px solid #cbd5e1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+            '<div style="text-align:center;">' +
+              '<img src="https://quickchart.io' + encodeURIComponent(uri) + '" width="130" height="130" style="display:block;margin:0 auto 6px;border-radius:6px;" onerror="this.style.display=\'none\'">' +
+              '<button type="button" onclick="navigator.clipboard.writeText(\'' + sec + '\');alert(\'✅ Ключ скопирован! Вставьте его в Яндекс Ключ → Ввести ключ вручную.\')" style="background:#0f172a;color:#fff;border:none;padding:7px 12px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">📋 Скопировать ключ</button>' +
+            '</div>' +
+            '<div style="font-size:13px;color:#0f172a;line-height:1.55;"><strong>1.</strong> Откройте <strong>Яндекс Ключ</strong> или <strong>Google Authenticator</strong>.<br><strong>2.</strong> Нажмите «+» → «Сканировать QR-код» или «Ввести ключ вручную»:<br><code style="background:#f1f5f9;padding:3px 8px;border-radius:6px;font-weight:700;font-size:14px;color:#2563eb;">' + sec + '</code><br><strong>3.</strong> Готово! При следующем входе система проверит 6 цифр с вашего телефона.</div>' +
+          '</div>';
+      };
+    }
+  }, 400);
+})();
+</script>
 
 
 </body>
