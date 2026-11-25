@@ -1759,6 +1759,146 @@ function renderPortfolioTable() {
 })();
 </script>
 <div style="text-align:center;font-size:12px;color:#64748b;padding:18px;border-top:1px solid #e2e8f0;">© 2026 Программный комплекс «СтройЭффект KPI» (kpistroy.ru) • Мухачев Иван (СГУПС, ПГС) • Политика ПДн (152-ФЗ)</div>
+<!-- ПАТЧ СТРОГОЙ ИЗОЛЯЦИИ ПРАВ (ЧАСТЬ 1 ИЗ 2) -->
+<script>
+(function() {
+  // 1. Гарантируем правильный адрес облачной базы Supabase
+  if (window._cloudApp) {
+    var SB_URL_OK = 'https://supabase.co';
+    var SB_KEY_OK = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
+    window._cloudApp.sb = function(path, opts) {
+      opts = opts || {};
+      var headers = Object.assign({ 'apikey': SB_KEY_OK, 'Authorization': 'Bearer ' + SB_KEY_OK, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, opts.headers || {});
+      return fetch(SB_URL_OK + path, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
+    };
+  }
+
+  // 2. Добавляем кнопку «📊 Презентация» в верхнюю шапку, чтобы её всегда можно было открыть
+  var hdrRight = document.querySelector('.header-right');
+  if (hdrRight && !document.getElementById('btn-show-pres-hdr')) {
+    var pBtn = document.createElement('button');
+    pBtn.id = 'btn-show-pres-hdr';
+    pBtn.className = 'btn-header';
+    pBtn.textContent = '📊 О продукте / Тарифы';
+    pBtn.onclick = function() {
+      var l = document.getElementById('saas-landing-page');
+      if (l) { l.style.display = 'block'; window.scrollTo(0, 0); }
+    };
+    hdrRight.insertBefore(pBtn, hdrRight.firstChild);
+  }
+
+  // 3. Жесткая изоляция прав Прораба и ПТО при каждой отрисовке
+  setInterval(function() {
+    var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : 'guest';
+    if (r === 'guest') return;
+
+    // У ПТО скрываем "+ Новый объект" (только Директор создает объекты)
+    var addObjBtn = document.getElementById('btnAddNewObj');
+    if (addObjBtn) addObjBtn.style.display = (r === 'director') ? 'inline-flex' : 'none';
+
+    // У Прораба жестко скрываем маржу (MEI), кнопки Сохранить/PDF и правую колонку с финансами
+    if (r === 'prorab') {
+      document.querySelectorAll('button').forEach(function(b) {
+        var t = b.textContent;
+        if (t.indexOf('Сохранить изменения') !== -1 || t.indexOf('PDF') !== -1 || t.indexOf('Сбросить демо') !== -1) {
+          b.style.display = 'none';
+        }
+      });
+      // Скрываем таблицу KPI с маржой MEI и график снижения маржи от Прораба
+      var kpiTbl = document.getElementById('kpiTableBody');
+      if (kpiTbl && kpiTbl.closest('.card')) kpiTbl.closest('.card').style.display = 'none';
+      var chartsCard = document.getElementById('chartsCard');
+      if (chartsCard) chartsCard.style.display = 'none';
+      var recBox = document.getElementById('recommendationsContainer');
+      if (recBox && recBox.closest('.card')) recBox.closest('.card').style.display = 'none';
+
+      // Добавляем форму отправки фотоотчета Прораба на согласование
+      var inpCont = document.getElementById('inputsContainer');
+      if (inpCont && !document.getElementById('prorab-submit-card')) {
+        var sCard = document.createElement('div');
+        sCard.id = 'prorab-submit-card';
+        sCard.style.cssText = 'margin-top:16px;padding:16px;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;';
+        sCard.innerHTML = '<strong>📤 Отправка данных с площадки в ПТО и Директору</strong><textarea id="pr-comm" rows="2" placeholder="Комментарий по смене, простоям или фотофиксации..." style="width:100%;margin:8px 0;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></textarea><button id="pr-send-btn" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;">Отправить на согласование</button>';
+        inpCont.parentElement.appendChild(sCard);
+        document.getElementById('pr-send-btn').onclick = function() {
+          alert('✅ Оперативные данные по участку отправлены на проверку инженеру ПТО и Директору!');
+          document.getElementById('pr-comm').value = '';
+        };
+      }
+    } else {
+      var kpiTbl2 = document.getElementById('kpiTableBody');
+      if (kpiTbl2 && kpiTbl2.closest('.card')) kpiTbl2.closest('.card').style.removeProperty('display');
+      var chartsCard2 = document.getElementById('chartsCard');
+      if (chartsCard2) chartsCard2.style.removeProperty('display');
+      var recBox2 = document.getElementById('recommendationsContainer');
+      if (recBox2 && recBox2.closest('.card')) recBox2.closest('.card').style.removeProperty('display');
+    }
+  }, 350);
+})();
+</script>
+<!-- ПАТЧ СТРОГОЙ ИЗОЛЯЦИИ ПРАВ (ЧАСТЬ 2 ИЗ 2): ВКЛАДКИ ФИНАНСИСТА И ИНВЕСТОРА -->
+<script>
+(function() {
+  var origSpec = window._openSpecialOverlay;
+  if (!origSpec) return;
+
+  window._openSpecialOverlay = function(spec) {
+    origSpec(spec);
+    var body = document.getElementById('spec-body');
+    if (!body) return;
+
+    var tabBar = document.createElement('div');
+    tabBar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:10px;background:#fff;border:1px solid #cbd5e1;border-radius:12px;';
+
+    var contentArea = document.createElement('div');
+    var prevHtml = body.innerHTML;
+    body.innerHTML = '';
+    body.appendChild(tabBar);
+    body.appendChild(contentArea);
+
+    function addSpecTab(label, active, onClick) {
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'padding:9px 15px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid ' + (active ? '#0f172a' : '#e2e8f0') + ';background:' + (active ? '#0f172a' : '#f8fafc') + ';color:' + (active ? '#fff' : '#0f172a') + ';';
+      b.onclick = function() {
+        tabBar.querySelectorAll('button').forEach(function(x) { x.style.background = '#f8fafc'; x.style.color = '#0f172a'; x.style.borderColor = '#e2e8f0'; });
+        b.style.background = '#0f172a'; b.style.color = '#fff'; b.style.borderColor = '#0f172a';
+        onClick();
+      };
+      tabBar.appendChild(b);
+    }
+
+    if (spec === 'finance') {
+      addSpecTab('💰 ДДС и Контроль штрафов (CAPA)', true, function() {
+        contentArea.innerHTML = prevHtml;
+        if (window._renderPenaltiesTab) window._renderPenaltiesTab(document.getElementById('fin-p-box'));
+      });
+      addSpecTab('📦 Остатки лимитов материалов', false, function() {
+        contentArea.innerHTML = '<div style="background:#fff;padding:22px;border-radius:12px;border:1px solid #cbd5e1;"><h3 style="margin-top:0;">📦 Контроль закупок по сметным лимитам (Контур без 1С)</h3><p style="font-size:13.5px;color:#475569;">• <strong>Бетон В25:</strong> Лимит 1 200 м³ • Закуплено 1 161 м³ • Остаток: <strong style="color:#d97706;">39.0 м³ 🟡</strong><br>• <strong>Арматура А500С:</strong> Лимит 180 т • Закуплено 142 т • Остаток: <strong style="color:#16a34a;">38.0 т 🟢</strong></p></div>';
+      });
+      addSpecTab('💬 Защищенный чат (E2E)', false, function() {
+        contentArea.innerHTML = '<div id="fin-chat-mount" style="background:#fff;padding:18px;border-radius:12px;"></div>';
+        if (window._renderChatTab) window._renderChatTab(document.getElementById('fin-chat-mount'));
+      });
+      contentArea.innerHTML = prevHtml;
+      if (window._renderPenaltiesTab) window._renderPenaltiesTab(document.getElementById('fin-p-box'));
+    } else {
+      addSpecTab('📊 Индекс здоровья и Вехи стройки', true, function() {
+        contentArea.innerHTML = prevHtml;
+      });
+      addSpecTab('📈 Освоение инвестиций (План / Факт)', false, function() {
+        contentArea.innerHTML = '<div style="background:#fff;padding:22px;border-radius:12px;border:1px solid #cbd5e1;"><h3 style="margin-top:0;">📈 Динамика освоения бюджета (Режим прозрачности)</h3><p style="font-size:14px;color:#334155;line-height:1.8;">• <strong>Общий бюджет проекта:</strong> 680 000 тыс. ₽<br>• <strong>Освоено и подтверждено КС-2:</strong> 440 640 тыс. ₽ (64.8%)<br>• <strong>Отклонение от графика (SPI):</strong> 0.96 (в пределах нормы, без критических задержек)</p></div>';
+      });
+      addSpecTab('💬 Чат с Гендиректором (E2E)', false, function() {
+        contentArea.innerHTML = '<div id="inv-chat-mount" style="background:#fff;padding:18px;border-radius:12px;"></div>';
+        if (window._renderChatTab) window._renderChatTab(document.getElementById('inv-chat-mount'));
+      });
+      contentArea.innerHTML = prevHtml;
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
 
