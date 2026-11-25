@@ -4497,16 +4497,19 @@ function renderPortfolioTable() {
 
     lastRenderedState = role + '_' + (document.getElementById('tab-cloud-chat-btn') ? '1' : '0') + '_' + (document.getElementById('field-role-chat-bar') ? '1' : '0');
   }
+ 
+  // Останавливаем старые мигающие таймеры и запускаем чистую отрисовку по клику
+  setTimeout(function() {
+    var maxId = window.setInterval(function() {}, 99999);
+    for (var i = 1; i <= maxId; i++) window.clearInterval(i);
+    buildRoleUI();
+  }, 600);
 
-  // Запускаем проверку при каждом клике по кнопкам выбора роли (без бесконечного мерцания)
   document.addEventListener('click', function() {
     setTimeout(buildRoleUI, 80);
   }, true);
-  setTimeout(buildRoleUI, 300);
 })();
 </script>
-
-
 
 
 
