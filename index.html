@@ -4548,22 +4548,65 @@ function renderPortfolioTable() {
     }
   }
 
+   function fullSyncAll() {
+    renderCurrentRole();
+
+    var c = window._kpiCore;
+    if (!c) return;
+    var role = c.getRole();
+
+    // 1. У Подрядчика прячем верхнюю строку вкладок Генподрядчика (Диагностика / Рейтинг)
+    if (role === 'contractor') {
+      var btns = document.querySelectorAll('button');
+      for (var b = 0; b < btns.length; b++) {
+        if (btns[b].textContent.indexOf('Диагностика объекта') !== -1 && btns[b].parentElement) {
+          btns[b].parentElement.style.display = 'none';
+          break;
+        }
+      }
+    }
+
+    // 2. Показываем персональную должностную инструкцию сверху в каждом кабинете
+    if (role !== 'guest' && !document.getElementById('clean-role-guide-banner')) {
+      var guides = {
+        director: '👔 <strong>Ваша должностная инструкция (Гендиректор):</strong> Контролируйте индекс потерь, согласовывайте красные заявки и штрафы (CAPA), управляйте командой и фиксируйте срезы месяца. • <em>Регламент: еженедельный контроль по пятницам.</em>',
+        pto: '📐 <strong>Ваша должностная инструкция (Инженер ПТО):</strong> Проверяйте объемы закрытия КС-2, контролируйте перерасход материалов (MVR) и отбирайте подрядчиков на Бирже. • <em>Регламент ввода: каждый вторник и четверг.</em>',
+        foreman: '👷 <strong>Ваша должностная инструкция (Прораб):</strong> Фиксируйте простои техники, выработку бригад и прикладывайте фотоотчеты со стройплощадки. • <em>Регламент ввода: каждую пятницу до 16:00.</em>',
+        contractor: '🤝 <strong>Ваша должностная инструкция (Подрядчик):</strong> Отслеживайте закрытие актов КС-2, подавайте оперативные отчеты по объемам и поддерживайте рейтинг ФНС. • <em>Регламент ввода: 15-го и 25-го числа месяца.</em>'
+      };
+      var headerBar = document.querySelector('header') || document.body.firstElementChild;
+      var anchor = document.getElementById('field-role-chat-bar') || document.getElementById('tab-cloud-ex-btn');
+      if (anchor && anchor.parentElement && guides[role]) {
+        var gBox = document.createElement('div');
+        gBox.id = 'clean-role-guide-banner';
+        gBox.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13px;color:#1e3a8a;';
+        gBox.innerHTML = guides[role];
+        var targetParent = (role === 'director' || role === 'pto') ? anchor.parentElement.parentElement : anchor.parentElement;
+        if (targetParent) targetParent.insertBefore(gBox, targetParent.firstChild);
+      }
+    }
+  }
+
   setTimeout(function() {
     var maxId = window.setInterval(function() {}, 99999);
     for (var i = 1; i <= maxId; i++) window.clearInterval(i);
-    renderCurrentRole();
-  }, 500);
+    fullSyncAll();
+    setTimeout(fullSyncAll, 250);
+  }, 450);
 
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('button');
     if (!btn) return;
-    var txt = btn.textContent || '';
-    if (txt.indexOf('Сменить роль') !== -1 || txt.indexOf('Директор / Генподрядчик') !== -1 || txt.indexOf('Инженер ПТО') !== -1 || txt.indexOf('Прораб / Начальник') !== -1 || txt.indexOf('Подрядная организация') !== -1 || btn.id === 'btn-2fa-verify') {
-      setTimeout(renderCurrentRole, 100);
+    var oldGuide = document.getElementById('clean-role-guide-banner');
+    if (oldGuide && (btn.textContent.indexOf('Сменить роль') !== -1 || btn.textContent.indexOf('Директор') !== -1 || btn.textContent.indexOf('ПТО') !== -1 || btn.textContent.indexOf('Прораб') !== -1 || btn.textContent.indexOf('Подрядная') !== -1)) {
+      oldGuide.remove();
     }
+    setTimeout(fullSyncAll, 90);
+    setTimeout(fullSyncAll, 280);
   }, true);
 })();
 </script>
+
 
 
 
