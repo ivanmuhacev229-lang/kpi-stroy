@@ -1379,270 +1379,7 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 3: УПРАВЛЕНИЕ РОЛЯМИ И АУДИТ РУЧНЫХ ИЗМЕНЕНИЙ -->
-<script>
-(function() {
-  var lastSnapshot = null;
-
-  function captureSnapshot() {
-    var inps = document.querySelectorAll('input[type="number"]');
-    if (inps.length < 16) return null;
-    var arr = new Array();
-    for (var i = 0; i < 16; i++) arr.push(inps.item(i).value);
-    return arr;
-  }
-
-  setInterval(function() {
-    var c = window._kpiCore;
-    if (!c) return;
-    var role = c.getRole();
-    if (role === 'guest') return;
-
-    if (!lastSnapshot) lastSnapshot = captureSnapshot();
-
-    var diagBtn = null, subTabBtn = null, saveBtn = null, sendSubBtn = null;
-    var btns = document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      var t = btns[i].textContent;
-      if (t.indexOf('Диагностика объекта') !== -1) diagBtn = btns[i];
-      if (t.indexOf('Кабинет подрядчика') !== -1) subTabBtn = btns[i];
-      if (t.indexOf('Сохранить изменения') !== -1) saveBtn = btns[i];
-      if (t.indexOf('Отправить отчет Генподрядчику') !== -1) sendSubBtn = btns[i];
-    }
-    if (!diagBtn || !diagBtn.parentElement) return;
-    var nav = diagBtn.parentElement;
-
-    // Перехват кнопки "Сохранить изменения" у Директора и ПТО для записи в Журнал аудита
-    if (saveBtn && !saveBtn.dataset.auditHooked) {
-      saveBtn.dataset.auditHooked = '1';
-      saveBtn.addEventListener('click', function() {
-        var r = c.getRole();
-        if (r !== 'director' && r !== 'pto') return;
-        var cur = captureSnapshot();
-        var names = new Array('Бюджет', 'План. прибыль', 'Факт. прибыль', 'Инфляция', 'Накладные', 'Раб. дней', 'Аренда техники', 'Штраф/дн', 'Дни простоя', 'Срок КС-2', 'НЗП без КС-2', 'Ставка %', 'Общий ФОТ', 'Брак ФОТ', 'Предъявлено', 'Принято с 1-го раза');
-        var diffs = new Array();
-        if (lastSnapshot && cur) {
-          for (var k = 0; k < 16; k++) {
-            if (lastSnapshot.at(k) !== cur.at(k)) diffs.push(names.at(k) + ': ' + lastSnapshot.at(k) + ' → ' + cur.at(k));
-          }
-        }
-        if (diffs.length > 0) {
-          var reason = prompt('Вы изменили показатели:\n' + diffs.join(', ') + '\n\nУкажите причину корректировки для Журнала изменений:', 'Корректировка по данным бухгалтерии / ПТО');
-          var now = new Date();
-          var tStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-          var sel = document.querySelector('select');
-          var oName = sel ? sel.options[sel.selectedIndex].text.split(' (').at(0) : 'ЖК Онега';
-          c.hist.unshift({
-            time: 'Сегодня, ' + tStr,
-            user: (r === 'director' ? 'Директор' : 'Инженер ПТО'),
-            obj: oName,
-            changes: diffs.join('; '),
-            reason: reason || 'Без указания причины'
-          });
-          c.save();
-          lastSnapshot = cur;
-        }
-      });
-    }
-
-    var auditBtn = document.getElementById('tab-audit-btn');
-    var auditPanel = document.getElementById('view-audit-panel');
-
-    if (!auditBtn) {
-      auditBtn = document.createElement('button');
-      auditBtn.id = 'tab-audit-btn';
-      auditBtn.className = diagBtn.className.replace('active', '').trim();
-      auditBtn.style.cursor = 'pointer';
-
-      auditPanel = document.createElement('div');
-      auditPanel.id = 'view-audit-panel';
-      auditPanel.style.cssText = 'display:none;background:#fff;border-radius:12px;padding:24px;margin-top:20px;border:1px solid #e2e8f0;';
-
-      nav.parentElement.insertBefore(auditPanel, nav.nextSibling);
-      nav.appendChild(auditBtn);
-
-      auditBtn.addEventListener('click', function() {
-        var ch = nav.children;
-        for (var k = 0; k < ch.length; k++) ch[k].classList.remove('active');
-        auditBtn.classList.add('active');
-        var sibs = nav.parentElement.children;
-        for (var j = 0; j < sibs.length; j++) {
-          if (sibs[j] !== nav && sibs[j] !== auditPanel && sibs[j].tagName === 'DIV') sibs[j].style.setProperty('display', 'none', 'important');
-        }
-        auditPanel.style.display = 'block';
-        if (window._renderAuditTab) window._renderAuditTab();
-      });
-
-      var navBtns = nav.children;
-      for (var n = 0; n < navBtns.length; n++) {
-        if (navBtns[n] !== auditBtn) {
-          navBtns[n].addEventListener('click', function() {
-            auditBtn.classList.remove('active');
-            auditPanel.style.display = 'none';
-            var sibs = nav.parentElement.children;
-            for (var j = 0; j < sibs.length; j++) {
-              if (sibs[j] !== nav && sibs[j] !== auditPanel && sibs[j].tagName === 'DIV') sibs[j].style.removeProperty('display');
-            }
-          });
-        }
-      }
-    }
-
-    var pend = 0;
-    for (var p = 0; p < c.wf.length; p++) { if (c.wf.at(p).status === 'pending') pend++; }
-    auditBtn.textContent = pend > 0 ? ('🔔 Согласование (' + pend + ') и Журнал') : '📜 Журнал и Согласование';
-
-    var fBox = document.getElementById('foreman-chat-box');
-    var sBox = document.getElementById('contractor-chat-box');
-
-    if (role === 'contractor') {
-      nav.style.removeProperty('display');
-      if (subTabBtn && !subTabBtn.classList.contains('active')) subTabBtn.click();
-      nav.style.setProperty('display', 'none', 'important');
-      if (auditPanel) auditPanel.style.display = 'none';
-      if (fBox) fBox.style.setProperty('display', 'none', 'important');
-      c.renderBox('contractor-chat-box', sendSubBtn, 'contractor');
-      return;
-    }
-
-    if (role === 'foreman') {
-      nav.style.removeProperty('display');
-      if (!diagBtn.classList.contains('active')) diagBtn.click();
-      nav.style.setProperty('display', 'none', 'important');
-      if (auditPanel) auditPanel.style.display = 'none';
-      if (sBox) sBox.style.setProperty('display', 'none', 'important');
-      c.cfgForeman(true);
-      c.renderBox('foreman-chat-box', saveBtn, 'foreman');
-      return;
-    }
-
-    nav.style.removeProperty('display');
-    if (fBox) fBox.style.setProperty('display', 'none', 'important');
-    if (sBox) sBox.style.setProperty('display', 'none', 'important');
-    c.cfgForeman(false);
-  }, 400);
-})();
-</script>
-
-    <!-- ФИНАЛЬНАЯ СБОРКА - БЛОК 4.1: EXCEL (ДИРЕКТОР И ПТО) -->
-<script>
-(function() {
-  setInterval(function() {
-    var c = window._kpiCore;
-    if (!c) return;
-    var role = c.getRole();
-    if (role === 'guest') return;
-
-    var canImport = (role === 'director' || role === 'pto');
-    var impBtn = document.getElementById('btn-import-xlsx');
-    var tplBtn = document.getElementById('btn-tpl-xlsx');
-
-    if (!canImport) {
-      if (impBtn) impBtn.style.setProperty('display', 'none', 'important');
-      if (tplBtn) tplBtn.style.setProperty('display', 'none', 'important');
-      return;
-    }
-
-    if (impBtn && tplBtn) {
-      impBtn.style.removeProperty('display');
-      tplBtn.style.removeProperty('display');
-      return;
-    }
-
-    var saveBtn = null;
-    var btns = document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.indexOf('Сохранить изменения') !== -1) { saveBtn = btns[i]; break; }
-    }
-    if (!saveBtn || !saveBtn.parentElement) return;
-
-    var bar = saveBtn.parentElement;
-    var fInp = document.createElement('input');
-    fInp.type = 'file';
-    fInp.id = 'xlsx-file-input';
-    fInp.accept = '.csv, .txt';
-    fInp.style.display = 'none';
-
-    impBtn = document.createElement('button');
-    impBtn.id = 'btn-import-xlsx';
-    impBtn.className = saveBtn.className;
-    impBtn.style.cssText = 'background:#16a34a;color:#fff;border:none;cursor:pointer;';
-    impBtn.textContent = '📥 Загрузить из Excel (CSV)';
-
-    tplBtn = document.createElement('button');
-    tplBtn.id = 'btn-tpl-xlsx';
-    tplBtn.className = saveBtn.className;
-    tplBtn.style.cssText = 'background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;cursor:pointer;';
-    tplBtn.textContent = '📄 Шаблон для Excel';
-
-    bar.appendChild(fInp);
-    bar.appendChild(impBtn);
-    bar.appendChild(tplBtn);
-
-    tplBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      var lines = new Array(
-        'Показатель;Значение;Ед. изм.',
-        'Сметная стоимость проекта (бюджет);750000;тыс. руб.',
-        'Плановая валовая прибыль;115000;тыс. руб.',
-        'Фактическая валовая прибыль;94000;тыс. руб.',
-        'Удорожание из-за рыночных цен (инфляция);7000;тыс. руб.',
-        'Постоянные накладные расходы в месяц;2800;тыс. руб.',
-        'Рабочих дней в месяце;22;дн.',
-        'Аренда простаивающих механизмов в день;45;тыс. руб./дн',
-        'Штрафные санкции за день срыва срока;20;тыс. руб./дн',
-        'Количество дней организационного простоя;4;дн.',
-        'Средний срок закрытия актов КС-2 / КС-3;32;дн.',
-        'Незакрытый объем НЗП (выполнено без КС-2);60000;тыс. руб.',
-        'Ставка привлечения оборотного капитала;21;% год.',
-        'Общий ФОТ основных рабочих за период;38000;тыс. руб.',
-        'ФОТ ушедший на переделки и брак;2900;тыс. руб.',
-        'Общий объем предъявленных технадзору работ;180000;тыс. руб.',
-        'Объем работ принятых с 1-го раза;152000;тыс. руб.'
-      );
-      var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Shablon_KPI_Stroy.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    });
-
-    impBtn.addEventListener('click', function(e) { e.preventDefault(); fInp.click(); });
-    fInp.addEventListener('change', function(e) {
-      var f = e.target.files.item(0);
-      if (!f) return;
-      var r = new FileReader();
-      r.onload = function(ev) {
-        var rows = ev.target.result.split(/\r?\n/);
-        var nums = new Array();
-        for (var x = 1; x < rows.length; x++) {
-          var ln = rows.at(x);
-          if (!ln || !ln.trim()) continue;
-          var parts = ln.split(/[;,]/);
-          for (var k = 1; k < parts.length; k++) {
-            var v = parseFloat(parts.at(k).replace(/["'\s]/g, '').replace(',', '.'));
-            if (!isNaN(v)) { nums.push(v); break; }
-          }
-        }
-        if (nums.length < 10) { alert('Используйте файл «Шаблон для Excel».'); return; }
-        var inps = document.querySelectorAll('input[type="number"]');
-        var cnt = Math.min(inps.length, nums.length);
-        for (var m = 0; m < cnt; m++) {
-          inps.item(m).value = nums.at(m);
-          inps.item(m).dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        if (typeof recalc === 'function') recalc();
-        alert('✅ Загружено показателей: ' + cnt);
-        fInp.value = '';
-      };
-      r.readAsText(f, 'UTF-8');
-    });
-  }, 500);
-})();
-</script>
-<!-- ЧИСТЫЙ БЛОК 1 ИЗ 4: SUPABASE И ПРЕЗЕНТАЦИЯ (ЧАСТЬ 1) -->
+<!-- ЧИСТЫЙ ФИНАЛ (ЧАСТЬ 1 ИЗ 2): EXCEL, SUPABASE, ПРЕЗЕНТАЦИЯ И МОДУЛИ -->
 <script>
 (function() {
   var SB_BASE = 'https://supabase.co';
@@ -1698,56 +1435,53 @@ function renderPortfolioTable() {
         '<button class="p-tab" data-s="3" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">3. Безопасность и Биржа</button>' +
         '<button class="p-tab" data-s="4" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">4. Тарифы и контакты</button>' +
       '</div>' +
-      '<div class="p-slide" id="ps-1" style="background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 12px;font-size:19px;">Экономия 2%–5% сметного бюджета без перегрузки сотрудников</h2><p style="font-size:14px;color:#475569;">Светофор платежей, разбор ошибок (CAPA) и контроль закрытия КС-2 возвращают от 10 до 30 млн ₽ на каждом объекте.</p></div>' +
-      '<div class="p-slide" id="ps-2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 12px;font-size:19px;">6 специализированных кабинетов</h2><p style="font-size:14px;color:#475569;">1. Гендиректор • 2. Инженер ПТО • 3. Прораб • 4. Финансист (без 1С) • 5. Инвестор (Только чтение) • 6. Подрядчик (4 модуля).</p></div>' +
-      '<div class="p-slide" id="ps-3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 12px;font-size:19px;">Криптозащита чатов (AES-256), Биржа ФНС и 2FA</h2><p style="font-size:14px;color:#475569;">Сквозное шифрование переписки, проверка контрагентов по ИНН (ФНС/ЕФРСБ) и двухфакторный вход.</p></div>' +
-      '<div class="p-slide" id="ps-4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"></div>' +
+      '<div class="p-slide" id="ps-1" style="background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 10px;font-size:19px;">Экономия 2%–5% сметного бюджета без перегрузки сотрудников</h2><p style="font-size:14px;color:#475569;">Светофор платежей, разбор ошибок (CAPA) и контроль закрытия КС-2 возвращают от 10 до 30 млн ₽ на каждом объекте.</p></div>' +
+      '<div class="p-slide" id="ps-2" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 10px;font-size:19px;">6 специализированных кабинетов</h2><p style="font-size:14px;color:#475569;">1. Гендиректор • 2. Инженер ПТО • 3. Прораб • 4. Финансист (без 1С) • 5. Инвестор (Только чтение) • 6. Подрядчик (4 модуля).</p></div>' +
+      '<div class="p-slide" id="ps-3" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;"><h2 style="margin:0 0 10px;font-size:19px;">Криптозащита чатов (AES-256), Биржа ФНС и 2FA</h2><p style="font-size:14px;color:#475569;">Сквозное шифрование переписки, проверка контрагентов по ИНН (ФНС/ЕФРСБ) и двухфакторный вход.</p></div>' +
+      '<div class="p-slide" id="ps-4" style="display:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:22px;">' +
+        '<h2 style="margin:0 0 8px;font-size:19px;">Тарифы, распределение ролей и прямое подключение</h2>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
+          '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">Для подрядчиков и ИП: 1–2 объекта, трекер КС-2 и Биржа.</div></div>' +
+          '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">Для генподрядчиков: до 10 объектов, все 6 ролей (Финансист без 1С, Инвестор), E2E-чат.</div></div>' +
+          '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">Для девелоперов и холдингов: безлимит объектов и выделенный контур.</div></div>' +
+        '</div>' +
+        '<div style="background:#0f172a;color:#fff;border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">' +
+          '<div><div style="font-size:11.5px;color:#38bdf8;font-weight:700;">ПРЯМОЕ ПОДКЛЮЧЕНИЕ И БЕСПЛАТНЫЙ ПИЛОТ 14 ДНЕЙ</div>' +
+          '<h3 style="margin:4px 0 6px;font-size:16px;">Автор проекта: Мухачев Иван</h3>' +
+          '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.6;">🎓 г. Новосибирск • СГУПС (факультет ПГС)<br>📱 MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 <strong style="color:#fff;">https://kpistroy.ru</strong></div></div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px;min-width:200px;">' +
+            '<a href="https://t.me" target="_blank" style="text-align:center;background:#0284c7;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✈️ Написать в Telegram</a>' +
+            '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилот%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✉️ Заявка на Email</a>' +
+            '<button id="btn-open-app-s4" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;">Открыть систему →</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   document.body.insertBefore(landing, document.body.firstChild);
+
+  var pTabs = landing.querySelectorAll('.p-tab'), pSlides = landing.querySelectorAll('.p-slide');
+  for (var i = 0; i < pTabs.length; i++) {
+    pTabs[i].onclick = function() {
+      var n = this.dataset.s;
+      for (var j = 0; j < pTabs.length; j++) { pTabs[j].style.background = '#fff'; pTabs[j].style.color = '#0f172a'; pTabs[j].style.border = '1px solid #cbd5e1'; }
+      this.style.background = '#0f172a'; this.style.color = '#fff'; this.style.border = 'none';
+      for (var k = 0; k < pSlides.length; k++) pSlides[k].style.display = (pSlides[k].id === 'ps-' + n) ? 'block' : 'none';
+    };
+  }
+  function closeLanding() { landing.style.display = 'none'; window.scrollTo(0, 0); }
+  document.getElementById('btn-open-app-top').onclick = closeLanding;
+  document.getElementById('btn-open-app-s4').onclick = closeLanding;
 })();
 </script>
-<!-- ЧИСТЫЙ БЛОК 2 ИЗ 4: СЛАЙД 4, БИРЖА И ШТРАФЫ -->
+<!-- ЧИСТЫЙ ФИНАЛ (ЧАСТЬ 2А): БИРЖА, ШТРАФЫ И КОМАНДА -->
 <script>
 (function() {
-  var app = window._cloudApp, landing = document.getElementById('saas-landing-page'), s4 = document.getElementById('ps-4');
-  if (s4 && landing) {
-    s4.innerHTML =
-      '<h2 style="margin:0 0 8px;font-size:19px;">Тарифы, распределение ролей и прямое подключение</h2>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;font-size:12.5px;">' +
-        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Старт» — 7 900 ₽/мес.</strong><div style="color:#475569;margin-top:6px;">Для подрядчиков и ИП: 1–2 объекта, трекер КС-2 и Биржа.</div></div>' +
-        '<div style="border:2px solid #2563eb;border-radius:12px;padding:14px;background:#eff6ff;"><strong style="color:#1e3a8a;">Тариф «Бизнес» — 19 900 ₽/мес.</strong><div style="color:#1e3a8a;margin-top:6px;">Для генподрядчиков: до 10 объектов, все 6 ролей (Финансист без 1С, Инвестор), E2E-чат.</div></div>' +
-        '<div style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc;"><strong>Тариф «Корпорация» — от 45 000 ₽</strong><div style="color:#475569;margin-top:6px;">Для девелоперов и холдингов: безлимит объектов и выделенный контур.</div></div>' +
-      '</div>' +
-      '<div style="background:#0f172a;color:#fff;border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">' +
-        '<div><div style="font-size:11.5px;color:#38bdf8;font-weight:700;">ПРЯМОЕ ПОДКЛЮЧЕНИЕ И БЕСПЛАТНЫЙ ПИЛОТ 14 ДНЕЙ</div>' +
-        '<h3 style="margin:4px 0 6px;font-size:16px;">Автор проекта: Мухачев Иван</h3>' +
-        '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.6;">🎓 г. Новосибирск • СГУПС (факультет ПГС)<br>📱 MAX / Тел.: <strong style="color:#fff;">+7 960 943-38-29</strong> • ✈️ Telegram: <strong style="color:#fff;">@ivan31006</strong><br>✉️ Email: <strong style="color:#fff;">ivan-mukhacev@yandex.ru</strong> • 🌐 <strong style="color:#fff;">https://kpistroy.ru</strong></div></div>' +
-        '<div style="display:flex;flex-direction:column;gap:8px;min-width:200px;">' +
-          '<a href="https://t.me" target="_blank" style="text-align:center;background:#0284c7;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✈️ Написать в Telegram</a>' +
-          '<a href="mailto:ivan-mukhacev@yandex.ru?subject=Пилот%20СтройЭффект%20KPI" style="text-align:center;background:#16a34a;color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;">✉️ Заявка на Email</a>' +
-          '<button id="btn-open-app-s4" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:9px 14px;border-radius:8px;font-weight:600;cursor:pointer;">Открыть систему →</button>' +
-        '</div>' +
-      '</div>';
-
-    var pTabs = landing.querySelectorAll('.p-tab'), pSlides = landing.querySelectorAll('.p-slide');
-    for (var i = 0; i < pTabs.length; i++) {
-      pTabs[i].onclick = function() {
-        var n = this.dataset.s;
-        for (var j = 0; j < pTabs.length; j++) { pTabs[j].style.background = '#fff'; pTabs[j].style.color = '#0f172a'; pTabs[j].style.border = '1px solid #cbd5e1'; }
-        this.style.background = '#0f172a'; this.style.color = '#fff'; this.style.border = 'none';
-        for (var k = 0; k < pSlides.length; k++) pSlides[k].style.display = (pSlides[k].id === 'ps-' + n) ? 'block' : 'none';
-      };
-    }
-    function closeLanding() { landing.style.display = 'none'; window.scrollTo(0, 0); }
-    document.getElementById('btn-open-app-top').onclick = closeLanding;
-    document.getElementById('btn-open-app-s4').onclick = closeLanding;
-  }
+  var app = window._cloudApp;
 
   window._renderExchangeTab = function(panel) {
-    panel.innerHTML = '<h2 style="margin-top:0;">🔍 Биржа проверенных субподрядчиков</h2><div id="cloud-ex-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px;">Загрузка из базы Supabase...</div>';
+    panel.innerHTML = '<h2 style="margin-top:0;">🔍 Биржа проверенных субподрядчиков</h2><div id="cloud-ex-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px;">Загрузка из базы...</div>';
     app.sb('companies?company_type=eq.subcontractor&order=rating_ftri.desc').then(function(subs) {
-      var box = document.getElementById('cloud-ex-list');
-      if (!box || !Array.isArray(subs)) return;
+      var box = document.getElementById('cloud-ex-list'); if (!box || !Array.isArray(subs)) return;
       box.innerHTML = subs.map(function(s) {
         return '<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:16px;"><div style="display:flex;justify-content:space-between;"><strong>' + s.name + '</strong><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">🟢 ФНС/ЕФРСБ ОК</span></div><div style="font-size:12.5px;color:#64748b;margin:6px 0;">ИНН: ' + s.inn + ' • ' + s.city + '<br>' + s.specialization + '</div><div style="font-size:12.5px;font-weight:700;color:#1e3a8a;margin-bottom:10px;">Сдача с 1-го раза: ' + s.rating_ftri + '% • Брак: ' + s.rating_cle + '%</div><button onclick="window._cloudApp.confirm(\'Приглашение\',\'Пригласить ' + s.name + ' на объект?\',function(){alert(\'✅ Приглашение отправлено!\')})" style="width:100%;background:#2563eb;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:700;cursor:pointer;">Пригласить на объект</button></div>';
       }).join('');
@@ -1755,14 +1489,14 @@ function renderPortfolioTable() {
   };
 
   window._renderPenaltiesTab = function(panel) {
-    panel.innerHTML = '<h2 style="margin-top:0;">💰 Контроль штрафов и трат (CAPA)</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px;"><div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><input id="p-ttl" placeholder="Назначение (напр. Штраф за слив бетона)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="p-amt" type="number" placeholder="Сумма (₽)" style="width:45%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><select id="p-cat" style="width:55%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><option value="penalty">🔴 Штраф / Брак</option><option value="overrun">🟡 Перерасход</option><option value="plan">🟢 План</option></select></div><input id="p-cul" placeholder="Виновник / участок" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="p-msr" placeholder="Мера предотвращения" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><button id="btn-p-save" style="width:100%;background:#dc2626;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Зафиксировать</button></div><div id="p-list">Загрузка...</div></div>';
+    panel.innerHTML = '<h2 style="margin-top:0;">💰 Контроль штрафов и непроизводительных трат (CAPA)</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px;"><div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><input id="p-ttl" placeholder="Назначение (напр. Штраф за слив бетона)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="p-amt" type="number" placeholder="Сумма (₽)" style="width:45%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><select id="p-cat" style="width:55%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;"><option value="penalty">🔴 Штраф / Брак</option><option value="overrun">🟡 Перерасход</option><option value="plan">🟢 План</option></select></div><input id="p-cul" placeholder="Виновник / участок" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="p-msr" placeholder="Мера предотвращения (CAPA)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><button id="btn-p-save" style="width:100%;background:#dc2626;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Зафиксировать</button></div><div id="p-list">Загрузка реестра...</div></div>';
     function loadP() {
       app.sb('payment_requests?order=created_at.desc&limit=10').then(function(rows) {
         var box = document.getElementById('p-list'); if (!box || !Array.isArray(rows)) return;
         box.innerHTML = rows.length ? rows.map(function(r) {
           var b = r.category === 'penalty' ? '🔴 Штраф' : (r.category === 'overrun' ? '🟡 Перерасход' : '🟢 План');
           return '<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:8px;margin-bottom:8px;font-size:13px;"><strong>' + b + ': ' + r.title + ' — ' + Number(r.amount).toLocaleString('ru-RU') + ' ₽</strong><br><span style="color:#64748b;font-size:12px;">Виновник: ' + (r.culprit_name || '—') + ' • Мера: ' + (r.prevention_measure || '—') + '</span></div>';
-        }).join('') : '<div style="color:#94a3b8;">Записей пока нет.</div>';
+        }).join('') : '<div style="color:#94a3b8;">Зафиксированных штрафов пока нет.</div>';
       });
     }
     loadP();
@@ -1774,16 +1508,10 @@ function renderPortfolioTable() {
       });
     };
   };
-})();
-</script>
-<!-- ЧИСТЫЙ БЛОК 3 ИЗ 4: КОМАНДА, E2E-ЧАТ И СПЕЦРОЛИ -->
-<script>
-(function() {
-  var app = window._cloudApp;
 
   window._renderTeamTab = function(panel) {
     var cur = app.getSession(), comp = cur && cur.company ? cur.company : null;
-    if (!comp || !comp.id) { panel.innerHTML = '<h2>👥 Команда</h2><p style="color:#64748b;">Войдите по коду вашей компании на главном экране (например, KPI-9044), чтобы добавлять сотрудников.</p>'; return; }
+    if (!comp || !comp.id) { panel.innerHTML = '<h2 style="margin-top:0;">👥 Команда</h2><p style="color:#64748b;">Войдите по коду вашей компании на главном экране (например, KPI-9044), чтобы добавлять сотрудников.</p>'; return; }
     panel.innerHTML = '<h2 style="margin-top:0;">👥 Команда «' + comp.name + '» (Код входа: ' + comp.invite_code + ')</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px;"><div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;"><input id="tm-name" placeholder="ФИО сотрудника" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><input id="tm-mail" placeholder="Email или телефон" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><select id="tm-role" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;"><option value="pto">Инженер ПТО</option><option value="prorab">Прораб</option><option value="finance">Финансист</option><option value="investor">Инвестор</option></select><button id="btn-tm-add" style="width:100%;background:#2563eb;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Добавить сотрудника</button></div><div id="tm-list">Загрузка...</div></div>';
     function loadTm() {
       app.sb('app_users?company_id=eq.' + encodeURIComponent(comp.id)).then(function(u) {
@@ -1798,14 +1526,12 @@ function renderPortfolioTable() {
       app.sb('app_users', { method: 'POST', body: JSON.stringify({ company_id: comp.id, full_name: n, email: m, role: document.getElementById('tm-role').value }) }).then(loadTm);
     };
   };
-
-  window._renderSubContracts = function(panel) {
-    panel.innerHTML = '<h3 style="margin-top:0;">📑 Мои договоры субподряда и закрытие КС-2</h3><div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:16px;"><strong>Заказчик: ООО «СтройИнвест» • Объект: ЖК Онега</strong><div style="font-size:13px;color:#475569;margin:8px 0;">Цена контракта: 85 000 тыс. ₽ • Закрыто по КС-2: 52 000 тыс. ₽ (61%) • Аванс отработан на 100%</div></div>';
-  };
-
-  window._renderSubProfile = function(panel) {
-    panel.innerHTML = '<h3 style="margin-top:0;">⭐ Публичный рейтинг на Бирже и статус ФНС / ЕФРСБ</h3><div style="background:#f0fdf4;border:1px solid #86efac;padding:14px;border-radius:10px;font-size:13.5px;color:#14532d;">🟢 <strong>Паспорт надежности РФ подтвержден:</strong> Действующее юрлицо по ЕГРЮЛ ФНС • Банкротств в ЕФРСБ и записей в РНП ФАС нет • Сдача с 1-го раза: 91.4%</div>';
-  };
+})();
+</script>
+<!-- ЧИСТЫЙ ФИНАЛ (ЧАСТЬ 2Б): E2E-ЧАТ И КАБИНЕТЫ ФИНАНСИСТА / ИНВЕСТОРА -->
+<script>
+(function() {
+  var app = window._cloudApp;
 
   window._renderChatTab = function(panel) {
     var role = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : 'staff';
@@ -1862,15 +1588,23 @@ function renderPortfolioTable() {
     document.getElementById('exit-spec').onclick = function() { ov.remove(); };
     var body = document.getElementById('spec-body');
     if (spec === 'finance') {
-      body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;"><div style="background:#fff;padding:16px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ЖИВЫЕ ДЕНЬГИ (ДДС)</strong><div style="font-size:24px;font-weight:800;color:#15803d;margin-top:4px;">+48 200 тыс. ₽</div></div><div style="background:#fff;padding:16px;border-radius:12px;border:1px solid #fde047;"><strong>ЛИМИТ БЕТОНА ПО СМЕТЕ</strong><div style="font-size:24px;font-weight:800;color:#854d0e;margin-top:4px;">39.0 м³</div></div></div><div id="fin-p-box" style="background:#fff;padding:20px;border-radius:12px;"></div>';
+      body.innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;">' +
+          '<div style="background:#fff;padding:16px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ЖИВЫЕ ДЕНЬГИ (ДДС)</strong><div style="font-size:24px;font-weight:800;color:#15803d;margin-top:4px;">+48 200 тыс. ₽</div></div>' +
+          '<div style="background:#fff;padding:16px;border-radius:12px;border:1px solid #fde047;"><strong>ЛИМИТ БЕТОНА ПО СМЕТЕ</strong><div style="font-size:24px;font-weight:800;color:#854d0e;margin-top:4px;">39.0 м³</div></div>' +
+        '</div><div id="fin-p-box" style="background:#fff;padding:20px;border-radius:12px;"></div>';
       window._renderPenaltiesTab(document.getElementById('fin-p-box'));
     } else {
-      body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;"><div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bfdbfe;"><strong>ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</strong><div style="font-size:28px;font-weight:800;color:#1e3a8a;margin-top:4px;">84 / 100 🟢</div></div><div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ОСВОЕНИЕ СМЕТЫ (SPI)</strong><div style="font-size:28px;font-weight:800;color:#15803d;margin-top:4px;">64.8%</div></div></div><div style="background:#fff;padding:20px;border-radius:12px;"><h3>📅 Контрольные вехи</h3><p style="line-height:1.8;font-size:14px;">✅ Этап 1: Фундаментная плита — Сдано в срок<br>✅ Этап 2: Монолитный каркас 1–8 эт. — Сдано в срок<br>🔄 Этап 3: Монолитный каркас 9–16 эт. — В работе (52%)</p></div>';
+      body.innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;">' +
+          '<div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bfdbfe;"><strong>ИНДЕКС ЗДОРОВЬЯ ОБЪЕКТА</strong><div style="font-size:28px;font-weight:800;color:#1e3a8a;margin-top:4px;">84 / 100 🟢</div></div>' +
+          '<div style="background:#fff;padding:18px;border-radius:12px;border:1px solid #bbf7d0;"><strong>ОСВОЕНИЕ СМЕТЫ (SPI)</strong><div style="font-size:28px;font-weight:800;color:#15803d;margin-top:4px;">64.8%</div></div>' +
+        '</div><div style="background:#fff;padding:20px;border-radius:12px;"><h3>📅 Контрольные вехи</h3><p style="line-height:1.8;font-size:14px;">✅ Этап 1: Фундаментная плита — Сдано в срок<br>✅ Этап 2: Монолитный каркас 1–8 эт. — Сдано в срок<br>🔄 Этап 3: Монолитный каркас 9–16 эт. — В работе (52%)</p></div>';
     }
   };
 })();
 </script>
-<!-- ЧИСТЫЙ БЛОК 4А: 2FA-ВХОД И РЕГИСТРАЦИЯ -->
+<!-- ЧИСТЫЙ ФИНАЛ (ЧАСТЬ 2В-1): 2FA-ВХОД И РЕГИСТРАЦИЯ -->
 <script>
 (function() {
   var app = window._cloudApp;
@@ -1935,7 +1669,7 @@ function renderPortfolioTable() {
   };
 })();
 </script>
-<!-- ЧИСТЫЙ БЛОК 4Б: КНОПКИ РОЛЕЙ, ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК И ПОДВАЛ -->
+<!-- ЧИСТЫЙ ФИНАЛ (ЧАСТЬ 2В-2): ЕДИНОЕ МЕНЮ И ПОДВАЛ 152-ФЗ -->
 <script>
 (function() {
   var currentRoleCache = '';
@@ -1953,75 +1687,78 @@ function renderPortfolioTable() {
     }
   }
 
-  function setupRoleWorkspace(role) {
+  function setupSingleUnifiedMenu(role) {
     var nav = document.getElementById('navTabs'); if (!nav) return;
-    var oldBar = document.getElementById('unified-cloud-bar'); if (oldBar) oldBar.remove();
-    var oldPnl = document.getElementById('unified-cloud-pnl'); if (oldPnl) oldPnl.remove();
+    nav.style.display = 'none';
+
+    var oldBar = document.getElementById('single-master-bar'); if (oldBar) oldBar.remove();
+    var oldPnl = document.getElementById('single-master-pnl'); if (oldPnl) oldPnl.remove();
 
     var bar = document.createElement('div');
-    bar.id = 'unified-cloud-bar';
-    bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:10px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;';
+    bar.id = 'single-master-bar';
+    bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;padding:10px;background:#fff;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 2px 6px rgba(15,23,42,0.04);';
 
     var pnl = document.createElement('div');
-    pnl.id = 'unified-cloud-pnl';
+    pnl.id = 'single-master-pnl';
     pnl.style.cssText = 'display:none;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:22px;margin-bottom:20px;';
 
     nav.insertAdjacentElement('afterend', bar); bar.insertAdjacentElement('afterend', pnl);
 
-    function showNative() {
+    function showNativeTab(tabId) {
       pnl.style.display = 'none';
-      document.querySelectorAll('.tab-content').forEach(function(el) { el.style.removeProperty('display'); });
-      if (typeof switchTab === 'function') switchTab(role === 'contractor' ? 'contractorPortal' : 'dashboard');
+      if (typeof switchTab === 'function') switchTab(tabId);
     }
 
-    function showCloud(fn) {
-      document.querySelectorAll('.tab-content').forEach(function(el) { el.style.setProperty('display', 'none', 'important'); });
+    function showCloudTab(fn) {
+      document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.add('hidden'); });
       pnl.style.display = 'block';
       if (fn) fn(pnl);
     }
 
     function addTab(label, active, fn) {
       var b = document.createElement('button'); b.textContent = label;
-      b.style.cssText = 'padding:8px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid ' + (active ? '#2563eb' : '#cbd5e1') + ';background:' + (active ? '#2563eb' : '#fff') + ';color:' + (active ? '#fff' : '#0f172a') + ';';
+      b.style.cssText = 'padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid ' + (active ? '#0f172a' : '#e2e8f0') + ';background:' + (active ? '#0f172a' : '#f8fafc') + ';color:' + (active ? '#fff' : '#0f172a') + ';';
       b.onclick = function() {
-        bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#fff'; x.style.color = '#0f172a'; x.style.borderColor = '#cbd5e1'; });
-        b.style.background = '#2563eb'; b.style.color = '#fff'; b.style.borderColor = '#2563eb';
+        bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#f8fafc'; x.style.color = '#0f172a'; x.style.borderColor = '#e2e8f0'; });
+        b.style.background = '#0f172a'; b.style.color = '#fff'; b.style.borderColor = '#0f172a';
         fn();
       };
       bar.appendChild(b);
     }
 
-    addTab('📋 Рабочий экран роли', true, showNative);
-    if (role === 'director' || role === 'pto') addTab('🔍 Биржа подрядчиков', false, function() { showCloud(window._renderExchangeTab); });
-    if (role === 'director') {
-      addTab('💰 Контроль штрафов', false, function() { showCloud(window._renderPenaltiesTab); });
-      addTab('👥 Команда', false, function() { showCloud(window._renderTeamTab); });
-    }
     if (role === 'contractor') {
-      addTab('📑 Мои договоры и КС-2', false, function() { showCloud(window._renderSubContracts); });
-      addTab('⭐ Мой рейтинг и ФНС', false, function() { showCloud(window._renderSubProfile); });
-    }
-    addTab('💬 Защищенный чат (E2E)', false, function() { showCloud(window._renderChatTab); });
-
-    nav.querySelectorAll('button').forEach(function(nb) {
-      if (!nb.dataset.hookedNative) {
-        nb.dataset.hookedNative = '1';
-        nb.addEventListener('click', function() {
-          pnl.style.display = 'none';
-          document.querySelectorAll('.tab-content').forEach(function(el) { el.style.removeProperty('display'); });
-        });
+      addTab('📋 Подача отчета подрядчика', true, function() { showNativeTab('contractorPortal'); });
+      addTab('📑 Мои договоры и КС-2', false, function() { showCloudTab(function(p){ p.innerHTML = '<h3>📑 Договор: ЖК Онега • Контракт 85 000 тыс. ₽ • Закрыто КС-2: 61%</h3>'; }); });
+      addTab('⭐ Мой рейтинг и ФНС', false, function() { showCloudTab(function(p){ p.innerHTML = '<h3>⭐ Паспорт ФНС/ЕФРСБ подтвержден • Качество FTRI: 91.4%</h3>'; }); });
+      addTab('💬 Защищенный чат (E2E)', false, function() { showCloudTab(window._renderChatTab); });
+      showNativeTab('contractorPortal');
+    } else if (role === 'prorab') {
+      addTab('📋 Оперативный учет участка', true, function() { showNativeTab('dashboard'); });
+      addTab('💬 Защищенный чат (E2E)', false, function() { showCloudTab(window._renderChatTab); });
+      showNativeTab('dashboard');
+    } else {
+      addTab('1. Диагностика объекта (KPI)', true, function() { showNativeTab('dashboard'); });
+      addTab('2. Рейтинг подрядчиков', false, function() { showNativeTab('contractors'); });
+      if (role === 'director') addTab('3. Портфель объектов', false, function() { showNativeTab('portfolio'); });
+      addTab('🔍 Биржа подрядчиков', false, function() { showCloudTab(window._renderExchangeTab); });
+      if (role === 'director') {
+        addTab('💰 Контроль штрафов', false, function() { showCloudTab(window._renderPenaltiesTab); });
+        addTab('👥 Команда', false, function() { showCloudTab(window._renderTeamTab); });
       }
-    });
+      addTab('💬 Защищенный чат (E2E)', false, function() { showCloudTab(window._renderChatTab); });
+      showNativeTab('dashboard');
+    }
   }
 
   setInterval(function() {
     var authVisible = !document.getElementById('authScreen').classList.contains('hidden');
     if (authVisible) { currentRoleCache = 'guest'; if (window._setupAuthScreen) window._setupAuthScreen(); addSpecBtns(); return; }
     var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : '';
-    if (r && r !== currentRoleCache) { currentRoleCache = r; setupRoleWorkspace(r); }
+    if (r && r !== currentRoleCache) { currentRoleCache = r; setupSingleUnifiedMenu(r); }
   }, 400);
 })();
 </script>
 <div style="text-align:center;font-size:12px;color:#64748b;padding:18px;border-top:1px solid #e2e8f0;">© 2026 Программный комплекс «СтройЭффект KPI» (kpistroy.ru) • Мухачев Иван (СГУПС, ПГС) • Политика ПДн (152-ФЗ)</div>
 </body>
 </html>
+
