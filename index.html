@@ -2319,6 +2319,136 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- МОДУЛЬ МАКСИМАЛЬНОЙ БЕЗОПАСНОСТИ (ЧАСТЬ 1 ИЗ 2): ANTI-XSS И AES-GCM 256-BIT -->
+<script>
+(function() {
+  // 1. Защита от кликджекинга (запрет встраивания сайта в чужие iframe)
+  if (window.top !== window.self) {
+    window.top.location = window.self.location;
+  }
+
+  // 2. Санитайзер от XSS-инъекций (очистка любого пользовательского текста от HTML-тегов)
+  window._safeText = function(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  // 3. Криптографический движок AES-GCM 256-бит (Web Crypto API)
+  var app = window._cloudApp;
+  if (app && window.crypto && window.crypto.subtle) {
+    function getSecretPhrase() {
+      var s = app.getSession();
+      return (s && s.company && s.company.invite_code)
+        ? ('KPIS-AES256-' + s.company.invite_code + '-' + s.company.inn)
+        : 'KPIS-DEMO-MASTER-KEY-2026';
+    }
+
+    async function deriveAesKey() {
+      var enc = new TextEncoder();
+      var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(getSecretPhrase()), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: enc.encode('kpistroy-salt-v2'), iterations: 120000, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    window._aes256Encrypt = async function(plainText) {
+      var safePlain = window._safeText(plainText);
+      var key = await deriveAesKey();
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      var cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(safePlain));
+      var combined = new Uint8Array(iv.length + cipher.byteLength);
+      combined.set(iv, 0);
+      combined.set(new Uint8Array(cipher), iv.length);
+      var bin = '';
+      for (var i = 0; i < combined.length; i++) bin += String.fromCharCode(combined[i]);
+      return 'AES256:' + btoa(bin);
+    };
+
+    window._aes256Decrypt = async function(payload) {
+      if (!payload) return '';
+      if (payload.indexOf('AES256:') !== 0) return window._safeText(app.decode(payload));
+      try {
+        var bin = atob(payload.slice(7));
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        var key = await deriveAesKey();
+        var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, key, bytes.slice(12));
+        return new TextDecoder().decode(plainBuf);
+      } catch (e) {
+        return '🔒 [Зашифровано ключом другой организации]';
+      }
+    };
+  }
+})();
+</script>
+<!-- МОДУЛЬ МАКСИМАЛЬНОЙ БЕЗОПАСНОСТИ (ЧАСТЬ 2 ИЗ 2): ANTI-BRUTEFORCE И АВТОБЛОКИРОВКА -->
+<script>
+(function() {
+  // 1. Защита от перебора кодов 2FA и ИНН (блокировка на 3 минуты после 5 ошибок)
+  var failCount = 0;
+  var lockUntil = 0;
+
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.id === 'go-2fa' || btn.id === 'otp-b') {
+      var now = Date.now();
+      if (now < lockUntil) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        var sec = Math.ceil((lockUntil - now) / 1000);
+        alert('🛡️ Сработала защита от подбора пароля. Повторите попытку через ' + sec + ' сек.');
+        return;
+      }
+    }
+  }, true);
+
+  var origAlert = window.alert;
+  window.alert = function(msg) {
+    if (typeof msg === 'string' && (msg.indexOf('Неверный код') !== -1 || msg.indexOf('Компания не найдена') !== -1)) {
+      failCount++;
+      if (failCount >= 5) {
+        lockUntil = Date.now() + 180000;
+        failCount = 0;
+        origAlert('🛡️ Превышен лимит попыток входа (5 из 5). Доступ заблокирован на 3 минуты для защиты данных.');
+        return;
+      }
+    }
+    origAlert(msg);
+  };
+
+  // 2. Автоблокировка экрана при бездействии пользователя (15 минут)
+  var idleSeconds = 0;
+  function resetIdleTimer() { idleSeconds = 0; }
+  ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(function(evt) {
+    document.addEventListener(evt, resetIdleTimer, { passive: true });
+  });
+
+  setInterval(function() {
+    var appScreen = document.getElementById('appScreen');
+    var specOv = document.getElementById('special-role-overlay');
+    var isWorking = (appScreen && !appScreen.classList.contains('hidden')) || (specOv && specOv.offsetParent !== null);
+    if (!isWorking) { idleSeconds = 0; return; }
+
+    idleSeconds++;
+    if (idleSeconds >= 900) { // 900 секунд = 15 минут
+      idleSeconds = 0;
+      if (specOv) specOv.remove();
+      if (typeof logout === 'function') logout();
+      origAlert('🔒 Сессия автоматически завершена из-за 15 минут бездействия для защиты коммерческой тайны.');
+    }
+  }, 1000);
+})();
+</script>
 
 </body>
 </html>
