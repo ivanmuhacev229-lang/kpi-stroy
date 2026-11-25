@@ -2613,6 +2613,56 @@ function renderPortfolioTable() {
   s1.appendChild(chart);
 })();
 </script>
+<!-- УМНЫЙ ПОКАЗ ПРЕЗЕНТАЦИИ (1 РАЗ) + КНОПКА ВОЗВРАТА НА ЭКРАНЕ ВХОДА И В ШАПКЕ -->
+<script>
+(function() {
+  var l = document.getElementById('saas-landing-page');
+  if (!l) return;
+
+  l.style.position = 'fixed';
+  l.style.inset = '0';
+  l.style.overflowY = 'auto';
+  l.style.zIndex = '9500';
+
+  // 1. Если пользователь уже видел презентацию — сразу открываем экран входа
+  try {
+    if (localStorage.getItem('kpistroy_seen_pres') === '1') {
+      l.style.display = 'none';
+    }
+  } catch (e) {}
+
+  function closeAndRemember() {
+    l.style.display = 'none';
+    try { localStorage.setItem('kpistroy_seen_pres', '1'); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+
+  function openPresentation() {
+    l.style.display = 'block';
+    l.scrollTop = 0;
+  }
+
+  var bTop = document.getElementById('btn-launch-v5');
+  if (bTop) bTop.onclick = closeAndRemember;
+  var bBot = document.getElementById('btn-launch-v5-s6');
+  if (bBot) bBot.onclick = closeAndRemember;
+
+  // 2. Добавляем кнопку возврата на экран входа (#authScreen) и привязываем кнопку в шапке
+  var authDemo = document.querySelector('.auth-demo');
+  if (authDemo && !document.getElementById('btn-auth-back-pres')) {
+    var backBtn = document.createElement('button');
+    backBtn.id = 'btn-auth-back-pres';
+    backBtn.type = 'button';
+    backBtn.textContent = '📊 О продукте / Презентация и Тарифы';
+    backBtn.style.cssText = 'margin-bottom:14px;background:#fff;color:#1e3a8a;border:1px solid #93c5fd;padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;';
+    backBtn.onclick = openPresentation;
+    authDemo.insertBefore(backBtn, authDemo.firstChild);
+  }
+
+  var hdrBtn = document.getElementById('btn-show-pres-hdr');
+  if (hdrBtn) hdrBtn.onclick = openPresentation;
+})();
+</script>
 
 </body>
 </html>
