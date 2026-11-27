@@ -3447,6 +3447,51 @@ function renderPortfolioTable() {
   }, 500);
 })();
 </script>
+<!-- ФИКС ЗАГРУЗКИ СПИСКА В ПАНЕЛИ МОДЕРАТОРА -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  var origMod = window._openModeratorPanel;
+  window._openModeratorPanel = function() {
+    if (origMod) origMod();
+    var box = document.getElementById('mod-list-box');
+    if (!box) return;
+
+    app.sb('companies?select=*').then(function(rows) {
+      if (!Array.isArray(rows)) {
+        box.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;color:#991b1b;">⚠️ Ошибка ответа базы данных: ' + window._safeText(JSON.stringify(rows)) + '</div>';
+        return;
+      }
+      if (!rows.length) {
+        box.innerHTML = '<div style="background:#fff;border:1px solid #cbd5e1;padding:20px;border-radius:12px;color:#475569;">Заявок на регистрацию пока нет.</div>';
+        return;
+      }
+      box.innerHTML = rows.map(function(c) {
+        var statusBadge = c.is_verified
+          ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:700;">🟢 Подтверждена</span>'
+          : '<span style="background:#fef9c3;color:#854d0e;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:700;">⏳ Песочница (Ждет проверки)</span>';
+
+        return '<div style="background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+          '<div style="max-width:650px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><strong style="font-size:15px;">' + window._safeText(c.name) + '</strong>' + statusBadge + '</div>' +
+            '<div style="font-size:12.5px;color:#475569;line-height:1.5;">ИНН: <strong>' + window._safeText(c.inn) + '</strong> • Код: <strong>' + window._safeText(c.invite_code) + '</strong> • Тип: ' + window._safeText(c.company_type) + '<br>' +
+            'Контакт: <strong>' + window._safeText(c.contact_person || '—') + '</strong> (' + window._safeText(c.contact_phone || '—') + ')<br>' +
+            'ОКВЭД: ' + window._safeText(c.specialization || '—') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            (!c.is_verified ? '<button onclick="window._modVerify(\'' + c.id + '\', true)" style="background:#16a34a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">✅ Одобрить ИНН</button>' : '') +
+            '<button onclick="window._modVerify(\'' + c.id + '\', false)" style="background:#ef4444;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">⛔ Снять допуск</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }).catch(function(err) {
+      box.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;color:#991b1b;">⚠️ Ошибка сети при подключении к Supabase. Проверьте интернет или VPN.</div>';
+    });
+  };
+})();
+</script>
 
 
 </body>
