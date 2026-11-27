@@ -3600,6 +3600,117 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- АНТИФРОД-ЗАЩИТА ШТРАФОВ CAPA (БЛОК 1 ИЗ 2) -->
+<script>
+(function() {
+  var DEFAULT_PENALTIES = [
+    { id: 'p1', kind: 'Штраф / Перерасход', desc: 'Слив остатков товарного бетона В25 (2.5 м³)', amt: 65000, act: 'Акт СК-14 от 21.11.2026', culprit: 'Участок №2 (Прораб Смирнов)', capa: 'Поминутный график подачи миксеров', status: 'approved' },
+    { id: 'p2', kind: 'Перерасход сверх сметы', desc: 'Сверхнормативный расход арматуры А500С', amt: 35000, act: 'Предписание ТН-08 от 24.11.2026', culprit: 'Бригада монолитчиков №1', capa: 'Предварительный раскрой на базе', status: 'pending' }
+  ];
+
+  window._getPenaltiesList = function() {
+    try {
+      var saved = JSON.parse(localStorage.getItem('kpistroy_antifraud_penalties'));
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch (e) {}
+    localStorage.setItem('kpistroy_antifraud_penalties', JSON.stringify(DEFAULT_PENALTIES));
+    return DEFAULT_PENALTIES.slice();
+  };
+
+  window._savePenaltiesList = function(list) {
+    try { localStorage.setItem('kpistroy_antifraud_penalties', JSON.stringify(list)); } catch (e) {}
+  };
+})();
+</script>
+<!-- АНТИФРОД-ЗАЩИТА ШТРАФОВ CAPA (БЛОК 2 ИЗ 2) -->
+<script>
+(function() {
+  window._renderPenaltiesTab = function(panel) {
+    var role = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : 'director';
+    var isDirector = (role === 'director');
+
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">' +
+        '<div><h2 style="margin:0;font-size:19px;">💰 Контроль штрафов и непроизводительных трат (CAPA)</h2>' +
+        '<div style="font-size:12.5px;color:#475569;">🛡️ <strong>Антифрод-защита:</strong> списание возможно только при наличии Акта технадзора и акцепта Гендиректора</div></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:18px;">' +
+        '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:12px;">' +
+          '<select id="p-kind" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;"><option value="Штраф / Перерасход">🔴 Штраф / Слив бетона</option><option value="Перерасход сверх сметы">🟡 Перерасход сверх сметы</option><option value="Переделка брака (CLE)">🟠 Переделка брака (CLE)</option></select>' +
+          '<input id="p-desc" placeholder="Суть убытка (напр. Переделка кладки)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;">' +
+          '<input id="p-act" placeholder="Номер акта технадзора / фото (обязательно!)" style="width:100%;padding:9px;border:1px solid #fca5a5;border-radius:8px;margin-bottom:8px;background:#fff;">' +
+          '<input id="p-amt" type="number" placeholder="Сумма, ₽" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;">' +
+          '<input id="p-culp" placeholder="Ответственный участок / субподрядчик" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;">' +
+          '<input id="p-capa" placeholder="Мера предотвращения (CAPA)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;">' +
+          '<button id="btn-p-add" style="width:100%;background:#0f172a;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">🔒 Отправить на проверку Гендиректору</button>' +
+        '</div>' +
+        '<div id="p-list"></div>' +
+      '</div>';
+
+    function drawList() {
+      var listBox = document.getElementById('p-list');
+      if (!listBox) return;
+      var items = window._getPenaltiesList ? window._getPenaltiesList() : [];
+      listBox.innerHTML = items.map(function(x) {
+        var stBadge = x.status === 'approved'
+          ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">✅ Акцептовано Директором</span>'
+          : (x.status === 'rejected'
+            ? '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">⛔ Отклонено (Антифрод)</span>'
+            : '<span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">⏳ Ждет акцепта Директора</span>');
+
+        var dirActions = (isDirector && x.status === 'pending')
+          ? '<div style="margin-top:8px;display:flex;gap:8px;">' +
+              '<button onclick="window._setPenaltyStatus(\'' + x.id + '\', \'approved\')" style="background:#16a34a;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;">✅ Подтвердить удержание</button>' +
+              '<button onclick="window._setPenaltyStatus(\'' + x.id + '\', \'rejected\')" style="background:#ef4444;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;">⛔ Отклонить фейк</button>' +
+            '</div>'
+          : '';
+
+        return '<div style="background:#fff;border:1px solid #cbd5e1;padding:12px;border-radius:10px;margin-bottom:10px;font-size:13px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;"><strong>' + window._safeText(x.kind) + ': ' + Number(x.amt || 0).toLocaleString('ru-RU') + ' ₽</strong>' + stBadge + '</div>' +
+          '<div style="color:#0f172a;margin-bottom:4px;">' + window._safeText(x.desc) + '</div>' +
+          '<div style="font-size:12px;color:#475569;">📄 Документ: <strong>' + window._safeText(x.act) + '</strong> • Виновник: ' + window._safeText(x.culp) + '<br>🛠️ Мера CAPA: ' + window._safeText(x.capa) + '</div>' +
+          dirActions +
+        '</div>';
+      }).join('');
+    }
+
+    window._setPenaltyStatus = function(id, st) {
+      var list = window._getPenaltiesList();
+      list.forEach(function(item) { if (item.id === id) item.status = st; });
+      window._savePenaltiesList(list);
+      drawList();
+    };
+
+    document.getElementById('btn-p-add').onclick = function() {
+      var desc = document.getElementById('p-desc').value.trim();
+      var act = document.getElementById('p-act').value.trim();
+      var amt = Number(document.getElementById('p-amt').value) || 0;
+      if (!desc || !amt) return alert('Укажите суть убытка и сумму.');
+      if (act.length < 4) return alert('🛡️ Антифрод-блокировка: невозможно внести штраф без номера Акта технадзора или предписания стройконтроля!');
+
+      var list = window._getPenaltiesList();
+      list.unshift({
+        id: 'pen_' + Date.now(),
+        kind: document.getElementById('p-kind').value,
+        desc: desc,
+        amt: amt,
+        act: act,
+        culp: document.getElementById('p-culp').value.trim() || 'Не указан',
+        capa: document.getElementById('p-capa').value.trim() || 'На контроле ПТО',
+        status: 'pending'
+      });
+      window._savePenaltiesList(list);
+      document.getElementById('p-desc').value = '';
+      document.getElementById('p-act').value = '';
+      document.getElementById('p-amt').value = '';
+      alert('🔒 Инцидент зафиксирован как черновик и отправлен на проверку Гендиректору.');
+      drawList();
+    };
+
+    drawList();
+  };
+})();
+</script>
 
 
 </body>
