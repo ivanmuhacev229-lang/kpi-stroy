@@ -133,6 +133,21 @@
     </style>
 </head>
 <body>
+    <!-- ПОЛНОЕ ОТКЛЮЧЕНИЕ И СКРЫТИЕ БЛОКОВ ИМПОРТА EXCEL -->
+<script>
+(function() {
+  setInterval(function() {
+    ['top-excel-import-bar', 'excel-objects-ribbon', 'btn-tab-excel-restore', 'imported-objs-block'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    document.querySelectorAll('button').forEach(function(b) {
+      if (b.textContent && b.textContent.indexOf('Импорт Excel') !== -1) b.remove();
+    });
+  }, 250);
+})();
+</script>
+
 <!-- НЕЗАВИСИМЫЙ ИМПОРТ ОБЪЕКТА ИЗ EXCEL (РАБОТАЕТ В ШАПКЕ КАБИНЕТА БЕЗ КОНФЛИКТОВ) -->
 <script>
 (function() {
