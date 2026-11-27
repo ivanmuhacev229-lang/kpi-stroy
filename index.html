@@ -3744,6 +3744,48 @@ function renderPortfolioTable() {
   }, 250);
 })();
 </script>
+<!-- ДОРАБОТКА ЭКРАНА ДИАГНОСТИКИ: ВСЕ 9 KPI + СТРУКТУРА СКРЫТЫХ ПОТЕРЬ -->
+<script>
+(function() {
+  setInterval(function() {
+    // 1. Добавляем 4 операционных KPI под таблицей 5 базовых показателей, чтобы на экране были все 9 KPI
+    var tables = document.querySelectorAll('table');
+    tables.forEach(function(tbl) {
+      if (tbl.innerHTML.indexOf('Коэффициент «съеденной» маржи') !== -1 && !tbl.parentElement.querySelector('#extra-4-kpi-box')) {
+        var box4 = document.createElement('div');
+        box4.id = 'extra-4-kpi-box';
+        box4.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0;';
+        box4.innerHTML =
+          '<div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;text-transform:uppercase;">Операционный контур (еще 4 из 9 KPI):</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:12px;">' +
+            '<div style="background:#fef2f2;border:1px solid #fecaca;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>MVR</strong> (Материалы)</span><strong style="color:#dc2626;">+3.8% 🔴</strong></div>' +
+            '<div style="background:#fefce8;border:1px solid #fef08a;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>SPI</strong> (График)</span><strong style="color:#ca8a04;">0.91 🟡</strong></div>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>OTD</strong> (Вехи в срок)</span><strong style="color:#16a34a;">92.0% 🟢</strong></div>' +
+            '<div style="background:#fefce8;border:1px solid #fef08a;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>CFI</strong> (Кэш-флоу)</span><strong style="color:#ca8a04;">0.98 🟡</strong></div>' +
+          '</div>';
+        tbl.parentElement.appendChild(box4);
+      }
+    });
+
+    // 2. Добавляем наглядную разбивку структуры скрытых потерь под красной карточкой
+    document.querySelectorAll('div').forEach(function(card) {
+      if (card.children.length >= 2 && card.textContent.indexOf('ВЫЯВЛЕННЫЕ СКРЫТЫЕ ПОТЕРИ') !== -1 && card.textContent.indexOf('СМЕТНАЯ СТОИМОСТЬ') === -1 && !card.querySelector('#loss-breakdown-bar')) {
+        var br = document.createElement('div');
+        br.id = 'loss-breakdown-bar';
+        br.style.cssText = 'margin-top:8px;padding-top:8px;border-top:1px dashed #fecaca;font-size:11px;color:#7f1d1d;';
+        br.innerHTML =
+          '<div style="display:flex;height:6px;border-radius:4px;overflow:hidden;margin-bottom:5px;">' +
+            '<div style="width:48%;background:#dc2626;" title="Простои и накладные"></div>' +
+            '<div style="width:34%;background:#f59e0b;" title="Переделка брака (ФОТ)"></div>' +
+            '<div style="width:18%;background:#3b82f6;" title="Заморозка в КС-2"></div>' +
+          '</div>' +
+          '<div>🔴 Простои 48% • 🟠 Брак 34% • 🔵 КС-2 18%</div>';
+        card.appendChild(br);
+      }
+    });
+  }, 450);
+})();
+</script>
 
 
 
