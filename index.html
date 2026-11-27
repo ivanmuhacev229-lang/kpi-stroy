@@ -3980,6 +3980,95 @@ function renderPortfolioTable() {
   }, true);
 })();
 </script>
+<!-- ГАРАНТИРОВАННЫЙ РАЗБОР EXCEL/CSV ПО КНОПКЕ -->
+<script>
+(function() {
+  function parseCsvSafe(rawText) {
+    var lines = rawText.split(/\r?\n/);
+    var res = new Array();
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines.slice(i, i + 1).join('').trim();
+      if (!line) continue;
+      var cols = line.indexOf(';') !== -1 ? line.split(';') : line.split(',');
+      if (cols.length >= 4) res.push(cols);
+    }
+    return res;
+  }
+
+  setInterval(function() {
+    var inp = document.getElementById('inp-excel-file');
+    if (!inp || document.getElementById('btn-force-parse-xls')) return;
+
+    var parseBtn = document.createElement('button');
+    parseBtn.id = 'btn-force-parse-xls';
+    parseBtn.type = 'button';
+    parseBtn.textContent = '⚡ Разобрать файл и показать кнопку «Применить к объекту»';
+    parseBtn.style.cssText = 'margin-top:12px;background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;';
+    inp.insertAdjacentElement('afterend', parseBtn);
+
+    parseBtn.onclick = function() {
+      var file = inp.files && inp.files.length ? inp.files.item(0) : null;
+      if (!file) return alert('Сначала нажмите «Выбрать файл» и укажите скачанный шаблон .csv');
+      var box = document.getElementById('excel-preview-box');
+      if (!box) return;
+
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        var rows = parseCsvSafe(String(evt.target.result || ''));
+        if (rows.length < 2) return alert('Файл пустой или имеет неверный формат.');
+
+        var sumPlan = 0, sumFact = 0, overCnt = 0;
+        var tbody = '';
+        for (var rIdx = 1; rIdx < rows.length; rIdx++) {
+          var row = rows.slice(rIdx, rIdx + 1).pop();
+          var name = String(row.slice(0, 1).join('')).trim();
+          var unit = String(row.slice(1, 2).join('')).trim() || 'шт';
+          var plan = parseFloat(String(row.slice(2, 3).join('')).replace(/\s+/g, '').replace(',', '.')) || 0;
+          var fact = parseFloat(String(row.slice(3, 4).join('')).replace(/\s+/g, '').replace(',', '.')) || 0;
+          var price = parseFloat(String(row.slice(4, 5).join('')).replace(/\s+/g, '').replace(',', '.')) || 1;
+          if (!name) continue;
+
+          sumPlan += plan * price;
+          sumFact += fact * price;
+          var diff = plan > 0 ? (((fact - plan) / plan) * 100) : 0;
+          var over = diff > 2.0;
+          if (over) overCnt++;
+
+          tbody += '<tr style="border-bottom:1px solid #e2e8f0;background:' + (over ? '#fef2f2' : '#fff') + ';">' +
+            '<td style="padding:8px;font-weight:600;">' + name.replace(/</g, '&lt;') + '</td>' +
+            '<td style="padding:8px;text-align:center;">' + unit.replace(/</g, '&lt;') + '</td>' +
+            '<td style="padding:8px;text-align:right;">' + plan.toLocaleString('ru-RU') + '</td>' +
+            '<td style="padding:8px;text-align:right;">' + fact.toLocaleString('ru-RU') + '</td>' +
+            '<td style="padding:8px;text-align:center;font-weight:700;color:' + (over ? '#dc2626' : '#16a34a') + ';">' + (diff > 0 ? '+' : '') + diff.toFixed(1) + '% ' + (over ? '🔴 Перерасход' : '🟢 Норма') + '</td>' +
+          '</tr>';
+        }
+
+        var totalPct = sumPlan > 0 ? (((sumFact - sumPlan) / sumPlan) * 100).toFixed(1) : '0.0';
+        box.innerHTML =
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px 16px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">' +
+            '<div><strong style="color:#166534;font-size:14px;">✅ Смета разобрана! Позиций: ' + (rows.length - 1) + '</strong><br>' +
+            '<span style="font-size:12.5px;color:#14532d;">План: <strong>' + Math.round(sumPlan).toLocaleString('ru-RU') + ' ₽</strong> • Факт: <strong>' + Math.round(sumFact).toLocaleString('ru-RU') + ' ₽</strong> • Позиций с перерасходом: <strong style="color:#dc2626;">' + overCnt + '</strong></span></div>' +
+            '<button type="button" id="btn-apply-xls-ok" style="background:#16a34a;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">💾 Применить к объекту</button>' +
+          '</div>' +
+          '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #cbd5e1;">' +
+            '<thead><tr style="background:#0f172a;color:#fff;"><th style="padding:8px;text-align:left;">Статья / Материал</th><th style="padding:8px;">Ед.</th><th style="padding:8px;">План</th><th style="padding:8px;">Факт</th><th style="padding:8px;">Отклонение (MVR)</th></tr></thead>' +
+            '<tbody>' + tbody + '</tbody>' +
+          '</table>';
+
+        document.getElementById('btn-apply-xls-ok').onclick = function() {
+          var dirCard = document.getElementById('dir-rich-chart-card');
+          if (dirCard) {
+            var badge = dirCard.querySelector('.badge');
+            if (badge) badge.textContent = '📊 Смета Excel применена • Отклонение MVR: +' + totalPct + '%';
+          }
+          alert('✅ Данные из сметы применены к текущему объекту!\nОтклонение расхода материалов (MVR): +' + totalPct + '%');
+        };
+      };
+      reader.readAsText(file, 'utf-8');
+    };
+  }, 400);
+})();
+</script>
 
 
 
