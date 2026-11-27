@@ -3846,6 +3846,88 @@ setInterval(function() {
   });
 }, 400);
 </script>
+<!-- УЛУЧШЕНИЕ ВКЛАДКИ "2. РЕЙТИНГ ПОДРЯДЧИКОВ": ФИЛЬТР + КНОПКА ПРЕТЕНЗИИ CAPA -->
+<script>
+(function() {
+  setInterval(function() {
+    var tbl = Array.from(document.querySelectorAll('table')).find(function(t) {
+      return t.offsetParent !== null && t.innerHTML.indexOf('Итоговый рейтинг') !== -1 && t.innerHTML.indexOf('Ущерб от простоев') !== -1;
+    });
+    if (!tbl || tbl.dataset.enhancedSub) return;
+    tbl.dataset.enhancedSub = '1';
+
+    // 1. Добавляем панель фильтрации над таблицей
+    var filterBar = document.createElement('div');
+    filterBar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;';
+    filterBar.innerHTML =
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button type="button" data-flt="all" style="background:#0f172a;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Все подрядчики</button>' +
+        '<button type="button" data-flt="red" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔴 Зона риска / Штрафы</button>' +
+        '<button type="button" data-flt="green" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🟢 Надежные (FTRI ≥ 85%)</button>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#64748b;">Автоматический расчет по актам КС-2 и предписаниям технадзора</div>';
+    tbl.parentElement.insertBefore(filterBar, tbl);
+
+    filterBar.querySelectorAll('button').forEach(function(b) {
+      b.onclick = function() {
+        var mode = b.getAttribute('data-flt');
+        tbl.querySelectorAll('tbody tr').forEach(function(tr) {
+          var txt = tr.textContent;
+          if (mode === 'all') tr.style.display = '';
+          else if (mode === 'red') tr.style.display = (txt.indexOf('РИСК') !== -1) ? '' : 'none';
+          else if (mode === 'green') tr.style.display = (txt.indexOf('НАДЕЖНЫЙ') !== -1) ? '' : 'none';
+        });
+      };
+    });
+
+    // 2. Добавляем колонку "Управленческое решение" в таблицу
+    var headRow = tbl.querySelector('thead tr');
+    if (headRow) {
+      var th = document.createElement('th');
+      th.textContent = 'Действие';
+      th.style.padding = '10px 8px';
+      headRow.appendChild(th);
+    }
+
+    tbl.querySelectorAll('tbody tr').forEach(function(tr) {
+      var cells = tr.querySelectorAll('td');
+      var subName = cells.length ? cells.item(0).textContent.trim().replace(/\s+/g, ' ') : 'Подрядчик';
+      var lossText = cells.length >= 6 ? cells.item(5).textContent.trim() : '0 тыс. ₽';
+      var isRisk = tr.textContent.indexOf('РИСК') !== -1;
+
+      var td = document.createElement('td');
+      td.style.padding = '10px 8px';
+      if (isRisk) {
+        td.innerHTML = '<button type="button" style="background:#dc2626;color:#fff;border:none;padding:6px 10px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;">⚖️ Претензия CAPA</button>';
+        td.querySelector('button').onclick = function() {
+          var amtNum = (parseInt(lossText.replace(/\D/g, ''), 10) || 100) * 1000;
+          try {
+            var list = JSON.parse(localStorage.getItem('kpistroy_antifraud_penalties') || '[]');
+            list.unshift({
+              id: 'pen_sub_' + Date.now(),
+              kind: 'Удержание за простой / срыв сроков',
+              desc: 'Автоматическая претензия по рейтингу KPI (' + subName + ')',
+              amt: amtNum,
+              act: 'Реестр KPI от ' + new Date().toLocaleDateString('ru-RU'),
+              culp: subName,
+              capa: 'Удержание из ближайшего акта КС-2',
+              status: 'pending'
+            });
+            localStorage.setItem('kpistroy_antifraud_penalties', JSON.stringify(list));
+          } catch (e) {}
+          alert('⚖️ Черновик претензии на сумму ' + amtNum.toLocaleString('ru-RU') + ' ₽ для ' + subName + ' сформирован и отправлен во вкладку «💰 Контроль штрафов» на акцепт Гендиректора!');
+        };
+      } else {
+        td.innerHTML = '<button type="button" style="background:#16a34a;color:#fff;border:none;padding:6px 10px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;">⭐ В приоритет Биржи</button>';
+        td.querySelector('button').onclick = function() {
+          alert('⭐ Организация ' + subName + ' отмечена как надежный партнер (FTRI > 90%) и поднята в приоритет при распределении новых лотов!');
+        };
+      }
+      tr.appendChild(td);
+    });
+  }, 400);
+})();
+</script>
 
 
 
