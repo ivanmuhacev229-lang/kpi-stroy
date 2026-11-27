@@ -4258,6 +4258,274 @@ setInterval(function() {
   }, 400);
 })();
 </script>
+<!-- ЖИВЫЕ ОТКЛИКИ ПОДРЯДЧИКОВ И ТАБЛИЦА СРАВНЕНИЯ ЦЕН В ЛОТАХ БИРЖИ -->
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn || !btn.textContent || btn.textContent.indexOf('Откликнуться / Предложить цену') === -1) return;
+    e.stopImmediatePropagation();
+
+    var card = btn.closest('div[style*="border-left:4px solid"]');
+    if (!card) return;
+    var title = card.querySelector('div') ? card.querySelector('div').textContent.trim() : 'Лот';
+
+    var price = prompt('Ваше коммерческое предложение по лоту «' + title + '» (цена, ₽):', '13 950 000 ₽');
+    if (!price) return;
+    var days = prompt('Предлагаемый срок выполнения (дней):', '40 дней') || '40 дней';
+    var org = prompt('Название вашей организации:', 'ООО «СибМонолитСтрой»') || 'Подрядчик';
+
+    // Увеличиваем счетчик откликов прямо в карточке
+    var cntSpan = Array.from(card.querySelectorAll('span')).find(function(s) {
+      return s.textContent.indexOf('Откликов подрядчиков:') !== -1;
+    });
+    if (cntSpan) {
+      var cur = parseInt(cntSpan.textContent.replace(/\D/g, ''), 10) || 0;
+      cntSpan.textContent = 'Откликов подрядчиков: ' + (cur + 1) + ' (Новый!)';
+      cntSpan.style.color = '#16a34a';
+    }
+
+    // Добавляем строку с предложением прямо в низ карточки тендера
+    var offerRow = document.createElement('div');
+    offerRow.style.cssText = 'margin-top:8px;padding:7px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;font-size:11.5px;color:#14532d;';
+    offerRow.innerHTML = '✅ <strong>' + org.replace(/</g, '&lt;') + '</strong>: цена <strong>' + price.replace(/</g, '&lt;') + '</strong>, срок <strong>' + days.replace(/</g, '&lt;') + '</strong>';
+    card.appendChild(offerRow);
+  }, true);
+})();
+</script>
+<!-- РАСШИРЕННАЯ B2B-БИРЖА (БЛОК 1 ИЗ 2): РЕГИОНЫ, БАЛЛЫ РЕЙТИНГА И ПОРТФОЛИО ПОДРЯДЧИКА -->
+<script>
+(function() {
+  window._EXCHANGE_PRO_DB = [
+    {
+      name: 'АО «Завод ЖБИ-4 Новосибирск»', inn: '5404112233', region: 'Новосибирск и НСО', city: 'Новосибирск',
+      holding_name: 'ГК СтройИнвест', specialization: '23.61 (Завод ЖБИ / Бетон)',
+      rating_ftri: 97.5, rating_cle: 0.9, staff: '240 чел. • Собственный РБУ (120 м³/ч) и парк 18 автобетоносмесителей',
+      sro: 'Член Ассоциации строителей Новосибирской области • Лаборатория аккредитована',
+      portfolio: [
+        { obj: 'ЖК «Онега» (г. Новосибирск)', work: 'Поставка товарного бетона В25–В35 и плит ПБ (14 200 м³)', year: '2025–2026', ftri: '98.2%' },
+        { obj: 'Логистический хаб «Север»', work: 'Сборный железобетонный каркас и колонны', year: '2025', ftri: '96.8%' }
+      ]
+    },
+    {
+      name: 'ООО «СибМонолитСтрой»', inn: '5406781234', region: 'Новосибирск и НСО', city: 'Новосибирск',
+      holding_name: 'ГК СтройИнвест', specialization: '41.20 (Монолит / Коробка), 43.12 (Земляные)',
+      rating_ftri: 94.2, rating_cle: 1.8, staff: '185 чел. (4 монолитные бригады) • 3 башенных крана QTZ, опалубка Doka',
+      sro: 'СРО-С-084 (компенсационный фонд 2-й уровень, до 500 млн ₽)',
+      portfolio: [
+        { obj: 'ЖК «Онега» (Секции 1–3)', work: 'Монолитный каркас 24 этажа (19 500 м³)', year: '2025–2026', ftri: '94.5%' },
+        { obj: 'БЦ «Калининский» (г. Новосибирск)', work: 'Нулевой цикл, шпунтовое ограждение и фундаментная плита', year: '2024', ftri: '93.9%' }
+      ]
+    },
+    {
+      name: 'ООО «УралСпецКаркас»', inn: '6671094821', region: 'Екатеринбург и Свердловская обл.', city: 'Екатеринбург',
+      holding_name: '', specialization: '41.20 (Монолит / Коробка), 43.99 (Фасады и Металл)',
+      rating_ftri: 93.4, rating_cle: 1.4, staff: '160 чел. • Собственный цех металлоконструкций (450 т/мес.)',
+      sro: 'СРО Союз «УралСтрой» • Допуск НОСТРОЙ',
+      portfolio: [
+        { obj: 'ЖК «Исеть-Парк» (г. Екатеринбург)', work: 'Монтаж металлокаркаса и витражного остекления (8 400 м²)', year: '2025', ftri: '94.0%' },
+        { obj: 'Складской комплекс «Кольцово»', work: 'Несущие фермы и сэндвич-панели', year: '2024', ftri: '92.8%' }
+      ]
+    },
+    {
+      name: 'ООО «ЭлектроСпецСтрой»', inn: '5401992845', region: 'Новосибирск и НСО', city: 'Новосибирск',
+      holding_name: '', specialization: '43.21 (Электромонтажные работы)',
+      rating_ftri: 92.8, rating_cle: 1.5, staff: '68 чел. • Собственная электротехническая лаборатория до 10 кВ',
+      sro: 'СРО-С-112 • Лицензия МЧС на пожарную сигнализацию и АСУ ТП',
+      portfolio: [
+        { obj: 'ЖК «Онега» (г. Новосибирск)', work: 'Внутреннее электроснабжение, ГРЩ и слаботочные системы', year: '2025–2026', ftri: '93.1%' },
+        { obj: 'ТЦ «Заельцовский»', work: 'Трансформаторная подстанция 2×1000 кВА и кабельные линии', year: '2024', ftri: '92.5%' }
+      ]
+    },
+    {
+      name: 'СК «ТехноФасад-НСК»', inn: '5404519821', region: 'Новосибирск и НСО', city: 'Новосибирск',
+      holding_name: '', specialization: '43.99 (Фасады и Металл), 43.91 (Кровельные работы)',
+      rating_ftri: 91.5, rating_cle: 2.4, staff: '92 чел. • 24 комплекта фасадных люлек ZLP-630',
+      sro: 'СРО-С-084 • Сертифицированный монтажник систем Hilti и Rockwool',
+      portfolio: [
+        { obj: 'ЖК «Академ-Парк» (г. Новосибирск)', work: 'Вентилируемый фасад из керамогранита (11 200 м²)', year: '2025', ftri: '91.8%' },
+        { obj: 'Гимназия № 12', work: 'Утепление фасада и мембранная кровля ПВХ (3 600 м²)', year: '2024', ftri: '91.2%' }
+      ]
+    },
+    {
+      name: 'АО «МосИнжСетьСтрой»', inn: '7704882910', region: 'Москва и МО', city: 'Москва',
+      holding_name: '', specialization: '42.21 (Наружные сети), 43.22 (Сантехника и ОВиК)',
+      rating_ftri: 90.6, rating_cle: 2.1, staff: '145 чел. • Установки ГНБ (горизонтально-направленного бурения)',
+      sro: 'СРО «Столица-Строй» (3-й уровень ответственности)',
+      portfolio: [
+        { obj: 'ЖК «Серебряный бор» (г. Москва)', work: 'Магистральные теплосети и ИТП 4,5 Гкал/ч', year: '2025', ftri: '91.0%' },
+        { obj: 'Технопарк «Сколково-Юг»', work: 'Ливневая канализация и водопровод методом ГНБ (3,2 км)', year: '2024', ftri: '90.2%' }
+      ]
+    },
+    {
+      name: 'ООО «ИнжСетьМонтаж»', inn: '5407334910', region: 'Новосибирск и НСО', city: 'Новосибирск',
+      holding_name: '', specialization: '43.22 (Сантехника и ОВиК), 42.21 (Наружные сети)',
+      rating_ftri: 88.9, rating_cle: 3.1, staff: '74 чел. • Сварочные посты с УЗК-контролем швов',
+      sro: 'СРО-С-084 • Допуск на газораспределительные сети',
+      portfolio: [
+        { obj: 'ЖК «Онега» (Корпус 1)', work: 'Системы отопления, водоснабжения и вентиляции', year: '2025', ftri: '89.1%' },
+        { obj: 'Складской комплекс «Толмачево»', work: 'Наружные сети водопровода и канализации (1,8 км)', year: '2024', ftri: '88.7%' }
+      ]
+    }
+  ];
+
+  // Формула интегрального балла подрядчика (из 100 баллов)
+  window._calcContractorScore = function(s) {
+    var score = (Number(s.rating_ftri || 85) * 0.75) + ((100 - (Number(s.rating_cle || 3) * 4)) * 0.25);
+    return Math.min(99.9, Math.max(50, score)).toFixed(1);
+  };
+
+  window._openRichPortfolioModal = function(inn) {
+    var item = (window._EXCHANGE_PRO_DB || []).find(function(x) { return x.inn === inn; });
+    if (!item) return;
+    var score = window._calcContractorScore(item);
+    var old = document.getElementById('rich-port-modal'); if (old) old.remove();
+
+    var ov = document.createElement('div');
+    ov.id = 'rich-port-modal';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.72);z-index:9750;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;';
+
+    var portHtml = (item.portfolio || []).map(function(p) {
+      return '<div style="background:#fff;border:1px solid #e2e8f0;border-left:4px solid #16a34a;border-radius:10px;padding:11px 14px;margin-bottom:8px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><strong style="font-size:13.5px;color:#0f172a;">🏗️ ' + p.obj + '</strong><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">FTRI: ' + p.ftri + ' (' + p.year + ')</span></div>' +
+        '<div style="font-size:12.5px;color:#475569;">' + p.work + '</div>' +
+      '</div>';
+    }).join('');
+
+    ov.innerHTML =
+      '<div style="background:#fff;max-width:640px;width:100%;border-radius:16px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;">' +
+          '<div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' +
+              '<span style="background:#dbeafe;color:#1e3a8a;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:800;">🏆 Рейтинг: ' + score + ' / 100 баллов</span>' +
+              '<span style="background:#dcfce7;color:#166534;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:800;">🟢 ФНС и ЕФРСБ проверены</span>' +
+              (item.holding_name ? '<span style="background:#fef08a;color:#854d0e;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:800;">🏠 ' + item.holding_name + '</span>' : '') +
+            '</div>' +
+            '<h3 style="margin:0 0 3px;font-size:19px;color:#0f172a;">' + item.name + '</h3>' +
+            '<div style="font-size:12.5px;color:#64748b;">ИНН: <strong>' + item.inn + '</strong> • Регион: <strong>' + item.region + ' (г. ' + item.city + ')</strong></div>' +
+          '</div>' +
+          '<button type="button" id="close-rich-port" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>' +
+        '</div>' +
+
+        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;font-size:12.5px;line-height:1.6;margin-bottom:14px;">' +
+          '<div><strong>📋 Специализация ОКВЭД 2:</strong> ' + item.specialization + '</div>' +
+          '<div><strong>👷 Штат и материально-техническая база:</strong> ' + item.staff + '</div>' +
+          '<div><strong>🛡️ СРО и допуски:</strong> ' + item.sro + '</div>' +
+          '<div><strong>📊 Показатели качества:</strong> Сдача с 1-го раза (FTRI) — <strong style="color:#16a34a;">' + item.rating_ftri + '%</strong> • Брак в ФОТ (CLE) — <strong style="color:#16a34a;">' + item.rating_cle + '%</strong></div>' +
+        '</div>' +
+
+        '<div style="font-size:13.5px;font-weight:800;color:#0f172a;margin-bottom:8px;">🏢 Выполненные объекты и портфолио (верифицировано актами КС-2):</div>' +
+        portHtml +
+
+        '<div style="display:flex;gap:10px;margin-top:16px;">' +
+          '<button type="button" id="btn-port-chat" style="flex:1;background:#2563eb;color:#fff;border:none;padding:11px;border-radius:9px;font-weight:700;cursor:pointer;">💬 Написать в E2E-чат</button>' +
+          '<button type="button" id="btn-port-close2" style="background:#f1f5f9;color:#0f172a;border:none;padding:11px 18px;border-radius:9px;font-weight:700;cursor:pointer;">Закрыть</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(ov);
+    document.getElementById('close-rich-port').onclick = function() { ov.remove(); };
+    document.getElementById('btn-port-close2').onclick = function() { ov.remove(); };
+    document.getElementById('btn-port-chat').onclick = function() {
+      ov.remove();
+      var chatBtn = Array.from(document.querySelectorAll('button')).find(function(b) {
+        return b.textContent && b.textContent.indexOf('Защищенный чат') !== -1;
+      });
+      if (chatBtn) chatBtn.click();
+    };
+  };
+})();
+</script>
+<!-- РАСШИРЕННАЯ B2B-БИРЖА (БЛОК 2 ИЗ 2): ФИЛЬТР РЕГИОН/ГОРОД И РАНЖИРОВАНИЕ ПО МЕСТАМ И БАЛЛАМ -->
+<script>
+(function() {
+  var REGIONS = [
+    'Все регионы и города РФ',
+    'Новосибирск и НСО',
+    'Москва и МО',
+    'Екатеринбург и Свердловская обл.'
+  ];
+
+  function paintRankedCards() {
+    var box = document.getElementById('cloud-ex-list');
+    if (!box || !window._EXCHANGE_PRO_DB) return;
+
+    var okvedVal = document.getElementById('ex-okved-filter') ? document.getElementById('ex-okved-filter').value : 'ALL';
+    var regVal = document.getElementById('ex-region-filter') ? document.getElementById('ex-region-filter').value : 'Все регионы и города РФ';
+    var qVal = document.getElementById('ex-search-inp') ? document.getElementById('ex-search-inp').value.trim().toLowerCase() : '';
+
+    var list = window._EXCHANGE_PRO_DB.slice().map(function(item) {
+      return Object.assign({}, item, { score: Number(window._calcContractorScore(item)) });
+    });
+
+    // Сортируем по баллам для присвоения честных мест в рейтинге (1 место, 2 место, 3 место...)
+    list.sort(function(a, b) { return b.score - a.score; });
+    list.forEach(function(item, idx) { item.rank = idx + 1; });
+
+    // Фильтруем по региону, ОКВЭД 2 и поисковому запросу
+    var filtered = list.filter(function(s) {
+      var passReg = (regVal === 'Все регионы и города РФ') || (s.region === regVal);
+      var passOkved = (okvedVal === 'ALL') || ((s.specialization || '').indexOf(okvedVal) !== -1);
+      var passQ = !qVal || (s.name.toLowerCase().indexOf(qVal) !== -1) || (s.inn.indexOf(qVal) !== -1) || (s.city.toLowerCase().indexOf(qVal) !== -1);
+      return passReg && passOkved && passQ;
+    });
+
+    if (!filtered.length) {
+      box.innerHTML = '<div style="grid-column:1/-1;background:#f8fafc;border:1px solid #cbd5e1;padding:20px;border-radius:12px;color:#475569;">По выбранным фильтрам региона и ОКВЭД 2 подрядчиков пока не найдено.</div>';
+      return;
+    }
+
+    box.innerHTML = filtered.map(function(s) {
+      var isOwn = Boolean(s.holding_name);
+      var medal = s.rank === 1 ? '🥇 1 место' : (s.rank === 2 ? '🥈 2 место' : (s.rank === 3 ? '🥉 3 место' : '🏅 #' + s.rank + ' место'));
+      var borderStyle = isOwn ? '2px solid #eab308' : '1px solid #cbd5e1';
+      var bgStyle = isOwn ? '#fefce8' : '#f8fafc';
+
+      return '<div style="background:' + bgStyle + ';border:' + borderStyle + ';border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;">' +
+        '<div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">' +
+            '<span style="background:#0f172a;color:#fff;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:800;">' + medal + ' • ' + s.score + ' б.</span>' +
+            (isOwn
+              ? '<span style="background:#fef08a;color:#854d0e;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;">🏠 Свой холдинг</span>'
+              : '<span style="background:#dcfce7;color:#166534;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;">🟢 ФНС/ЕФРСБ ОК</span>') +
+          '</div>' +
+          '<strong style="font-size:15px;color:#0f172a;display:block;margin-bottom:4px;">' + s.name + '</strong>' +
+          '<div style="font-size:12px;color:#475569;margin-bottom:8px;line-height:1.45;">📍 <strong>' + s.region + '</strong> (г. ' + s.city + ')<br>ИНН: ' + s.inn + '<br><strong>ОКВЭД:</strong> ' + s.specialization + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="background:#fff;border:1px solid #e2e8f0;padding:7px 10px;border-radius:8px;font-size:12px;font-weight:700;color:#1e3a8a;margin-bottom:9px;">FTRI (с 1-го раза): ' + s.rating_ftri + '% • Брак (CLE): ' + s.rating_cle + '%</div>' +
+          '<button type="button" onclick="window._openRichPortfolioModal(\'' + s.inn + '\')" style="width:100%;margin-bottom:6px;background:#fff;color:#0f172a;border:1px solid #94a3b8;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🏢 Портфолио, объекты и досье</button>' +
+          '<button type="button" style="width:100%;background:' + (isOwn ? '#ca8a04' : '#2563eb') + ';color:#fff;border:none;padding:9px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">' + (isOwn ? '🏠 Внутренний заказ холдинга' : '➕ Пригласить на объект') + '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  setInterval(function() {
+    var okvedSel = document.getElementById('ex-okved-filter');
+    var box = document.getElementById('cloud-ex-list');
+    if (!okvedSel || !box) return;
+
+    // 1. Вставляем фильтр по Региону и Городу рядом с ОКВЭД 2
+    if (!document.getElementById('ex-region-filter')) {
+      var regSel = document.createElement('select');
+      regSel.id = 'ex-region-filter';
+      regSel.style.cssText = 'padding:9px 12px;border:1px solid #86efac;border-radius:8px;font-weight:700;font-size:13px;background:#f0fdf4;color:#166534;';
+      regSel.innerHTML = REGIONS.map(function(r) { return '<option value="' + r + '">📍 ' + r + '</option>'; }).join('');
+      okvedSel.insertAdjacentElement('beforebegin', regSel);
+
+      regSel.onchange = paintRankedCards;
+      okvedSel.onchange = paintRankedCards;
+      var sInp = document.getElementById('ex-search-inp');
+      if (sInp) sInp.oninput = paintRankedCards;
+
+      paintRankedCards();
+    } else if (box.innerHTML.indexOf('место •') === -1 && box.innerHTML.indexOf('не найдено') === -1) {
+      paintRankedCards();
+    }
+  }, 350);
+})();
+</script>
 
 
 
