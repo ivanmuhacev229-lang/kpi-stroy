@@ -3973,6 +3973,94 @@ setInterval(function() {
   }, 400);
 })();
 </script>
+<!-- СВЯЗКА B2B-БИРЖА -> РЕЙТИНГ ПОДРЯДЧИКОВ (ДОБАВЛЕНИЕ ТОЛЬКО ПРОВЕРЕННЫХ С БИРЖИ) -->
+<script>
+(function() {
+  function getHiredSubs() {
+    try { return JSON.parse(localStorage.getItem('kpistroy_hired_exchange_subs') || '[]'); } catch (e) { return []; }
+  }
+
+  // 1. Заменяем ручную кнопку на переход в B2B-Биржу и подрисовываем нанятых с Биржи подрядчиков в рейтинг
+  setInterval(function() {
+    var oldManualBtn = document.getElementById('btn-add-sub-row');
+    if (oldManualBtn) oldManualBtn.remove();
+
+    var tbl = Array.from(document.querySelectorAll('table')).find(function(t) {
+      return t.offsetParent !== null && t.innerHTML.indexOf('Итоговый рейтинг') !== -1 && t.innerHTML.indexOf('Ущерб от простоев') !== -1;
+    });
+    if (!tbl) return;
+
+    var bar = tbl.previousElementSibling;
+    if (bar && !document.getElementById('btn-goto-exchange-sub')) {
+      var goBtn = document.createElement('button');
+      goBtn.id = 'btn-goto-exchange-sub';
+      goBtn.type = 'button';
+      goBtn.textContent = '🔍 Назначить с B2B-Биржи →';
+      goBtn.style.cssText = 'background:#2563eb;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;';
+      goBtn.onclick = function() {
+        var exTab = Array.from(document.querySelectorAll('button')).find(function(b) {
+          return b.textContent && b.textContent.indexOf('Биржа подрядчиков') !== -1;
+        });
+        if (exTab) exTab.click();
+      };
+      bar.appendChild(goBtn);
+    }
+
+    // Отрисовываем подрядчиков, приглашенных с B2B-Биржи
+    var tbody = tbl.querySelector('tbody');
+    if (!tbody) return;
+    getHiredSubs().forEach(function(s) {
+      if (tbody.querySelector('tr[data-hired-inn="' + s.inn + '"]')) return;
+      var tr = document.createElement('tr');
+      tr.setAttribute('data-hired-inn', s.inn);
+      tr.style.background = '#f0fdf4';
+      tr.innerHTML =
+        '<td><strong>' + String(s.name).replace(/</g, '&lt;') + '</strong><br><span style="font-size:11px;color:#166534;">✓ Проверен на B2B-Бирже</span></td>' +
+        '<td>ЖК Онега (Комфорт-класс)<br><span style="font-size:11.5px;color:#64748b;">' + String(s.spec).replace(/</g, '&lt;') + '</span></td>' +
+        '<td><strong>' + s.ftri + '%</strong></td>' +
+        '<td>' + s.cle + '%</td>' +
+        '<td>0 дн.</td>' +
+        '<td>0 тыс. ₽</td>' +
+        '<td><span style="display:inline-block;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d;">НАДЕЖНЫЙ (Зеленая)</span></td>' +
+        '<td style="padding:10px 8px;"><span style="font-size:11.5px;font-weight:700;color:#15803d;">⭐ В работе с Биржи</span></td>';
+      tbody.appendChild(tr);
+    });
+  }, 400);
+
+  // 2. Перехватываем нажатие "Пригласить на объект" / "Внутренний заказ холдинга" в карточках B2B-Биржи
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    var txt = btn.textContent || '';
+    if (txt.indexOf('Пригласить на объект') !== -1 || txt.indexOf('Внутренний заказ холдинга') !== -1) {
+      var card = btn.parentElement;
+      if (!card) return;
+      var nameEl = card.querySelector('strong');
+      var name = nameEl ? nameEl.textContent.trim() : 'Подрядчик с Биржи';
+      var cardTxt = card.textContent || '';
+      var innMatch = cardTxt.match(/ИНН:\s*(\d+)/);
+      var ftriMatch = cardTxt.match(/FTRI\):\s*([\d.]+)/);
+      var cleMatch = cardTxt.match(/CLE\):\s*([\d.]+)/);
+      var okvedMatch = cardTxt.match(/ОКВЭД:\s*([^\n]+)/);
+
+      var list = getHiredSubs();
+      var inn = innMatch ? innMatch.slice(1).join('') : String(Date.now());
+      if (!list.some(function(x) { return x.name === name; })) {
+        list.push({
+          inn: inn,
+          name: name,
+          spec: okvedMatch ? okvedMatch.slice(1).join('').trim() : 'СМР по ОКВЭД 2',
+          ftri: ftriMatch ? ftriMatch.slice(1).join('') : '92.0',
+          cle: cleMatch ? cleMatch.slice(1).join('') : '1.9'
+        });
+        try { localStorage.setItem('kpistroy_hired_exchange_subs', JSON.stringify(list)); } catch (err) {}
+      }
+      btn.textContent = '✅ Назначен на объект (в Рейтинге)';
+      btn.style.background = '#16a34a';
+    }
+  }, true);
+})();
+</script>
 
 
 
