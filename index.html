@@ -3492,6 +3492,19 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ПЕРЕКЛЮЧЕНИЕ БАЗЫ НА СОБСТВЕННЫЙ CLOUDFLARE PROXY (РАБОТАЕТ В РФ БЕЗ БЛОКИРОВОК) -->
+<script>
+(function() {
+  if (!window._cloudApp) return;
+  var PROXY_BASE = 'https://kpistroy.ru';
+  var SB_ANON = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
+  window._cloudApp.sb = function(path, opts) {
+    opts = opts || {};
+    var headers = Object.assign({ 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, opts.headers || {});
+    return fetch(PROXY_BASE + path, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
+  };
+})();
+</script>
 
 
 </body>
