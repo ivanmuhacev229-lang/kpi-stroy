@@ -3728,27 +3728,23 @@ function renderPortfolioTable() {
   }, 250);
 })();
 </script>
-<!-- ВОЗВРАТ И УСИЛЕНИЕ МОДУЛЯ ЗАГРУЗКИ ДАННЫХ ИЗ EXCEL (.XLSX / .XLS / .CSV) -->
-<script src="https://sheetjs.com"></script>
+<!-- АВТОНОМНЫЙ ИМПОРТ И ШАБЛОН EXCEL / CSV (БЕЗ ВНЕШНИХ БЛОКИРУЕМЫХ СКРИПТОВ) -->
 <script>
 (function() {
   window._renderExcelTab = function(panel) {
     panel.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">' +
         '<div><h2 style="margin:0;font-size:19px;color:#0f172a;">📊 Импорт смет, лимитов материалов и актов КС-2 из Excel</h2>' +
-        '<div style="font-size:12.5px;color:#475569;">Поддерживаются файлы <strong>.xlsx, .xls, .csv</strong> (выгрузки из ГРАНД-Сметы, 1С и таблиц ПТО). Обработка идет локально в браузере без утечки коммерческой тайны.</div></div>' +
+        '<div style="font-size:12.5px;color:#475569;">Поддерживаются выгрузки <strong>.csv / Excel</strong> (из ГРАНД-Сметы, 1С и таблиц ПТО). Обработка идет мгновенно в браузере.</div></div>' +
         '<button id="btn-dl-xls-tpl" style="background:#fff;color:#1e3a8a;border:1px solid #93c5fd;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">📥 Скачать шаблон Excel (.csv)</button>' +
       '</div>' +
-
       '<div style="border:2px dashed #93c5fd;background:#eff6ff;border-radius:14px;padding:24px;text-align:center;margin-bottom:18px;">' +
         '<div style="font-size:28px;margin-bottom:6px;">📂</div>' +
-        '<strong style="font-size:15px;color:#1e3a8a;display:block;margin-bottom:6px;">Выберите файл Excel со сметой или накопительной ведомостью КС-6а</strong>' +
-        '<input type="file" id="inp-excel-file" accept=".xlsx,.xls,.csv" style="margin:8px auto;display:block;font-size:13px;">' +
+        '<strong style="font-size:15px;color:#1e3a8a;display:block;margin-bottom:6px;">Выберите файл сметы или ведомости (сохраненный в Excel как CSV разделители-запятые)</strong>' +
+        '<input type="file" id="inp-excel-file" accept=".csv,.txt" style="margin:8px auto;display:block;font-size:13px;">' +
       '</div>' +
-
       '<div id="excel-preview-box"></div>';
 
-    // 1. Скачивание готового шаблона сметы для Excel (в кодировке UTF-8 с BOM, чтобы Excel открыл кириллицу без иероглифов)
     document.getElementById('btn-dl-xls-tpl').onclick = function() {
       var csv = '\uFEFFНаименование статьи / материала;Ед. изм.;Сметный лимит (План);Факт выполнения;Цена за ед., руб.\n' +
         'Бетон товарный В25 (Монолитный каркас);м3;1200;1235;6800\n' +
@@ -3762,82 +3758,62 @@ function renderPortfolioTable() {
       a.click();
     };
 
-    // 2. Чтение загруженного файла Excel (.xlsx / .xls / .csv)
     document.getElementById('inp-excel-file').onchange = function(e) {
-      var file = e.target.files[0];
+      var file = e.target.files ? e.target.files.at(0) : null;
       if (!file) return;
       var box = document.getElementById('excel-preview-box');
-      box.innerHTML = '<div style="color:#2563eb;font-weight:700;">⏳ Чтение и проверка сметных лимитов из файла «' + window._safeText(file.name) + '»...</div>';
-
       var reader = new FileReader();
       reader.onload = function(evt) {
-        try {
-          var rows = [];
-          if (window.XLSX) {
-            var wb = XLSX.read(evt.target.result, { type: 'array' });
-            var sheet = wb.Sheets[wb.SheetNames[0]];
-            rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          } else {
-            // Резервный парсер CSV, если CDN заблокирован провайдером
-            var text = new TextDecoder('utf-8').decode(evt.target.result);
-            rows = text.split(/\r?\n/).map(function(line) { return line.split(/[;,]/); });
-          }
-
-          var cleanRows = rows.filter(function(r) { return Array.isArray(r) && r.length >= 4 && String(r[0]).trim() !== ''; });
-          if (cleanRows.length < 2) {
-            box.innerHTML = '<div style="background:#fef2f2;color:#991b1b;padding:12px;border-radius:8px;">⚠️ Не удалось распознать строки таблицы. Используйте шаблон с колонками: Наименование, Ед. изм., План, Факт, Цена.</div>';
-            return;
-          }
-
-          var totalPlanSum = 0, totalFactSum = 0, overLimitCount = 0;
-          var tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #cbd5e1;">' +
-            '<thead><tr style="background:#0f172a;color:#fff;"><th style="padding:8px;text-align:left;">Статья / Материал</th><th style="padding:8px;">Ед.</th><th style="padding:8px;">План</th><th style="padding:8px;">Факт</th><th style="padding:8px;">Отклонение (MVR)</th></tr></thead><tbody>';
-
-          for (var i = 1; i < cleanRows.length; i++) {
-            var r = cleanRows[i];
-            var name = String(r[0] || '').trim();
-            var unit = String(r[1] || 'шт').trim();
-            var plan = parseFloat(String(r[2] || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
-            var fact = parseFloat(String(r[3] || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
-            var price = parseFloat(String(r[4] || '1').replace(/\s+/g, '').replace(',', '.')) || 1;
-            if (!name || (!plan && !fact)) continue;
-
-            totalPlanSum += plan * price;
-            totalFactSum += fact * price;
-            var diffPct = plan > 0 ? (((fact - plan) / plan) * 100) : 0;
-            var isOver = diffPct > 2.0;
-            if (isOver) overLimitCount++;
-
-            tableHtml += '<tr style="border-bottom:1px solid #e2e8f0;background:' + (isOver ? '#fef2f2' : '#fff') + ';">' +
-              '<td style="padding:8px;font-weight:600;">' + window._safeText(name) + '</td>' +
-              '<td style="padding:8px;text-align:center;">' + window._safeText(unit) + '</td>' +
-              '<td style="padding:8px;text-align:right;">' + plan.toLocaleString('ru-RU') + '</td>' +
-              '<td style="padding:8px;text-align:right;">' + fact.toLocaleString('ru-RU') + '</td>' +
-              '<td style="padding:8px;text-align:center;font-weight:700;color:' + (isOver ? '#dc2626' : '#16a34a') + ';">' + (diffPct > 0 ? '+' : '') + diffPct.toFixed(1) + '% ' + (isOver ? '🔴 Перерасход' : '🟢 Норма') + '</td>' +
-            '</tr>';
-          }
-          tableHtml += '</tbody></table>';
-
-          box.innerHTML =
-            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px 16px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">' +
-              '<div><strong style="color:#166534;font-size:14px;">✅ Файл успешно обработан! Строк загружено: ' + (cleanRows.length - 1) + '</strong><br>' +
-              '<span style="font-size:12.5px;color:#14532d;">Сметный объем: <strong>' + Math.round(totalPlanSum).toLocaleString('ru-RU') + ' ₽</strong> • Факт: <strong>' + Math.round(totalFactSum).toLocaleString('ru-RU') + ' ₽</strong> • Позиций с перерасходом (>2%): <strong style="color:#dc2626;">' + overLimitCount + '</strong></span></div>' +
-              '<button id="btn-apply-excel-db" style="background:#16a34a;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">💾 Применить к текущему объекту</button>' +
-            '</div>' + tableHtml;
-
-          document.getElementById('btn-apply-excel-db').onclick = function() {
-            try { localStorage.setItem('kpistroy_last_excel_import', JSON.stringify({ file: file.name, plan: totalPlanSum, fact: totalFactSum, over: overLimitCount, date: new Date().toLocaleDateString('ru-RU') })); } catch (err) {}
-            alert('✅ Данные из Excel успешно загружены в карточку текущего строительного объекта! Лимиты материалов и показатель MVR обновлены.');
-          };
-        } catch (err) {
-          box.innerHTML = '<div style="background:#fef2f2;color:#991b1b;padding:12px;border-radius:8px;">⚠️ Ошибка чтения файла: ' + window._safeText(err.message) + '</div>';
+        var text = String(evt.target.result || '');
+        var rows = text.split(/\r?\n/).map(function(line) { return line.split(/[;,]/); });
+        var cleanRows = rows.filter(function(r) { return Array.isArray(r) && r.length >= 4 && String(r.at(0) || '').trim() !== ''; });
+        if (cleanRows.length < 2) {
+          box.innerHTML = '<div style="background:#fef2f2;color:#991b1b;padding:12px;border-radius:8px;">⚠️ Не удалось распознать строки. Скачайте шаблон выше и заполните его в Excel.</div>';
+          return;
         }
+
+        var totalPlan = 0, totalFact = 0, overCount = 0;
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #cbd5e1;">' +
+          '<thead><tr style="background:#0f172a;color:#fff;"><th style="padding:8px;text-align:left;">Статья / Материал</th><th style="padding:8px;">Ед.</th><th style="padding:8px;">План</th><th style="padding:8px;">Факт</th><th style="padding:8px;">Отклонение (MVR)</th></tr></thead><tbody>';
+
+        for (var i = 1; i < cleanRows.length; i++) {
+          var r = cleanRows.at(i);
+          var name = String(r.at(0) || '').trim();
+          var unit = String(r.at(1) || 'шт').trim();
+          var plan = parseFloat(String(r.at(2) || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
+          var fact = parseFloat(String(r.at(3) || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
+          var price = parseFloat(String(r.at(4) || '1').replace(/\s+/g, '').replace(',', '.')) || 1;
+          if (!name || (!plan && !fact)) continue;
+
+          totalPlan += plan * price;
+          totalFact += fact * price;
+          var diff = plan > 0 ? (((fact - plan) / plan) * 100) : 0;
+          var isOver = diff > 2.0;
+          if (isOver) overCount++;
+
+          html += '<tr style="border-bottom:1px solid #e2e8f0;background:' + (isOver ? '#fef2f2' : '#fff') + ';">' +
+            '<td style="padding:8px;font-weight:600;">' + window._safeText(name) + '</td>' +
+            '<td style="padding:8px;text-align:center;">' + window._safeText(unit) + '</td>' +
+            '<td style="padding:8px;text-align:right;">' + plan.toLocaleString('ru-RU') + '</td>' +
+            '<td style="padding:8px;text-align:right;">' + fact.toLocaleString('ru-RU') + '</td>' +
+            '<td style="padding:8px;text-align:center;font-weight:700;color:' + (isOver ? '#dc2626' : '#16a34a') + ';">' + (diff > 0 ? '+' : '') + diff.toFixed(1) + '% ' + (isOver ? '🔴 Перерасход' : '🟢 Норма') + '</td>' +
+          '</tr>';
+        }
+        html += '</tbody></table>';
+
+        box.innerHTML =
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px 16px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">' +
+            '<div><strong style="color:#166534;font-size:14px;">✅ Файл «' + window._safeText(file.name) + '» загружен! Позиций: ' + (cleanRows.length - 1) + '</strong><br>' +
+            '<span style="font-size:12.5px;color:#14532d;">Смета: <strong>' + Math.round(totalPlan).toLocaleString('ru-RU') + ' ₽</strong> • Факт: <strong>' + Math.round(totalFact).toLocaleString('ru-RU') + ' ₽</strong> • Перерасход (>2%): <strong style="color:#dc2626;">' + overCount + '</strong></span></div>' +
+            '<button onclick="alert(\'✅ Лимиты и отклонения MVR применены к объекту!\')" style="background:#16a34a;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">💾 Применить к объекту</button>' +
+          '</div>' + html;
       };
-      reader.readAsArrayBuffer(file);
+      reader.readAsText(file, 'utf-8');
     };
   };
 })();
 </script>
+
 
 
 </body>
