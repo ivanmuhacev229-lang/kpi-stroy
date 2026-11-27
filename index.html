@@ -3813,6 +3813,24 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- ПРИНУДИТЕЛЬНАЯ ПРИВЯЗКА ВКЛАДКИ "ИМПОРТ EXCEL" К НОВОМУ ПАРСЕРУ -->
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.textContent && btn.textContent.indexOf('Импорт Excel') !== -1) {
+      setTimeout(function() {
+        var pnl = document.getElementById('single-master-pnl');
+        if (pnl && window._renderExcelTab) {
+          pnl.style.display = 'block';
+          window._renderExcelTab(pnl);
+        }
+      }, 40);
+    }
+  }, true);
+})();
+</script>
 
 
 
