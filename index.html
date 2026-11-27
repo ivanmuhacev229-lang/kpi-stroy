@@ -3909,6 +3909,77 @@ function renderPortfolioTable() {
   }, true);
 })();
 </script>
+<!-- ИСПРАВЛЕННЫЙ ЧИТАТЕЛЬ КОЛОНОК EXCEL/CSV + КНОПКА "ПРИМЕНИТЬ К ОБЪЕКТУ" -->
+<script>
+(function() {
+  document.addEventListener('change', function(e) {
+    if (!e.target || e.target.id !== 'inp-excel-file') return;
+    var file = e.target.files ? e.target.files.at(0) : null;
+    if (!file) return;
+    var box = document.getElementById('excel-preview-box');
+    if (!box) return;
+
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      var text = String(evt.target.result || '');
+      var rows = text.split(/\r?\n/).map(function(line) { return line.split(/[;,]/); });
+      var cleanRows = rows.filter(function(r) { return Array.isArray(r) && r.length >= 4 && String(r.at(0) || '').trim() !== ''; });
+
+      if (cleanRows.length < 2) {
+        box.innerHTML = '<div style="background:#fef2f2;color:#991b1b;padding:12px;border-radius:8px;">⚠️ Не удалось распознать строки. Используйте шаблон с 5 колонками.</div>';
+        return;
+      }
+
+      var totalPlan = 0, totalFact = 0, overCount = 0;
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #cbd5e1;">' +
+        '<thead><tr style="background:#0f172a;color:#fff;"><th style="padding:8px;text-align:left;">Статья / Материал</th><th style="padding:8px;">Ед.</th><th style="padding:8px;">План</th><th style="padding:8px;">Факт</th><th style="padding:8px;">Отклонение (MVR)</th></tr></thead><tbody>';
+
+      for (var i = 1; i < cleanRows.length; i++) {
+        var r = cleanRows.at(i);
+        var name = String(r.at(0) || '').trim();
+        var unit = String(r.at(1) || 'шт').trim();
+        var plan = parseFloat(String(r.at(2) || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
+        var fact = parseFloat(String(r.at(3) || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
+        var price = parseFloat(String(r.at(4) || '1').replace(/\s+/g, '').replace(',', '.')) || 1;
+        if (!name || (!plan && !fact)) continue;
+
+        totalPlan += plan * price;
+        totalFact += fact * price;
+        var diff = plan > 0 ? (((fact - plan) / plan) * 100) : 0;
+        var isOver = diff > 2.0;
+        if (isOver) overCount++;
+
+        html += '<tr style="border-bottom:1px solid #e2e8f0;background:' + (isOver ? '#fef2f2' : '#fff') + ';">' +
+          '<td style="padding:8px;font-weight:600;">' + name.replace(/</g, '&lt;') + '</td>' +
+          '<td style="padding:8px;text-align:center;">' + unit.replace(/</g, '&lt;') + '</td>' +
+          '<td style="padding:8px;text-align:right;">' + plan.toLocaleString('ru-RU') + '</td>' +
+          '<td style="padding:8px;text-align:right;">' + fact.toLocaleString('ru-RU') + '</td>' +
+          '<td style="padding:8px;text-align:center;font-weight:700;color:' + (isOver ? '#dc2626' : '#16a34a') + ';">' + (diff > 0 ? '+' : '') + diff.toFixed(1) + '% ' + (isOver ? '🔴 Перерасход' : '🟢 Норма') + '</td>' +
+        '</tr>';
+      }
+      html += '</tbody></table>';
+
+      var overallDiff = totalPlan > 0 ? (((totalFact - totalPlan) / totalPlan) * 100).toFixed(1) : '0.0';
+      box.innerHTML =
+        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px 16px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">' +
+          '<div><strong style="color:#166534;font-size:14px;">✅ Файл «' + file.name.replace(/</g, '&lt;') + '» прочитан! Позиций: ' + (cleanRows.length - 1) + '</strong><br>' +
+          '<span style="font-size:12.5px;color:#14532d;">Смета: <strong>' + Math.round(totalPlan).toLocaleString('ru-RU') + ' ₽</strong> • Факт: <strong>' + Math.round(totalFact).toLocaleString('ru-RU') + ' ₽</strong> • Позиций с перерасходом (>2%): <strong style="color:#dc2626;">' + overCount + '</strong></span></div>' +
+          '<button type="button" id="btn-apply-xls-real" style="background:#16a34a;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">💾 Применить к объекту</button>' +
+        '</div>' + html;
+
+      document.getElementById('btn-apply-xls-real').onclick = function() {
+        var dirCard = document.getElementById('dir-rich-chart-card');
+        if (dirCard) {
+          var badge = dirCard.querySelector('.badge');
+          if (badge) badge.textContent = '📊 Смета Excel применена • Отклонение MVR: +' + overallDiff + '%';
+        }
+        alert('✅ Данные из файла «' + file.name + '» применены к текущему объекту!\n\nСметный лимит: ' + Math.round(totalPlan).toLocaleString('ru-RU') + ' ₽\nФакт: ' + Math.round(totalFact).toLocaleString('ru-RU') + ' ₽\nОтклонение MVR: +' + overallDiff + '%');
+      };
+    };
+    reader.readAsText(file, 'utf-8');
+  }, true);
+})();
+</script>
 
 
 
