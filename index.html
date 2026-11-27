@@ -4551,6 +4551,98 @@ function renderPortfolioTable() {
   });
 })();
 </script>
+<!-- ФИНАЛЬНЫЙ МОСТ EXCEL -> ПОРТФЕЛЬ ОБЪЕКТОВ (ПРЯМАЯ ЗАПИСЬ И ОТРИСОВКА) -->
+<script>
+(function() {
+  function drawPortfolioExcelCards() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (e) {}
+    if (!list.length) return;
+
+    // Ищем открытую вкладку портфеля (где есть кнопки/карточки объектов, но нет формы импорта)
+    var containers = Array.from(document.querySelectorAll('.tab-content, #single-master-pnl, main, section'));
+    var target = containers.find(function(el) {
+      return el.offsetParent !== null &&
+             el.innerHTML.indexOf('inp-excel-file') === -1 &&
+             (el.innerHTML.indexOf('Портфель объектов') !== -1 || el.innerHTML.indexOf('ЖК «Онега»') !== -1);
+    });
+
+    if (!target || document.getElementById('imported-objs-block')) return;
+
+    var wrap = document.createElement('div');
+    wrap.id = 'imported-objs-block';
+    wrap.style.cssText = 'margin-top:20px;padding:18px;background:#eff6ff;border:2px solid #2563eb;border-radius:14px;';
+    wrap.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<h3 style="margin:0;font-size:16px;color:#1e3a8a;">📊 Объекты, импортированные из Excel (' + list.length + ')</h3>' +
+        '<button type="button" onclick="localStorage.removeItem(\'kpistroy_imported_projects\');document.getElementById(\'imported-objs-block\').remove();" style="background:#fff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;color:#64748b;">Очистить импорт</button>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">' +
+      list.map(function(o) {
+        var isRed = parseFloat(o.mei) > 12;
+        var isYel = parseFloat(o.mei) > 5 && !isRed;
+        var zone = isRed ? '🔴 Критично' : (isYel ? '🟡 Внимание' : '🟢 В норме');
+        return '<div style="background:#fff;border:1px solid #bfdbfe;border-radius:12px;padding:16px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="font-size:15px;color:#0f172a;">' + String(o.name).replace(/</g, '&lt;') + '</strong><span style="background:#f1f5f9;padding:3px 8px;border-radius:8px;font-size:11.5px;font-weight:700;">' + zone + '</span></div>' +
+          '<div style="font-size:12px;color:#475569;margin-bottom:8px;">📍 ' + String(o.address).replace(/</g, '&lt;') + '</div>' +
+          '<div style="font-size:12.5px;line-height:1.6;color:#1e293b;">' +
+            'Сметный бюджет: <strong>' + Number(o.cPlan).toLocaleString('ru-RU') + ' тыс. ₽</strong><br>' +
+            'Внутренние потери маржи (MEI): <strong>' + o.mei + '%</strong><br>' +
+            'Цена задержки КС-2 (DCC): <strong>' + Number(o.dcc).toLocaleString('ru-RU') + ' тыс. ₽</strong> • Простой: <strong>' + o.cod + ' тыс. ₽/дн.</strong>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+
+    target.appendChild(wrap);
+  }
+
+  // Переопределяем саму кнопку "➕ Добавить объект в систему" сразу при её появлении
+  setInterval(function() {
+    var addBtn = document.getElementById('btn-create-obj-from-xls');
+    if (addBtn && !addBtn.dataset.directBound) {
+      addBtn.dataset.directBound = '1';
+      addBtn.onclick = function() {
+        var box = document.getElementById('excel-preview-box');
+        var data = {};
+        if (box) {
+          box.querySelectorAll('tbody tr').forEach(function(tr) {
+            var tds = tr.querySelectorAll('td');
+            if (tds.length >= 2) data[tds.item(0).textContent.trim()] = tds.item(1).textContent.trim();
+          });
+        }
+
+        var objName = data['Наименование объекта'] || 'ЖК «Академ-Парк» (Корпус 2)';
+        var objAddr = data['Адрес и шифр объекта'] || 'г. Новосибирск, ул. Тимакова, 14';
+        var cPlan = parseFloat(data['Плановая сметная себестоимость (C_план)']) || 340000;
+        var mPlan = parseFloat(data['Плановая валовая маржа (M_план)']) || 68000;
+        var cFact = parseFloat(data['Фактическая себестоимость (C_факт)']) || 351500;
+        var dRyn = parseFloat(data['Рыночное удорожание материалов (dC_рын)']) || 4500;
+        var vNzp = parseFloat(data['Объем незакрытых актов КС-2 (V_нзп)']) || 62000;
+        var tFact = parseFloat(data['Фактический срок закрытия КС-2 (T_факт)']) || 48;
+        var codVal = parseFloat(data['Стоимость дня простоя объекта (CoD)']) || 145;
+
+        var mei = mPlan > 0 ? ((((cFact - dRyn) - cPlan) / mPlan) * 100).toFixed(1) : '0.0';
+        var dcc = Math.round(vNzp * (0.18 / 365) * Math.max(0, tFact - 30));
+
+        var list = [];
+        try { list = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (err) {}
+        list = list.filter(function(x) { return x.name !== objName; });
+        list.unshift({ id: 'imp_' + Date.now(), name: objName, address: objAddr, cPlan: cPlan, mPlan: mPlan, mei: mei, dcc: dcc, cod: codVal });
+        try { localStorage.setItem('kpistroy_imported_projects', JSON.stringify(list)); } catch (err) {}
+
+        // Переключаем на вкладку "3. Портфель объектов"
+        var portBtn = Array.from(document.querySelectorAll('button')).find(function(b) {
+          return b.textContent && b.textContent.indexOf('Портфель') !== -1;
+        });
+        if (portBtn) portBtn.click();
+        setTimeout(drawPortfolioExcelCards, 120);
+      };
+    }
+
+    drawPortfolioExcelCards();
+  }, 350);
+})();
+</script>
 
 
 
