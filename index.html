@@ -3202,6 +3202,153 @@ function renderPortfolioTable() {
   }, 350);
 })();
 </script>
+<!-- СВЯЗКА 1+2 (БЛОК 1 ИЗ 2): ЖИВЫЕ ПРАВА ПТО ИЗ НАСТРОЕК ДИРЕКТОРА -->
+<script>
+(function() {
+  function getDirConfig() {
+    var def = { maxMvr: 2.0, maxKsDays: 30, maxCle: 5.0, ptoExchange: true, ptoPenalties: false };
+    try {
+      var saved = JSON.parse(localStorage.getItem('kpistroy_dir_cfg'));
+      if (saved) return Object.assign(def, saved);
+    } catch (e) {}
+    return def;
+  }
+
+  // Применяем настройки Директора к меню инженера ПТО в реальном времени
+  setInterval(function() {
+    var r = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : 'guest';
+    var bar = document.getElementById('single-master-bar');
+    var pnl = document.getElementById('single-master-pnl');
+    if (r !== 'pto' || !bar || !pnl) return;
+
+    var cfg = getDirConfig();
+
+    // 1. Управляем видимостью вкладки "🔍 Биржа подрядчиков" для ПТО
+    bar.querySelectorAll('button').forEach(function(b) {
+      if (b.textContent.indexOf('Биржа подрядчиков') !== -1) {
+        b.style.display = cfg.ptoExchange ? 'inline-block' : 'none';
+      }
+    });
+
+    // 2. Добавляем или скрываем вкладку "💰 Контроль штрафов" для ПТО по галочке Директора
+    var penBtn = document.getElementById('btn-pto-dynamic-pen');
+    if (cfg.ptoPenalties) {
+      if (!penBtn) {
+        penBtn = document.createElement('button');
+        penBtn.id = 'btn-pto-dynamic-pen';
+        penBtn.textContent = '💰 Контроль штрафов';
+        penBtn.style.cssText = 'padding:9px 14px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid #e2e8f0;background:#f8fafc;color:#0f172a;';
+        penBtn.onclick = function() {
+          bar.querySelectorAll('button').forEach(function(x) { x.style.background = '#f8fafc'; x.style.color = '#0f172a'; x.style.borderColor = '#e2e8f0'; });
+          penBtn.style.background = '#0f172a'; penBtn.style.color = '#fff'; penBtn.style.borderColor = '#0f172a';
+          document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.add('hidden'); });
+          pnl.style.display = 'block';
+          if (window._renderPenaltiesTab) window._renderPenaltiesTab(pnl);
+        };
+        bar.appendChild(penBtn);
+      }
+    } else if (penBtn) {
+      penBtn.remove();
+    }
+  }, 450);
+})();
+</script>
+<!-- СВЯЗКА 1+2 (БЛОК 2 ИЗ 2): ФИЛЬТР ОКВЭД 2 И СВОЙ ХОЛДИНГ НА БИРЖЕ -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  var FILTER_OKVEDS = new Array(
+    { val: 'ALL', label: 'Все строительные коды ОКВЭД 2' },
+    { val: '41.20', label: '41.20 — Монолитный каркас и коробка' },
+    { val: '43.12', label: '43.12 — Земляные работы и котлованы' },
+    { val: '42.21', label: '42.21 — Наружные инженерные сети' },
+    { val: '43.21', label: '43.21 — Электромонтажные работы' },
+    { val: '43.22', label: '43.22 — Сантехника, отопление и ОВиК' },
+    { val: '43.91', label: '43.91 — Кровельные работы' },
+    { val: '43.99', label: '43.99 — Фасады и металлоконструкции' },
+    { val: '43.31', label: '43.31 — Внутренние отделочные работы' },
+    { val: '23.61', label: '23.61 — Завод ЖБИ / Поставка бетона' }
+  );
+
+  var DEMO_EXCHANGE = new Array(
+    { name: 'ООО «СибМонолитСтрой»', inn: '5406781234', city: 'Новосибирск', holding_name: 'ГК СтройИнвест', specialization: '41.20 (Монолит / Коробка), 43.12 (Земляные)', rating_ftri: 94.2, rating_cle: 1.8 },
+    { name: 'АО «Завод ЖБИ-4 Новосибирск»', inn: '5404112233', city: 'Новосибирск', holding_name: 'ГК СтройИнвест', specialization: '23.61 (Завод ЖБИ / Бетон)', rating_ftri: 97.5, rating_cle: 0.9 },
+    { name: 'СК «ТехноФасад-НСК»', inn: '5404519821', city: 'Новосибирск', holding_name: '', specialization: '43.99 (Фасады и Металл), 43.91 (Кровля)', rating_ftri: 91.5, rating_cle: 2.4 },
+    { name: 'ООО «ИнжСетьМонтаж»', inn: '5407334910', city: 'Новосибирск', holding_name: '', specialization: '43.22 (Сантехника и ОВиК), 42.21 (Наружные сети)', rating_ftri: 88.9, rating_cle: 3.1 },
+    { name: 'ООО «ЭлектроСпецСтрой»', inn: '5401992845', city: 'Новосибирск', holding_name: '', specialization: '43.21 (Электромонтаж)', rating_ftri: 92.8, rating_cle: 1.5 }
+  );
+
+  window._renderExchangeTab = function(panel) {
+    var cur = app.getSession();
+    var myHolding = (cur && cur.company && cur.company.holding_name) ? cur.company.holding_name : 'ГК СтройИнвест';
+
+    var optsHtml = FILTER_OKVEDS.map(function(o) { return '<option value="' + o.val + '">' + o.label + '</option>'; }).join('');
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">' +
+        '<div><h2 style="margin:0;font-size:19px;color:#0f172a;">🔍 B2B-Биржа проверенных подрядчиков и заводов</h2>' +
+        '<div style="font-size:12.5px;color:#64748b;">Отбор по кодам ОКВЭД 2 • Приоритетный показ дочерних предприятий группы компаний</div></div>' +
+        '<select id="ex-okved-filter" style="padding:9px 12px;border:1px solid #93c5fd;border-radius:8px;font-weight:700;font-size:13px;background:#eff6ff;color:#1e3a8a;">' + optsHtml + '</select>' +
+      '</div>' +
+      '<div id="cloud-ex-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:14px;">Загрузка каталога...</div>';
+
+    var allItems = DEMO_EXCHANGE.slice();
+
+    function paintCards(filterCode) {
+      var box = document.getElementById('cloud-ex-list');
+      if (!box) return;
+
+      var filtered = allItems.filter(function(s) {
+        if (filterCode === 'ALL') return true;
+        return (s.specialization || '').indexOf(filterCode) !== -1;
+      });
+
+      // Поднимаем компании своего холдинга на самый верх
+      filtered.sort(function(a, b) {
+        var aOwn = (myHolding && a.holding_name === myHolding) ? 1 : 0;
+        var bOwn = (myHolding && b.holding_name === myHolding) ? 1 : 0;
+        if (aOwn !== bOwn) return bOwn - aOwn;
+        return (b.rating_ftri || 0) - (a.rating_ftri || 0);
+      });
+
+      if (!filtered.length) {
+        box.innerHTML = '<div style="color:#64748b;padding:16px;background:#f8fafc;border-radius:10px;">По выбранному коду ОКВЭД 2 проверенных исполнителей пока нет.</div>';
+        return;
+      }
+
+      box.innerHTML = filtered.map(function(s) {
+        var isOwn = myHolding && s.holding_name && s.holding_name.toLowerCase() === myHolding.toLowerCase();
+        var borderStyle = isOwn ? '2px solid #eab308' : '1px solid #cbd5e1';
+        var bgStyle = isOwn ? '#fefce8' : '#f8fafc';
+        var topBadge = isOwn
+          ? '<span style="background:#fef08a;color:#854d0e;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;">🏠 Свой холдинг</span>'
+          : '<span style="background:#dcfce7;color:#166534;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;">🟢 ФНС/ЕФРСБ ОК</span>';
+
+        return '<div style="background:' + bgStyle + ';border:' + borderStyle + ';border-radius:12px;padding:16px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><strong>' + window._safeText(s.name) + '</strong>' + topBadge + '</div>' +
+          '<div style="font-size:12px;color:#475569;margin:7px 0;line-height:1.45;">ИНН: ' + window._safeText(s.inn) + ' • г. ' + window._safeText(s.city || 'РФ') + '<br><strong>ОКВЭД:</strong> ' + window._safeText(s.specialization) + '</div>' +
+          '<div style="background:#fff;border:1px solid #e2e8f0;padding:7px 10px;border-radius:8px;font-size:12px;font-weight:700;color:#1e3a8a;margin-bottom:10px;">Сдача с 1-го раза (FTRI): ' + s.rating_ftri + '% • Брак (CLE): ' + s.rating_cle + '%</div>' +
+          '<button onclick="window._cloudApp.confirm(\'Назначение исполнителя\',\'Направить заявку организации ' + window._safeText(s.name) + '?\',function(){alert(\'✅ Заявка отправлена!\')})" style="width:100%;background:' + (isOwn ? '#ca8a04' : '#2563eb') + ';color:#fff;border:none;padding:9px;border-radius:8px;font-weight:700;cursor:pointer;">' + (isOwn ? '🏠 Внутренний заказ холдинга' : '➕ Пригласить на объект') + '</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    paintCards('ALL');
+    document.getElementById('ex-okved-filter').onchange = function() { paintCards(this.value); };
+
+    // Подгружаем реальные верифицированные компании из Supabase и объединяем с витриной
+    app.sb('companies?company_type=in.(subcontractor,factory,hybrid)&is_verified=eq.true').then(function(rows) {
+      if (Array.isArray(rows) && rows.length) {
+        rows.forEach(function(r) {
+          if (!allItems.some(function(x) { return x.inn === r.inn; })) allItems.push(r);
+        });
+        paintCards(document.getElementById('ex-okved-filter').value);
+      }
+    });
+  };
+})();
+</script>
 
 
 </body>
