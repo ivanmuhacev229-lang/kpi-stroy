@@ -3928,6 +3928,51 @@ setInterval(function() {
   }, 400);
 })();
 </script>
+<!-- КНОПКА ДОБАВЛЕНИЯ НОВОГО ПОДРЯДЧИКА В РЕЙТИНГ -->
+<script>
+(function() {
+  setInterval(function() {
+    var tbl = Array.from(document.querySelectorAll('table')).find(function(t) {
+      return t.offsetParent !== null && t.innerHTML.indexOf('Итоговый рейтинг') !== -1 && t.innerHTML.indexOf('Ущерб от простоев') !== -1;
+    });
+    if (!tbl || document.getElementById('btn-add-sub-row')) return;
+
+    var bar = tbl.previousElementSibling;
+    if (!bar) return;
+
+    var addBtn = document.createElement('button');
+    addBtn.id = 'btn-add-sub-row';
+    addBtn.type = 'button';
+    addBtn.textContent = '➕ Добавить подрядчика';
+    addBtn.style.cssText = 'background:#2563eb;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;';
+    bar.appendChild(addBtn);
+
+    addBtn.onclick = function() {
+      var name = prompt('Название подрядной организации (например, ООО «СибСтройМонтаж»):');
+      if (!name) return;
+      var objWork = prompt('Объект и вид работ (например, ЖК Онега • Электромонтаж):', 'ЖК Онега • Инженерные сети') || 'ЖК Онега';
+      var ftri = parseFloat(prompt('Процент сдачи с 1-го раза FTRI (%):', '89.5')) || 89.5;
+      var cle = parseFloat(prompt('Доля брака в ФОТ CLE (%):', '2.8')) || 2.8;
+      var delayDays = parseInt(prompt('Простои по вине подрядчика (дн.):', '0'), 10) || 0;
+      var lossAmt = parseInt(prompt('Ущерб от простоев (тыс. ₽):', '0'), 10) || 0;
+
+      var isRisk = (ftri < 80 || cle > 5 || delayDays > 0);
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><strong>' + name.replace(/</g, '&lt;') + '</strong></td>' +
+        '<td>' + objWork.replace(/</g, '&lt;') + '</td>' +
+        '<td><strong>' + ftri.toFixed(1) + '%</strong></td>' +
+        '<td>' + cle.toFixed(1) + '%</td>' +
+        '<td>' + delayDays + ' дн.</td>' +
+        '<td>' + lossAmt + ' тыс. ₽</td>' +
+        '<td><span style="display:inline-block;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;background:' + (isRisk ? '#fee2e2;color:#b91c1c' : '#dcfce7;color:#15803d') + ';">' + (isRisk ? 'РИСК / ШТРАФЫ (Красная)' : 'НАДЕЖНЫЙ (Зеленая)') + '</span></td>' +
+        '<td style="padding:10px 8px;"><button type="button" style="background:' + (isRisk ? '#dc2626' : '#16a34a') + ';color:#fff;border:none;padding:6px 10px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;">' + (isRisk ? '⚖️ Претензия CAPA' : '⭐ В приоритет Биржи') + '</button></td>';
+
+      tbl.querySelector('tbody').appendChild(tr);
+    };
+  }, 400);
+})();
+</script>
 
 
 
