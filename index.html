@@ -133,6 +133,106 @@
     </style>
 </head>
 <body>
+<!-- НЕЗАВИСИМЫЙ ИМПОРТ ОБЪЕКТА ИЗ EXCEL (РАБОТАЕТ В ШАПКЕ КАБИНЕТА БЕЗ КОНФЛИКТОВ) -->
+<script>
+(function() {
+  function drawExcelBanner() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (e) {}
+
+    var host = document.getElementById('single-master-bar') || document.querySelector('header');
+    if (!host || !host.parentElement) return;
+
+    var bar = document.getElementById('top-excel-import-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'top-excel-import-bar';
+      bar.style.cssText = 'max-width:1200px;margin:10px auto;padding:12px 16px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-family:sans-serif;';
+      bar.innerHTML =
+        '<div style="font-size:13px;color:#0f172a;"><strong>📊 Быстрый импорт объекта из Excel (.csv):</strong> загрузите паспорт объекта для расчета KPI</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+          '<button type="button" id="top-btn-dl-tpl" style="background:#fff;border:1px solid #93c5fd;color:#1e3a8a;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">📥 Скачать шаблон</button>' +
+          '<label style="background:#2563eb;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">📂 Загрузить файл объекта<input type="file" id="top-inp-xls" accept=".csv,.txt" style="display:none;"></label>' +
+        '</div>' +
+        '<div id="top-excel-cards" style="width:100%;"></div>';
+      host.parentElement.insertBefore(bar, host);
+
+      document.getElementById('top-btn-dl-tpl').onclick = function() {
+        var csv = '\uFEFFПараметр строительного объекта;Значение;Единица измерения\n' +
+          'Наименование объекта;ЖК «Академ-Парк» (Корпус 2);текст\n' +
+          'Адрес и шифр объекта;г. Новосибирск, ул. Тимакова, 14;текст\n' +
+          'Плановая сметная себестоимость (C_план);340000;тыс. руб.\n' +
+          'Плановая валовая маржа (M_план);68000;тыс. руб.\n' +
+          'Фактическая себестоимость (C_факт);351500;тыс. руб.\n' +
+          'Рыночное удорожание материалов (dC_рын);4500;тыс. руб.\n' +
+          'Объем незакрытых актов КС-2 (V_нзп);62000;тыс. руб.\n' +
+          'Фактический срок закрытия КС-2 (T_факт);48;дней\n' +
+          'Стоимость дня простоя объекта (CoD);145;тыс. руб./дн.\n';
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        a.download = 'Shablon_Obekt_KPI.csv';
+        a.click();
+      };
+
+      document.getElementById('top-inp-xls').onchange = function(e) {
+        var f = e.target.files && e.target.files.length ? e.target.files.item(0) : null;
+        if (!f) return;
+        var rd = new FileReader();
+        rd.onload = function(ev) {
+          var lines = String(ev.target.result || '').split(/\r?\n/);
+          var d = {};
+          for (var i = 1; i < lines.length; i++) {
+            var ln = lines.slice(i, i + 1).join('').trim();
+            if (!ln) continue;
+            var parts = ln.indexOf(';') !== -1 ? ln.split(';') : ln.split(',');
+            var k = String(parts.slice(0, 1).join('')).trim();
+            var v = String(parts.slice(1, 2).join('')).trim();
+            if (k && v) d[k] = v;
+          }
+          var name = d['Наименование объекта'] || f.name.replace(/\.[^.]+$/, '');
+          var addr = d['Адрес и шифр объекта'] || 'г. Новосибирск';
+          var cPlan = parseFloat(d['Плановая сметная себестоимость (C_план)']) || 340000;
+          var mPlan = parseFloat(d['Плановая валовая маржа (M_план)']) || 68000;
+          var cFact = parseFloat(d['Фактическая себестоимость (C_факт)']) || 351500;
+          var dRyn = parseFloat(d['Рыночное удорожание материалов (dC_рын)']) || 4500;
+          var vNzp = parseFloat(d['Объем незакрытых актов КС-2 (V_нзп)']) || 62000;
+          var tFact = parseFloat(d['Фактический срок закрытия КС-2 (T_факт)']) || 48;
+          var cod = parseFloat(d['Стоимость дня простоя объекта (CoD)']) || 145;
+
+          var mei = mPlan > 0 ? ((((cFact - dRyn) - cPlan) / mPlan) * 100).toFixed(1) : '0.0';
+          var dcc = Math.round(vNzp * (0.18 / 365) * Math.max(0, tFact - 30));
+
+          var cur = [];
+          try { cur = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (err) {}
+          cur = cur.filter(function(x) { return x.name !== name; });
+          cur.unshift({ name: name, address: addr, cPlan: cPlan, mei: mei, dcc: dcc, cod: cod });
+          try { localStorage.setItem('kpistroy_imported_projects', JSON.stringify(cur)); } catch (err) {}
+          paintCards();
+        };
+        rd.readAsText(f, 'utf-8');
+      };
+    }
+
+    function paintCards() {
+      var box = document.getElementById('top-excel-cards');
+      if (!box) return;
+      var items = [];
+      try { items = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (err) {}
+      if (!items.length) { box.innerHTML = ''; return; }
+      box.innerHTML = '<div style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px;">' +
+        items.map(function(o) {
+          return '<div style="background:#eff6ff;border:2px solid #2563eb;border-radius:10px;padding:12px;font-size:12.5px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#1e3a8a;font-size:14px;">🏗️ ' + String(o.name).replace(/</g, '&lt;') + '</strong><span style="background:#fff;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;">Из Excel</span></div>' +
+            '<div style="color:#475569;font-size:11.5px;margin:3px 0 6px;">📍 ' + String(o.address).replace(/</g, '&lt;') + '</div>' +
+            '<div>Смета: <strong>' + Number(o.cPlan).toLocaleString('ru-RU') + ' тыс. ₽</strong> • MEI: <strong style="color:#dc2626;">' + o.mei + '%</strong> • DCC: <strong>' + Number(o.dcc).toLocaleString('ru-RU') + ' тыс. ₽</strong> • Простой: <strong>' + o.cod + ' тыс. ₽/дн.</strong></div>' +
+          '</div>';
+        }).join('') + '</div>';
+    }
+    paintCards();
+  }
+  setInterval(drawExcelBanner, 400);
+})();
+</script>
 
 <!-- ЭКРАН ВХОДА И РЕГИСТРАЦИИ -->
 <div id="authScreen" class="auth-wrapper">
