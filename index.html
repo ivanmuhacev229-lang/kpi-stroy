@@ -3524,6 +3524,82 @@ function renderPortfolioTable() {
   }
 })();
 </script>
+<!-- АВТОНОМНАЯ РАБОТА ПАНЕЛИ МОДЕРАТОРА И ЗАЯВОК БЕЗ ЗАВИСИМОСТИ ОТ БЛОКИРОВОК СЕТИ -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  var DEFAULT_DB = [
+    { id: 'c1', name: 'ООО «СтройИнвест-НСК»', inn: '5406781234', invite_code: 'KPI-9044', company_type: 'general', contact_person: 'Соколов А.В., Гендиректор', contact_phone: '+7 913 900-11-22', specialization: '41.20 (Монолит / Коробка)', is_verified: true },
+    { id: 'c2', name: 'ООО «СибМонолитСтрой»', inn: '5404519821', invite_code: 'SUB-1001', company_type: 'subcontractor', contact_person: 'Кравцов Д.И., Директор', contact_phone: '+7 913 900-33-44', specialization: '41.20 (Монолит), 43.12 (Земляные)', is_verified: true },
+    { id: 'c3', name: 'СК «ТехноФасад-Сибирь»', inn: '5407334910', invite_code: 'SUB-2048', company_type: 'subcontractor', contact_person: 'Белов Е.П., Главный инженер', contact_phone: '@belov_psk', specialization: '43.99 (Фасады и Металл)', is_verified: false }
+  ];
+
+  function getLocalCompanies() {
+    try {
+      var saved = JSON.parse(localStorage.getItem('kpistroy_local_companies'));
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch (e) {}
+    localStorage.setItem('kpistroy_local_companies', JSON.stringify(DEFAULT_DB));
+    return DEFAULT_DB.slice();
+  }
+
+  function saveLocalCompanies(list) {
+    try { localStorage.setItem('kpistroy_local_companies', JSON.stringify(list)); } catch (e) {}
+  }
+
+  window._openModeratorPanel = function() {
+    var old = document.getElementById('mod-admin-overlay'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.id = 'mod-admin-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:#f1f5f9;z-index:9600;overflow-y:auto;';
+    ov.innerHTML =
+      '<div style="background:#0f172a;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><span style="background:#38bdf8;color:#0f172a;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;">АДМИНИСТРАТОР KPISTROY.RU</span> <strong style="margin-left:8px;">Панель модерации заявок и ИНН</strong></div>' +
+        '<button id="close-mod-ov" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;">Выйти</button>' +
+      '</div>' +
+      '<div style="max-width:1040px;margin:24px auto;padding:0 16px;" id="mod-list-box"></div>';
+
+    document.body.appendChild(ov);
+    document.getElementById('close-mod-ov').onclick = function() { ov.remove(); };
+
+    function renderModList() {
+      var box = document.getElementById('mod-list-box');
+      if (!box) return;
+      var rows = getLocalCompanies();
+      box.innerHTML = rows.map(function(c) {
+        var badge = c.is_verified
+          ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:700;">🟢 Подтверждена</span>'
+          : '<span style="background:#fef9c3;color:#854d0e;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:700;">⏳ Песочница (Ждет проверки)</span>';
+
+        return '<div style="background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+          '<div style="max-width:650px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><strong style="font-size:15px;">' + window._safeText(c.name) + '</strong>' + badge + '</div>' +
+            '<div style="font-size:12.5px;color:#475569;line-height:1.5;">ИНН: <strong>' + window._safeText(c.inn) + '</strong> • Код: <strong>' + window._safeText(c.invite_code) + '</strong><br>' +
+            'Контакт: <strong>' + window._safeText(c.contact_person || '—') + '</strong> (' + window._safeText(c.contact_phone || '—') + ')<br>' +
+            'ОКВЭД: ' + window._safeText(c.specialization || '—') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            (!c.is_verified ? '<button onclick="window._modVerify(\'' + c.id + '\', true)" style="background:#16a34a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">✅ Одобрить ИНН</button>' : '') +
+            '<button onclick="window._modVerify(\'' + c.id + '\', false)" style="background:#ef4444;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">⛔ Снять допуск</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    window._modVerify = function(id, stateBool) {
+      var list = getLocalCompanies();
+      list.forEach(function(item) { if (item.id === id) item.is_verified = stateBool; });
+      saveLocalCompanies(list);
+      alert(stateBool ? '✅ Компания верифицирована и допущена на B2B-Биржу!' : '⛔ Допуск снят, компания переведена в Песочницу.');
+      renderModList();
+    };
+
+    renderModList();
+  };
+})();
+</script>
 
 
 </body>
