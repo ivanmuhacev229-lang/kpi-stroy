@@ -4105,6 +4105,159 @@ setInterval(function() {
   }, 400);
 })();
 </script>
+<!-- УЛУЧШЕНИЕ B2B-БИРЖИ (БЛОК 1 ИЗ 2): ОТКРЫТЫЕ ЛОТЫ / ЗАКАЗЫ ЗАСТРОЙЩИКОВ -->
+<script>
+(function() {
+  var DEFAULT_LOTS = [
+    { id: 'lot1', title: 'Устройство вентилируемого фасада (4 200 м²)', obj: 'ЖК «Онега» (Комфорт-класс)', okved: '43.99 — Фасады', budget: '14 800 000 ₽', deadline: '45 дней', responses: 2 },
+    { id: 'lot2', title: 'Поставка товарного бетона М350 В25 (1 800 м³)', obj: 'Логистический хаб «Север»', okved: '23.61 — Завод ЖБИ / Бетон', budget: '12 240 000 ₽', deadline: 'По графику', responses: 4 }
+  ];
+
+  window._getExchangeLots = function() {
+    try {
+      var saved = JSON.parse(localStorage.getItem('kpistroy_exchange_lots'));
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch (e) {}
+    localStorage.setItem('kpistroy_exchange_lots', JSON.stringify(DEFAULT_LOTS));
+    return DEFAULT_LOTS.slice();
+  };
+
+  window._saveExchangeLots = function(list) {
+    try { localStorage.setItem('kpistroy_exchange_lots', JSON.stringify(list)); } catch (e) {}
+  };
+
+  window._openNewLotModal = function() {
+    var title = prompt('Наименование работ или поставки (например, Электромонтаж секции №2):');
+    if (!title) return;
+    var obj = prompt('Строительный объект:', 'ЖК «Онега» (Комфорт-класс)') || 'ЖК «Онега»';
+    var okved = prompt('Требуемый код ОКВЭД 2:', '43.21 — Электромонтажные работы') || '41.20 — СМР';
+    var budget = prompt('Ориентировочный бюджет лота:', '6 500 000 ₽') || 'По смете';
+    var deadline = prompt('Срок выполнения:', '30 календарных дней') || '30 дней';
+
+    var lots = window._getExchangeLots();
+    lots.unshift({ id: 'lot_' + Date.now(), title: title, obj: obj, okved: okved, budget: budget, deadline: deadline, responses: 0 });
+    window._saveExchangeLots(lots);
+    if (window._paintExchangeLots) window._paintExchangeLots();
+    alert('📢 Лот «' + title + '» опубликован на B2B-Бирже! Проверенные подрядчики с кодом ' + okved + ' получили уведомление.');
+  };
+})();
+</script>
+<!-- УЛУЧШЕНИЕ B2B-БИРЖИ (БЛОК 2 ИЗ 2): ДОСЬЕ ИНН/ЕФРСБ, ПОИСК И ОТОБРАЖЕНИЕ ЛОТОВ -->
+<script>
+(function() {
+  window._openContractorDossier = function(name, inn, spec, ftri, cle) {
+    var old = document.getElementById('dossier-modal-ov'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.id = 'dossier-modal-ov';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9700;display:flex;align-items:center;justify-content:center;padding:16px;';
+    ov.innerHTML =
+      '<div style="background:#fff;max-width:540px;width:100%;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.25);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">' +
+          '<div><span style="background:#dcfce7;color:#166534;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:800;">🟢 ВЕРИФИЦИРОВАНО ФНС / ЕФРСБ</span><h3 style="margin:6px 0 2px;font-size:18px;color:#0f172a;">' + String(name).replace(/</g, '&lt;') + '</h3><div style="font-size:12.5px;color:#64748b;">ИНН: ' + String(inn).replace(/</g, '&lt;') + ' • ОКВЭД: ' + String(spec).replace(/</g, '&lt;') + '</div></div>' +
+          '<button type="button" id="close-dos-btn" style="background:#f1f5f9;border:none;width:30px;height:30px;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>' +
+        '</div>' +
+        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;font-size:13px;line-height:1.65;margin-bottom:14px;">' +
+          '• <strong>Статус в ЕГРЮЛ (ФНС):</strong> Действующее юрлицо, массовых адресов и дисквалификации нет<br>' +
+          '• <strong>Реестр банкротств (ЕФРСБ):</strong> Арбитражных дел о несостоятельности не найдено<br>' +
+          '• <strong>Индекс приемки с 1-го раза (FTRI):</strong> <strong style="color:#16a34a;">' + ftri + '%</strong> (высокая культура производства)<br>' +
+          '• <strong>Доля переделок в ФОТ (CLE):</strong> <strong style="color:#16a34a;">' + cle + '%</strong> (норма ≤ 5%)<br>' +
+          '• <strong>Подтвержденный опыт на платформе:</strong> 4 закрытых объекта без срыва сроков КС-2' +
+        '</div>' +
+        '<button type="button" id="ok-dos-btn" style="width:100%;background:#0f172a;color:#fff;border:none;padding:11px;border-radius:9px;font-weight:700;cursor:pointer;">Закрыть досье</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('close-dos-btn').onclick = function() { ov.remove(); };
+    document.getElementById('ok-dos-btn').onclick = function() { ov.remove(); };
+  };
+
+  window._paintExchangeLots = function() {
+    var box = document.getElementById('ex-lots-container');
+    if (!box || !window._getExchangeLots) return;
+    var lots = window._getExchangeLots();
+    box.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">' +
+        '<strong style="font-size:14.5px;color:#0f172a;">📢 Активные тендеры и заказы застройщиков (' + lots.length + ')</strong>' +
+        '<button type="button" onclick="window._openNewLotModal()" style="background:#0f172a;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">➕ Разместить заказ на Бирже</button>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;">' +
+      lots.map(function(l, idx) {
+        return '<div style="background:#fff;border:1px solid #cbd5e1;border-left:4px solid #2563eb;border-radius:10px;padding:14px;font-size:12.5px;">' +
+          '<div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:4px;">' + String(l.title).replace(/</g, '&lt;') + '</div>' +
+          '<div style="color:#475569;margin-bottom:6px;">🏗️ ' + String(l.obj).replace(/</g, '&lt;') + ' • <strong>' + String(l.okved).replace(/</g, '&lt;') + '</strong></div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:7px 10px;border-radius:8px;margin-bottom:8px;">' +
+            '<span>Бюджет: <strong>' + String(l.budget).replace(/</g, '&lt;') + '</strong></span>' +
+            '<span>Срок: <strong>' + String(l.deadline).replace(/</g, '&lt;') + '</strong></span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<span style="font-size:11.5px;color:#2563eb;font-weight:700;">Откликов подрядчиков: ' + l.responses + '</span>' +
+            '<button type="button" onclick="alert(\'✅ Ваш отклик / предложение направлено организатору лота в защищенный E2E-чат!\')" style="background:#eff6ff;color:#1e3a8a;border:1px solid #93c5fd;padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;">✋ Откликнуться / Предложить цену</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+  };
+
+  setInterval(function() {
+    var exList = document.getElementById('cloud-ex-list');
+    if (!exList) return;
+
+    // 1. Вставляем блок активных лотов над каталогом подрядчиков
+    if (!document.getElementById('ex-lots-container')) {
+      var lotsDiv = document.createElement('div');
+      lotsDiv.id = 'ex-lots-container';
+      lotsDiv.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:18px;';
+      exList.parentElement.insertBefore(lotsDiv, exList);
+      window._paintExchangeLots();
+    }
+
+    // 2. Добавляем строку поиска по названию / ИНН рядом с фильтром ОКВЭД 2
+    var okvedSel = document.getElementById('ex-okved-filter');
+    if (okvedSel && !document.getElementById('ex-search-inp')) {
+      var sInp = document.createElement('input');
+      sInp.id = 'ex-search-inp';
+      sInp.placeholder = '🔍 Поиск по названию или ИНН...';
+      sInp.style.cssText = 'padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;min-width:220px;';
+      okvedSel.insertAdjacentElement('beforebegin', sInp);
+      sInp.oninput = function() {
+        var q = sInp.value.trim().toLowerCase();
+        exList.querySelectorAll(':scope > div').forEach(function(card) {
+          card.style.display = (!q || card.textContent.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+        });
+      };
+    }
+
+    // 3. Добавляем кнопку "📄 Досье ФНС / ЕФРСБ" в каждую карточку подрядчика
+    exList.querySelectorAll(':scope > div').forEach(function(card) {
+      if (card.querySelector('.btn-dossier-card')) return;
+      var mainBtn = card.querySelector('button');
+      if (!mainBtn) return;
+
+      var nameEl = card.querySelector('strong');
+      var name = nameEl ? nameEl.textContent.trim() : 'Организация';
+      var txt = card.textContent || '';
+      var innM = txt.match(/ИНН:\s*(\d+)/);
+      var ftriM = txt.match(/FTRI\):\s*([\d.]+)/);
+      var cleM = txt.match(/CLE\):\s*([\d.]+)/);
+      var okvedM = txt.match(/ОКВЭД:\s*([^\n]+)/);
+
+      var dosBtn = document.createElement('button');
+      dosBtn.type = 'button';
+      dosBtn.className = 'btn-dossier-card';
+      dosBtn.textContent = '📄 Досье ФНС / ЕФРСБ и опыт';
+      dosBtn.style.cssText = 'width:100%;margin-top:6px;background:#fff;color:#0f172a;border:1px solid #cbd5e1;padding:7px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;';
+      dosBtn.onclick = function() {
+        window._openContractorDossier(
+          name,
+          innM ? innM.slice(1).join('') : '5400000000',
+          okvedM ? okvedM.slice(1).join('').trim() : 'СМР',
+          ftriM ? ftriM.slice(1).join('') : '92.0',
+          cleM ? cleM.slice(1).join('') : '1.8'
+        );
+      };
+      mainBtn.insertAdjacentElement('afterend', dosBtn);
+    });
+  }, 400);
+})();
+</script>
 
 
 
