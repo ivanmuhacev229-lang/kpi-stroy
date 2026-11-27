@@ -3837,6 +3837,15 @@ function renderPortfolioTable() {
   }, 400);
 })();
 </script>
+<script>
+setInterval(function() {
+  document.querySelectorAll('h2, h3, div, span').forEach(function(el) {
+    if (el.textContent && el.textContent.indexOf('5 авторских показателей эффективности') !== -1 && el.children.length <= 1) {
+      el.innerHTML = el.innerHTML.replace('5 авторских показателей эффективности', '9 авторских показателей эффективности');
+    }
+  });
+}, 400);
+</script>
 
 
 
