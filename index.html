@@ -3711,6 +3711,23 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- СТРОГАЯ БЛОКИРОВКА КНОПОК АКЦЕПТА ШТРАФОВ В КАБИНЕТЕ ФИНАНСИСТА И ПТО -->
+<script>
+(function() {
+  setInterval(function() {
+    var specOv = document.getElementById('special-role-overlay');
+    var isSpecOpen = specOv && specOv.offsetParent !== null;
+    var curRole = (typeof state !== 'undefined' && state.currentUser) ? state.currentUser.role : 'guest';
+
+    // Если открыт кабинет Финансиста/Инвестора или роль не director — прячем кнопки акцепта
+    if (isSpecOpen || curRole !== 'director') {
+      document.querySelectorAll('button[onclick*="_setPenaltyStatus"]').forEach(function(btn) {
+        btn.style.display = 'none';
+      });
+    }
+  }, 250);
+})();
+</script>
 
 
 </body>
