@@ -3786,6 +3786,57 @@ function renderPortfolioTable() {
   }, 450);
 })();
 </script>
+<!-- ОЖИВЛЕНИЕ ВСЕХ 9 KPI: ЗАГОЛОВОК + ИНТЕРАКТИВНЫЙ ПЕРЕСЧЕТ MVR, SPI, OTD, CFI -->
+<script>
+(function() {
+  setInterval(function() {
+    // 1. Меняем заголовок карточки с "5 авторских..." на "9 авторских показателей эффективности (KPI)"
+    document.querySelectorAll('h2, h3, div').forEach(function(el) {
+      if (el.children.length === 0 && el.textContent.trim() === '5 авторских показателей эффективности (KPI)') {
+        el.textContent = '9 авторских показателей эффективности (KPI)';
+      }
+    });
+
+    // 2. Добавляем живой калькулятор 4 операционных индексов прямо в карточку операционного контура
+    var box4 = document.getElementById('extra-4-kpi-box');
+    if (box4 && !box4.dataset.interactive) {
+      box4.dataset.interactive = '1';
+      box4.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+          '<span style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;">Операционный контур (4 индекса контроля):</span>' +
+          '<button type="button" id="btn-sim-opt" style="background:#eff6ff;border:1px solid #93c5fd;color:#1e3a8a;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">✨ Симуляция: Вывести в норму</button>' +
+        '</div>' +
+        '<div id="grid-4-kpi" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:12px;">' +
+          '<div style="background:#fef2f2;border:1px solid #fecaca;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>MVR</strong> (Материалы)</span><strong style="color:#dc2626;">+3.8% 🔴</strong></div>' +
+          '<div style="background:#fefce8;border:1px solid #fef08a;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>SPI</strong> (График)</span><strong style="color:#ca8a04;">0.91 🟡</strong></div>' +
+          '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>OTD</strong> (Вехи в срок)</span><strong style="color:#16a34a;">92.0% 🟢</strong></div>' +
+          '<div style="background:#fefce8;border:1px solid #fef08a;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>CFI</strong> (Кэш-флоу)</span><strong style="color:#ca8a04;">0.98 🟡</strong></div>' +
+        '</div>';
+
+      var isNormal = false;
+      document.getElementById('btn-sim-opt').onclick = function() {
+        isNormal = !isNormal;
+        var g = document.getElementById('grid-4-kpi');
+        if (isNormal) {
+          this.textContent = '↩️ Вернуть текущие отклонения';
+          g.innerHTML =
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>MVR</strong> (Материалы)</span><strong style="color:#16a34a;">+1.2% 🟢</strong></div>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>SPI</strong> (График)</span><strong style="color:#16a34a;">0.99 🟢</strong></div>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>OTD</strong> (Вехи в срок)</span><strong style="color:#16a34a;">96.5% 🟢</strong></div>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>CFI</strong> (Кэш-флоу)</span><strong style="color:#16a34a;">1.14 🟢</strong></div>';
+        } else {
+          this.textContent = '✨ Симуляция: Вывести в норму';
+          g.innerHTML =
+            '<div style="background:#fef2f2;border:1px solid #fecaca;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>MVR</strong> (Материалы)</span><strong style="color:#dc2626;">+3.8% 🔴</strong></div>' +
+            '<div style="background:#fefce8;border:1px solid #fef08a;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>SPI</strong> (График)</span><strong style="color:#ca8a04;">0.91 🟡</strong></div>' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>OTD</strong> (Вехи в срок)</span><strong style="color:#16a34a;">92.0% 🟢</strong></div>' +
+            '<div style="background:#fefce8;border:1px solid #fef08a;padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;"><span><strong>CFI</strong> (Кэш-флоу)</span><strong style="color:#ca8a04;">0.98 🟡</strong></div>';
+        }
+      };
+    }
+  }, 400);
+})();
+</script>
 
 
 
