@@ -4643,6 +4643,81 @@ function renderPortfolioTable() {
   }, 350);
 })();
 </script>
+<!-- ВИЗУАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ИМПОРТИРОВАННЫХ ИЗ EXCEL ОБЪЕКТОВ В ШАПКЕ КАБИНЕТА -->
+<script>
+(function() {
+  function renderTopImportedBar() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (e) {}
+    if (!list.length) return;
+
+    var bar = document.getElementById('single-master-bar');
+    if (!bar || !bar.parentElement) return;
+
+    var ribbon = document.getElementById('excel-objects-ribbon');
+    if (!ribbon) {
+      ribbon = document.createElement('div');
+      ribbon.id = 'excel-objects-ribbon';
+      ribbon.style.cssText = 'margin:12px 0;padding:14px 16px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #2563eb;border-radius:12px;';
+      bar.parentElement.insertBefore(ribbon, bar);
+    }
+
+    ribbon.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">' +
+        '<strong style="color:#1e3a8a;font-size:14px;">🏗️ Объекты, загруженные из Excel (' + list.length + '):</strong>' +
+        '<button type="button" onclick="localStorage.removeItem(\'kpistroy_imported_projects\');document.getElementById(\'excel-objects-ribbon\').remove();" style="background:#fff;border:1px solid #93c5fd;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;color:#1e3a8a;">Скрыть / Очистить</button>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">' +
+      list.map(function(o) {
+        return '<div style="background:#fff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;font-size:12.5px;">' +
+          '<div style="font-weight:800;color:#0f172a;font-size:14px;margin-bottom:3px;">' + String(o.name).replace(/</g, '&lt;') + '</div>' +
+          '<div style="color:#64748b;font-size:11.5px;margin-bottom:6px;">📍 ' + String(o.address).replace(/</g, '&lt;') + '</div>' +
+          '<div>Бюджет: <strong>' + Number(o.cPlan).toLocaleString('ru-RU') + ' тыс. ₽</strong> • MEI: <strong style="color:#dc2626;">' + o.mei + '%</strong> • DCC: <strong>' + Number(o.dcc).toLocaleString('ru-RU') + ' тыс. ₽</strong></div>' +
+        '</div>';
+      }).join('') + '</div>';
+  }
+
+  setInterval(function() {
+    var addBtn = document.getElementById('btn-create-obj-from-xls');
+    if (addBtn && !addBtn.dataset.ribbonBound) {
+      addBtn.dataset.ribbonBound = '1';
+      addBtn.onclick = function() {
+        var box = document.getElementById('excel-preview-box');
+        var data = {};
+        if (box) {
+          box.querySelectorAll('tbody tr').forEach(function(tr) {
+            var tds = tr.querySelectorAll('td');
+            if (tds.length >= 2) data[tds.item(0).textContent.trim()] = tds.item(1).textContent.trim();
+          });
+        }
+        var objName = data['Наименование объекта'] || 'ЖК «Академ-Парк» (Корпус 2)';
+        var objAddr = data['Адрес и шифр объекта'] || 'г. Новосибирск, ул. Тимакова, 14';
+        var cPlan = parseFloat(data['Плановая сметная себестоимость (C_план)']) || 340000;
+        var mPlan = parseFloat(data['Плановая валовая маржа (M_план)']) || 68000;
+        var cFact = parseFloat(data['Фактическая себестоимость (C_факт)']) || 351500;
+        var dRyn = parseFloat(data['Рыночное удорожание материалов (dC_рын)']) || 4500;
+        var vNzp = parseFloat(data['Объем незакрытых актов КС-2 (V_нзп)']) || 62000;
+        var tFact = parseFloat(data['Фактический срок закрытия КС-2 (T_факт)']) || 48;
+        var codVal = parseFloat(data['Стоимость дня простоя объекта (CoD)']) || 145;
+
+        var mei = mPlan > 0 ? ((((cFact - dRyn) - cPlan) / mPlan) * 100).toFixed(1) : '0.0';
+        var dcc = Math.round(vNzp * (0.18 / 365) * Math.max(0, tFact - 30));
+
+        var list = [];
+        try { list = JSON.parse(localStorage.getItem('kpistroy_imported_projects') || '[]'); } catch (err) {}
+        list = list.filter(function(x) { return x.name !== objName; });
+        list.unshift({ id: 'imp_' + Date.now(), name: objName, address: objAddr, cPlan: cPlan, mPlan: mPlan, mei: mei, dcc: dcc, cod: codVal });
+        try { localStorage.setItem('kpistroy_imported_projects', JSON.stringify(list)); } catch (err) {}
+
+        renderTopImportedBar();
+        addBtn.textContent = '✅ Объект добавлен наверх!';
+        addBtn.style.background = '#16a34a';
+      };
+    }
+    renderTopImportedBar();
+  }, 350);
+})();
+</script>
 
 
 
