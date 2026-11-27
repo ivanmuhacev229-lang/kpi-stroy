@@ -4017,6 +4017,94 @@ setInterval(function() {
   }, true);
 })();
 </script>
+<!-- УЛУЧШЕНИЕ ВКЛАДКИ "3. ПОРТФЕЛЬ ОБЪЕКТОВ": ЧИСТКА ТЕСТОВ + КНОПКИ "ОТКРЫТЬ" И "+ НОВЫЙ ОБЪЕКТ" -->
+<script>
+(function() {
+  setInterval(function() {
+    var tbl = Array.from(document.querySelectorAll('table')).find(function(t) {
+      return t.offsetParent !== null && t.innerHTML.indexOf('ИТОГО ПО ПОРТФЕЛЮ КОМПАНИИ') !== -1;
+    });
+    if (!tbl) return;
+
+    // 1. Автоматически скрываем случайную тестовую строку "yv"
+    tbl.querySelectorAll('tbody tr').forEach(function(tr) {
+      var firstCell = tr.querySelector('td');
+      if (firstCell && firstCell.textContent.trim().toLowerCase() === 'yv') {
+        tr.style.display = 'none';
+      }
+    });
+
+    if (tbl.dataset.enhancedPortfolio) return;
+    tbl.dataset.enhancedPortfolio = '1';
+
+    // 2. Добавляем панель управления над таблицей портфеля
+    var topCtrl = document.createElement('div');
+    topCtrl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;';
+    topCtrl.innerHTML =
+      '<div style="font-size:12.5px;color:#475569;">Нажмите на объект, чтобы перейти к его детальной диагностике 9 KPI</div>' +
+      '<button type="button" id="btn-add-portfolio-obj" style="background:#2563eb;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">➕ Добавить объект в портфель</button>';
+    tbl.parentElement.insertBefore(topCtrl, tbl);
+
+    // 3. Добавляем колонку "Переход" в каждую строку объекта
+    var headRow = tbl.querySelector('thead tr');
+    if (headRow) {
+      var th = document.createElement('th');
+      th.textContent = 'Анализ';
+      th.style.padding = '10px 8px';
+      headRow.appendChild(th);
+    }
+
+    tbl.querySelectorAll('tbody tr').forEach(function(tr) {
+      if (tr.textContent.indexOf('ИТОГО ПО ПОРТФЕЛЮ') !== -1) {
+        var emptyTd = document.createElement('td');
+        tr.appendChild(emptyTd);
+        return;
+      }
+      var td = document.createElement('td');
+      td.style.padding = '10px 8px';
+      td.innerHTML = '<button type="button" style="background:#f1f5f9;border:1px solid #cbd5e1;color:#0f172a;padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;">🔍 Диагностика →</button>';
+      td.querySelector('button').onclick = function() {
+        var diagBtn = Array.from(document.querySelectorAll('button')).find(function(b) {
+          return b.textContent && b.textContent.indexOf('1. Диагностика объекта') !== -1;
+        });
+        if (diagBtn) diagBtn.click();
+      };
+      tr.appendChild(td);
+    });
+
+    // 4. Кнопка добавления нового реального объекта в таблицу портфеля
+    document.getElementById('btn-add-portfolio-obj').onclick = function() {
+      var name = prompt('Название нового строительного объекта (например, ЖК «Тихий берег»):');
+      if (!name) return;
+      var profile = prompt('Профиль строительства:', 'Жилое строительство') || 'Жилое строительство';
+      var budget = parseInt(prompt('Сметный бюджет объекта (тыс. ₽):', '450000'), 10) || 450000;
+
+      var tbody = tbl.querySelector('tbody');
+      var totalRow = Array.from(tbody.querySelectorAll('tr')).find(function(r) {
+        return r.textContent.indexOf('ИТОГО ПО ПОРТФЕЛЮ') !== -1;
+      });
+
+      var newTr = document.createElement('tr');
+      newTr.style.background = '#f0fdf4';
+      newTr.innerHTML =
+        '<td><strong>' + name.replace(/</g, '&lt;') + '</strong></td>' +
+        '<td>' + profile.replace(/</g, '&lt;') + '</td>' +
+        '<td>' + budget.toLocaleString('ru-RU') + '</td>' +
+        '<td><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:6px;font-weight:700;">2.4%</span></td>' +
+        '<td><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:6px;font-weight:700;">310</span></td>' +
+        '<td><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:6px;font-weight:700;">85.0</span></td>' +
+        '<td><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:6px;font-weight:700;">3.1%</span></td>' +
+        '<td><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:6px;font-weight:700;">91.5%</span></td>' +
+        '<td><strong>2 150 тыс. ₽</strong></td>' +
+        '<td style="color:#16a34a;font-weight:700;">+1 420 тыс. ₽</td>' +
+        '<td style="padding:10px 8px;"><button type="button" style="background:#f1f5f9;border:1px solid #cbd5e1;color:#0f172a;padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;">🔍 Диагностика →</button></td>';
+
+      if (totalRow) tbody.insertBefore(newTr, totalRow);
+      else tbody.appendChild(newTr);
+    };
+  }, 400);
+})();
+</script>
 
 
 
