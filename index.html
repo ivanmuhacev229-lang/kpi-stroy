@@ -3505,6 +3505,25 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<script>
+(function() {
+  var PROXY_BASE = '/api/rest/v1/';
+  var SB_ANON = 'sb_publishable_OnrHPTYJPX0LI8OeDIg37Q_V4aiAhAu';
+  if (window._cloudApp) {
+    window._cloudApp.sb = function(path, opts) {
+      opts = opts || {};
+      var headers = Object.assign({
+        'apikey': SB_ANON,
+        'Authorization': 'Bearer ' + SB_ANON,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }, opts.headers || {});
+      return fetch(PROXY_BASE + path, Object.assign({}, opts, { headers: headers }))
+        .then(function(r) { return r.json(); });
+    };
+  }
+})();
+</script>
 
 
 </body>
