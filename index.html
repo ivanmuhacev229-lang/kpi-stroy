@@ -3349,6 +3349,104 @@ function renderPortfolioTable() {
   };
 })();
 </script>
+<!-- СВЯЗКА 3+4 (БЛОК 1 ИЗ 2): ЛИЧНАЯ ПАНЕЛЬ МОДЕРАТОРА ЗАЯВОК -->
+<script>
+(function() {
+  var app = window._cloudApp;
+  if (!app) return;
+
+  window._openModeratorPanel = function() {
+    var old = document.getElementById('mod-admin-overlay'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.id = 'mod-admin-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:#f1f5f9;z-index:9600;overflow-y:auto;';
+    ov.innerHTML =
+      '<div style="background:#0f172a;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><span style="background:#38bdf8;color:#0f172a;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;">АДМИНИСТРАТОР KPISTROY.RU</span> <strong style="margin-left:8px;">Панель модерации заявок и ИНН</strong></div>' +
+        '<button id="close-mod-ov" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;">Выйти</button>' +
+      '</div>' +
+      '<div style="max-width:1040px;margin:24px auto;padding:0 16px;" id="mod-list-box">Загрузка заявок из базы...</div>';
+
+    document.body.appendChild(ov);
+    document.getElementById('close-mod-ov').onclick = function() { ov.remove(); };
+
+    function loadRequests() {
+      app.sb('companies?order=created_at.desc').then(function(rows) {
+        var box = document.getElementById('mod-list-box');
+        if (!box || !Array.isArray(rows)) return;
+        box.innerHTML = rows.map(function(c) {
+          var statusBadge = c.is_verified
+            ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:700;">🟢 Подтверждена</span>'
+            : '<span style="background:#fef9c3;color:#854d0e;padding:3px 10px;border-radius:10px;font-size:11.5px;font-weight:700;">⏳ Песочница (Ждет проверки)</span>';
+
+          return '<div style="background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+            '<div style="max-width:650px;">' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><strong style="font-size:15px;">' + window._safeText(c.name) + '</strong>' + statusBadge + '</div>' +
+              '<div style="font-size:12.5px;color:#475569;line-height:1.5;">ИНН: <strong>' + window._safeText(c.inn) + '</strong> • Код: <strong>' + window._safeText(c.invite_code) + '</strong> • Тип: ' + window._safeText(c.company_type) + '<br>' +
+              'Контакт: <strong>' + window._safeText(c.contact_person || '—') + '</strong> (' + window._safeText(c.contact_phone || '—') + ')<br>' +
+              'ОКВЭД: ' + window._safeText(c.specialization || '—') + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;">' +
+              (!c.is_verified ? '<button onclick="window._modVerify(\'' + c.id + '\', true)" style="background:#16a34a;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">✅ Одобрить ИНН</button>' : '') +
+              '<button onclick="window._modVerify(\'' + c.id + '\', false)" style="background:#ef4444;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;">⛔ Снять допуск</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      });
+    }
+
+    window._modVerify = function(id, stateBool) {
+      app.sb('companies?id=eq.' + encodeURIComponent(id), {
+        method: 'PATCH',
+        body: JSON.stringify({ is_verified: stateBool, fns_verified: stateBool })
+      }).then(function() {
+        alert(stateBool ? '✅ Компания верифицирована и допущена на B2B-Биржу!' : '⛔ Допуск снят, компания переведена в Песочницу.');
+        loadRequests();
+      });
+    };
+
+    loadRequests();
+  };
+
+  // Перехват вашего личного кода модератора MOD-IVAN2026 на экране входа
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#go-2fa');
+    if (!btn) return;
+    var inp = document.getElementById('cd-2fa');
+    if (inp && inp.value.trim().toUpperCase() === 'MOD-IVAN2026') {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      window._openModeratorPanel();
+    }
+  }, true);
+})();
+</script>
+<!-- СВЯЗКА 3+4 (БЛОК 2 ИЗ 2): ДИНАМИЧЕСКИЕ ГРАФИКИ ПРИ СМЕНЕ ОБЪЕКТА -->
+<script>
+(function() {
+  var OBJ_METRICS = {
+    0: { name: 'ЖК «Онега»', ohi: '84 / 100 🟢', budget: '440.6 млн ₽ (64.8%)', ftri: '88.5% 🟢', spi: '0.96', pts: '60,152 180,132 300,104 420,74 540,48', dirTrend: '-24% потерь', dirPts: '70,35 220,58 370,88 520,115 640,132' },
+    1: { name: 'Логистический хаб «Север»', ohi: '71 / 100 🟡', budget: '312.0 млн ₽ (52.0%)', ftri: '79.2% 🟡', spi: '0.88', pts: '60,150 180,136 300,118 420,96 540,78', dirTrend: '-11% потерь', dirPts: '70,40 220,48 370,62 520,74 640,86' },
+    2: { name: 'Развязка «Южный обход»', ohi: '92 / 100 🟢', budget: '890.4 млн ₽ (78.5%)', ftri: '94.1% 🟢', spi: '1.02', pts: '60,148 180,118 300,84 420,52 540,28', dirTrend: '-38% потерь', dirPts: '70,30 220,65 370,102 520,128 640,145' }
+  };
+
+  setInterval(function() {
+    var sel = document.getElementById('projectSelector');
+    var idx = sel ? (sel.selectedIndex || 0) : 0;
+    var m = OBJ_METRICS[idx] || OBJ_METRICS[0];
+
+    // Обновляем график снижения потерь у Гендиректора при переключении объекта
+    var dirCard = document.getElementById('dir-rich-chart-card');
+    if (dirCard && dirCard.dataset.curObj !== String(idx)) {
+      dirCard.dataset.curObj = String(idx);
+      var badge = dirCard.querySelector('.badge');
+      if (badge) badge.textContent = m.name + ' • Тренд: ' + m.dirTrend;
+      var poly = dirCard.querySelector('polyline');
+      if (poly) poly.setAttribute('points', m.dirPts);
+    }
+  }, 500);
+})();
+</script>
 
 
 </body>
