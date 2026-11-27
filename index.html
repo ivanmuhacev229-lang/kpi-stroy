@@ -3860,6 +3860,55 @@ function renderPortfolioTable() {
   }, 400);
 })();
 </script>
+<!-- ЖИВОЕ ОБНОВЛЕНИЕ ПОКАЗАТЕЛЕЙ ОБЪЕКТА (MVR И MEI) ПРИ ИМПОРТЕ EXCEL -->
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn || btn.textContent.indexOf('Применить к объекту') === -1) return;
+
+    var box = document.getElementById('excel-preview-box');
+    if (!box) return;
+
+    // Считаем реальные суммы плана и факта из загруженной таблицы
+    var rows = box.querySelectorAll('tbody tr');
+    var sumPlan = 0, sumFact = 0, overItems = [];
+    rows.forEach(function(tr) {
+      var tds = tr.querySelectorAll('td');
+      if (tds.length >= 5) {
+        var name = tds[0].textContent.trim();
+        var plan = parseFloat(tds[2].textContent.replace(/\s+/g, '').replace(',', '.')) || 0;
+        var fact = parseFloat(tds[3].textContent.replace(/\s+/g, '').replace(',', '.')) || 0;
+        sumPlan += plan;
+        sumFact += fact;
+        if (tds[4].textContent.indexOf('Перерасход') !== -1) overItems.push(name);
+      }
+    });
+
+    var realMvr = sumPlan > 0 ? (((sumFact - sumPlan) / sumPlan) * 100) : 0;
+    var mvrText = (realMvr > 0 ? '+' : '') + realMvr.toFixed(1) + '%';
+
+    // Сохраняем примененные показатели для текущего объекта
+    try {
+      localStorage.setItem('kpistroy_applied_excel', JSON.stringify({
+        mvr: mvrText,
+        isOver: realMvr > 2.0,
+        overList: overItems,
+        updatedAt: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      }));
+    } catch (err) {}
+
+    // Сразу обновляем плашку статуса на дашборде
+    var dirCard = document.getElementById('dir-rich-chart-card');
+    if (dirCard) {
+      var badge = dirCard.querySelector('.badge');
+      if (badge) {
+        badge.textContent = '📊 Смета Excel обновлена • Отклонение MVR: ' + mvrText + (realMvr > 2.0 ? ' 🔴 Перерасход' : ' 🟢 В норме');
+      }
+    }
+  }, true);
+})();
+</script>
 
 
 
