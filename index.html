@@ -4069,6 +4069,112 @@ function renderPortfolioTable() {
   }, 400);
 })();
 </script>
+<!-- ИМПОРТ ИСХОДНЫХ ДАННЫХ ОБЪЕКТА (ПАСПОРТ, БЮДЖЕТ, КС-2, ПРОСТОИ) ИЗ EXCEL -->
+<script>
+(function() {
+  setInterval(function() {
+    var topBar = document.getElementById('btn-dl-xls-tpl');
+    if (!topBar || document.getElementById('btn-dl-obj-passport')) return;
+
+    // 1. Добавляем кнопку скачивания шаблона исходных данных объекта
+    var objTplBtn = document.createElement('button');
+    objTplBtn.id = 'btn-dl-obj-passport';
+    objTplBtn.type = 'button';
+    objTplBtn.textContent = '🏗️ Шаблон: Исходные данные объекта (.csv)';
+    objTplBtn.style.cssText = 'background:#f0fdf4;color:#166534;border:1px solid #86efac;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;margin-left:8px;';
+    topBar.insertAdjacentElement('afterend', objTplBtn);
+
+    objTplBtn.onclick = function() {
+      var csvObj = '\uFEFFПараметр строительного объекта;Значение;Единица измерения\n' +
+        'Наименование объекта;ЖК «Академ-Парк» (Корпус 2);текст\n' +
+        'Адрес и шифр объекта;г. Новосибирск, ул. Тимакова, 14;текст\n' +
+        'Плановая сметная себестоимость (C_план);340000;тыс. руб.\n' +
+        'Плановая валовая маржа (M_план);68000;тыс. руб.\n' +
+        'Фактическая себестоимость (C_факт);351500;тыс. руб.\n' +
+        'Рыночное удорожание материалов (dC_рын);4500;тыс. руб.\n' +
+        'Объем незакрытых актов КС-2 (V_нзп);62000;тыс. руб.\n' +
+        'Фактический срок закрытия КС-2 (T_факт);48;дней\n' +
+        'Стоимость дня простоя объекта (CoD);145;тыс. руб./дн.\n' +
+        'Общий фонд оплаты труда (ФОТ);28000;тыс. руб.\n';
+      var blob = new Blob([csvObj], { type: 'text/csv;charset=utf-8;' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Shablon_Ishodnye_Dannye_Obekta.csv';
+      a.click();
+    };
+
+    // 2. Перехватываем кнопку разбора, если загружен файл исходных данных объекта (3 колонки: Параметр; Значение; Ед.)
+    var parseBtn = document.getElementById('btn-force-parse-xls');
+    var inp = document.getElementById('inp-excel-file');
+    if (parseBtn && inp && !parseBtn.dataset.objHooked) {
+      parseBtn.dataset.objHooked = '1';
+      var origClick = parseBtn.onclick;
+
+      parseBtn.onclick = function() {
+        var file = inp.files && inp.files.length ? inp.files.item(0) : null;
+        if (!file) return alert('Сначала выберите файл .csv');
+        var box = document.getElementById('excel-preview-box');
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+          var txt = String(evt.target.result || '');
+          // Если это файл исходных данных объекта (содержит "Наименование объекта" или "Плановая сметная")
+          if (txt.indexOf('Наименование объекта') !== -1 || txt.indexOf('Плановая сметная') !== -1) {
+            var lines = txt.split(/\r?\n/);
+            var params = {};
+            var rowsHtml = '';
+            for (var i = 1; i < lines.length; i++) {
+              var line = lines.slice(i, i + 1).join('').trim();
+              if (!line) continue;
+              var cols = line.indexOf(';') !== -1 ? line.split(';') : line.split(',');
+              var k = String(cols.slice(0, 1).join('')).trim();
+              var v = String(cols.slice(1, 2).join('')).trim();
+              var u = String(cols.slice(2, 3).join('')).trim();
+              if (!k || !v) continue;
+              params[k] = v;
+              rowsHtml += '<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px;font-weight:600;">' + k.replace(/</g, '&lt;') + '</td><td style="padding:8px;font-weight:700;color:#1e3a8a;">' + v.replace(/</g, '&lt;') + '</td><td style="padding:8px;color:#64748b;">' + u.replace(/</g, '&lt;') + '</td></tr>';
+            }
+
+            var objName = params['Наименование объекта'] || 'Новый объект из Excel';
+            var cPlan = parseFloat(params['Плановая сметная себестоимость (C_план)']) || 100000;
+            var mPlan = parseFloat(params['Плановая валовая маржа (M_план)']) || 20000;
+            var cFact = parseFloat(params['Фактическая себестоимость (C_факт)']) || 100000;
+            var dRyn = parseFloat(params['Рыночное удорожание материалов (dC_рын)']) || 0;
+            var meiVal = mPlan > 0 ? ((((cFact - dRyn) - cPlan) / mPlan) * 100).toFixed(1) : '0.0';
+
+            if (box) {
+              box.innerHTML =
+                '<div style="background:#eff6ff;border:1px solid #93c5fd;padding:16px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+                  '<div><strong style="color:#1e3a8a;font-size:15px;">🏗️ Паспорт объекта «' + objName.replace(/</g, '&lt;') + '» распознан!</strong><br>' +
+                  '<span style="font-size:12.5px;color:#334155;">Расчетный индекс внутренних потерь маржи (MEI): <strong>' + meiVal + '%</strong> • Бюджет: <strong>' + cPlan.toLocaleString('ru-RU') + ' тыс. ₽</strong></span></div>' +
+                  '<button type="button" id="btn-create-obj-from-xls" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">➕ Добавить объект в систему</button>' +
+                '</div>' +
+                '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #cbd5e1;">' +
+                  '<thead><tr style="background:#0f172a;color:#fff;"><th style="padding:8px;text-align:left;">Исходный параметр</th><th style="padding:8px;text-align:left;">Значение</th><th style="padding:8px;text-align:left;">Ед. изм.</th></tr></thead>' +
+                  '<tbody>' + rowsHtml + '</tbody>' +
+                '</table>';
+
+              document.getElementById('btn-create-obj-from-xls').onclick = function() {
+                var sel = document.getElementById('projectSelector');
+                if (sel) {
+                  var opt = document.createElement('option');
+                  opt.value = 'xls_' + Date.now();
+                  opt.textContent = objName;
+                  sel.appendChild(opt);
+                  sel.value = opt.value;
+                }
+                alert('✅ Строительный объект «' + objName + '» успешно добавлен в список объектов!\nВсе исходные параметры (бюджет, маржа, КС-2, простои) загружены для расчета 9 KPI.');
+              };
+            }
+          } else if (origClick) {
+            origClick();
+          }
+        };
+        reader.readAsText(file, 'utf-8');
+      };
+    }
+  }, 400);
+})();
+</script>
 
 
 
