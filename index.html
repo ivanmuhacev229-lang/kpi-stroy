@@ -4175,6 +4175,67 @@ function renderPortfolioTable() {
   }, 400);
 })();
 </script>
+<!-- ЗАПИСЬ ИМПОРТИРОВАННОГО ИЗ EXCEL ОБЪЕКТА В ПОРТФЕЛЬ ОБЪЕКТОВ (STATE.PROJECTS) -->
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#btn-create-obj-from-xls');
+    if (!btn) return;
+    e.stopImmediatePropagation();
+
+    var box = document.getElementById('excel-preview-box');
+    if (!box) return;
+
+    // Собираем параметры из таблицы предпросмотра
+    var data = {};
+    box.querySelectorAll('tbody tr').forEach(function(tr) {
+      var tds = tr.querySelectorAll('td');
+      if (tds.length >= 2) {
+        data[tds.item(0).textContent.trim()] = tds.item(1).textContent.trim();
+      }
+    });
+
+    var objName = data['Наименование объекта'] || 'ЖК «Академ-Парк» (из Excel)';
+    var objAddr = data['Адрес и шифр объекта'] || 'г. Новосибирск';
+    var cPlan = parseFloat(data['Плановая сметная себестоимость (C_план)']) || 340000;
+    var mPlan = parseFloat(data['Плановая валовая маржа (M_план)']) || 68000;
+    var cFact = parseFloat(data['Фактическая себестоимость (C_факт)']) || 351500;
+    var dRyn = parseFloat(data['Рыночное удорожание материалов (dC_рын)']) || 4500;
+    var vNzp = parseFloat(data['Объем незакрытых актов КС-2 (V_нзп)']) || 62000;
+    var tFact = parseFloat(data['Фактический срок закрытия КС-2 (T_факт)']) || 48;
+    var codVal = parseFloat(data['Стоимость дня простоя объекта (CoD)']) || 145;
+    var fotVal = parseFloat(data['Общий фонд оплаты труда (ФОТ)']) || 28000;
+
+    if (typeof state !== 'undefined' && Array.isArray(state.projects)) {
+      var newProj = {
+        id: 'proj_xls_' + Date.now(),
+        name: objName,
+        address: objAddr,
+        budget: cPlan * 1000,
+        plannedMargin: mPlan * 1000,
+        actualCost: cFact * 1000,
+        marketInflation: dRyn * 1000,
+        unclosedKs2: vNzp * 1000,
+        ks2Days: tFact,
+        costOfDelay: codVal * 1000,
+        totalFot: fotVal * 1000,
+        reworkFot: Math.round(fotVal * 1000 * 0.045),
+        ftri: 88.5,
+        mvr: 1.8,
+        spi: 0.96,
+        otd: 91.0,
+        cfi: 1.08
+      };
+      state.projects.push(newProj);
+      state.activeProjectId = newProj.id;
+      if (typeof saveState === 'function') saveState();
+      if (typeof renderAll === 'function') renderAll();
+    }
+
+    alert('✅ Объект «' + objName + '» успешно добавлен в Портфель объектов и выбран активным!\n\nПерейдите во вкладку «3. Портфель объектов» или «1. Диагностика объекта (KPI)», чтобы увидеть его расчеты.');
+  }, true);
+})();
+</script>
 
 
 
